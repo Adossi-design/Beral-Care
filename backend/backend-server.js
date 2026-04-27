@@ -1,0 +1,138 @@
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+const { verifyToken, requireAdmin, requireDoctor, requirePatient } = require('./middleware/roleGuard');
+const authRoutes    = require('./routes/auth');
+const adminRoutes   = require('./routes/admin');
+const doctorRoutes  = require('./routes/doctor');
+const patientRoutes = require('./routes/patient');
+
+const pool = require('./utils/db');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(cors());
+app.use(express.json());
+
+app.get('/', (req, res) => res.json({ message: 'Beral Care API is running' }));
+
+// Public — no token required
+app.use('/api/auth', authRoutes);
+
+// Protected — token + role required
+// All role checks are enforced server-side here, never rely on frontend alone
+app.use('/api/admin',   verifyToken, requireAdmin,   adminRoutes);
+app.use('/api/doctor',  verifyToken, requireDoctor,  doctorRoutes);
+app.use('/api/patient', verifyToken, requirePatient, patientRoutes);
+
+// Database setup — run once after deployment
+app.get('/setup-db', async (req, res) => {
+  try {
+    const shouldSeed = String(process.env.DB_SEED_SAMPLE_DATA || 'false').toLowerCase() === 'true';
+
+    const setupSQL = `
+      CREATE TABLE IF NOT EXISTS users (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        full_name VARCHAR(200) NOT NULL,
+        email VARCHAR(255) UNIQUE,
+        phone VARCHAR(20) UNIQUE,
+        password_hash VARCHAR(255) NOT NULL,
+        role ENUM('patient', 'doctor', 'admin') DEFAULT 'patient',
+        patient_id VARCHAR(20) UNIQUE DEFAULT NULL,
+        suspended TINYINT(1) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS patients (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        full_name VARCHAR(200) NOT NULL,
+        date_of_birth DATE,
+        gender VARCHAR(15),
+        contact_info VARCHAR(200),
+        address TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS doctors (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        full_name VARCHAR(100) NOT NULL,
+        specialty VARCHAR(50) NOT NULL,
+        license_number VARCHAR(50) UNIQUE NOT NULL,
+        contact_info VARCHAR(100),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS consultations (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        patient_id INT NOT NULL,
+        doctor_id INT NOT NULL,
+        consultation_date DATE NOT NULL,
+        notes TEXT,
+        diagnosis TEXT,
+        prescription TEXT,
+        status ENUM('pending', 'completed', 'cancelled') DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (patient_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (doctor_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+
+      CREATE TABLE IF NOT EXISTS doctor_patient_access (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        doctor_id INT NOT NULL,
+        patient_user_id INT NOT NULL,
+        status ENUM('pending', 'approved', 'denied') DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_access (doctor_id, patient_user_id),
+        FOREIGN KEY (doctor_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (patient_user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+    `;
+
+    const sampleDataSQL = `
+      INSERT IGNORE INTO doctors (id, full_name, specialty, license_number, contact_info) VALUES
+        (1, 'Dr. Primary Care', 'General Practice', 'MD000', 'doctor1@example.com'),
+        (2, 'Dr. Cardio Team', 'Cardiology', 'MD001', 'doctor2@example.com'),
+        (3, 'Dr. Pediatrics Team', 'Pediatrics', 'MD002', 'doctor3@example.com');
+
+      INSERT IGNORE INTO patients (full_name, date_of_birth, gender, contact_info, address) VALUES
+        ('Sample Patient One', '1985-03-15', 'Male', 'patient1@example.com', 'Sample Address 1'),
+        ('Sample Patient Two', '1965-07-22', 'Female', 'patient2@example.com', 'Sample Address 2'),
+        ('Sample Patient Three', '1998-11-03', 'Male', 'patient3@example.com', 'Sample Address 3');
+
+      INSERT IGNORE INTO consultations (patient_id, doctor_id, consultation_date, notes, diagnosis, status) VALUES
+        (1, 1, '2024-07-20', 'Patient complained of chest pain', 'Mild angina', 'completed'),
+        (2, 2, '2024-07-21', 'Regular checkup', 'Healthy', 'completed'),
+        (3, 3, '2024-07-22', 'Child vaccination', 'Vaccination completed', 'completed');
+    `;
+
+    for (const stmt of setupSQL.split(';').filter(s => s.trim()))
+      await pool.query(stmt);
+
+    if (shouldSeed)
+      for (const stmt of sampleDataSQL.split(';').filter(s => s.trim()))
+        await pool.query(stmt);
+
+    res.json({
+      message: 'Database setup completed successfully!',
+      tables_created: ['users', 'patients', 'doctors', 'consultations', 'doctor_patient_access'],
+      sample_data: shouldSeed ? 'Sample records inserted' : 'Skipped (set DB_SEED_SAMPLE_DATA=true to enable)',
+    });
+  } catch (error) {
+    console.error('Database setup error:', error);
+    res.status(500).json({ error: 'Database setup failed', details: error.message });
+  }
+});
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Beral Care API running on port ${PORT}`);
+});
+
+module.exports = app;
