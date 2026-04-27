@@ -1,0 +1,10 @@
+.env
+.env.*
+backend/.env
+ussd-gateway/.env
+node_modules/
+.expo/
+dist/
+build/
+*.log
+backend/seeders/createAdmin.js
