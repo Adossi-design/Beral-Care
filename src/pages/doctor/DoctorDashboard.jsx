@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TextInput, TouchableOpacity, Alert, ActivityIndicator,
@@ -7,12 +7,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import DoctorLayout from '../../components/layouts/DoctorLayout';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../../client-services/api';
+import { useLanguage } from '../../context/LanguageContext';
+import api from '@client-services/api';
 
 const STATUS_COLORS = { pending: '#f59e0b', completed: '#22c55e', cancelled: '#ef4444' };
 
 const DoctorDashboard = ({ navigation, route }) => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [patientIdInput, setPatientIdInput] = useState(route?.params?.prefillPatientId || '');
   const [searching, setSearching] = useState(false);
   const [appointments, setAppointments] = useState([]);
@@ -32,16 +34,7 @@ const DoctorDashboard = ({ navigation, route }) => {
       .finally(() => setLoadingAppts(false));
   }, []);
 
-  // Auto-trigger search when arriving from QR scanner
-  useEffect(() => {
-    const prefill = route?.params?.prefillPatientId;
-    if (prefill) {
-      setPatientIdInput(prefill);
-      handlePatientSearch(prefill);
-    }
-  }, [route?.params?.prefillPatientId]);
-
-  const handlePatientSearch = async (overrideId) => {
+  const handlePatientSearch = useCallback(async (overrideId) => {
     const idToSearch = (overrideId || patientIdInput).trim();
     if (!idToSearch) return;
     setSearching(true);
@@ -49,11 +42,19 @@ const DoctorDashboard = ({ navigation, route }) => {
       const res = await api.get(`/api/doctor/patient/${idToSearch}`);
       navigation.navigate('DoctorPatients', { patientData: res.data });
     } catch (error) {
-      Alert.alert('Patient Lookup', error.response?.data?.error || 'Patient not found');
+      Alert.alert(t('patientLookup'), error.response?.data?.error || t('patientNotFound'));
     } finally {
       setSearching(false);
     }
-  };
+  }, [patientIdInput, navigation, t]);
+
+  useEffect(() => {
+    const prefill = route?.params?.prefillPatientId;
+    if (prefill) {
+      setPatientIdInput(prefill);
+      handlePatientSearch(prefill);
+    }
+  }, [route?.params?.prefillPatientId, handlePatientSearch]);
 
   return (
     <ProtectedRoute requiredRole="doctor" navigation={navigation}>
@@ -63,7 +64,7 @@ const DoctorDashboard = ({ navigation, route }) => {
           {/* Greeting */}
           <View style={styles.greetRow}>
             <View>
-              <Text style={styles.greetSub}>Good day,</Text>
+              <Text style={styles.greetSub}>{t('goodDay')},</Text>
               <Text style={styles.greetName}>Dr. {user?.name || 'Doctor'} 👋</Text>
             </View>
             <View style={styles.avatarCircle}>
@@ -71,10 +72,10 @@ const DoctorDashboard = ({ navigation, route }) => {
             </View>
           </View>
 
-          {/* Patient search — front and center */}
+          {/* Patient search */}
           <LinearGradient colors={['#185FA5', '#1a6bbf']} style={styles.searchCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-            <Text style={styles.searchCardTitle}>🔍  Patient Lookup</Text>
-            <Text style={styles.searchCardSub}>Enter a Patient ID to view their records</Text>
+            <Text style={styles.searchCardTitle}>🔍  {t('patientLookup')}</Text>
+            <Text style={styles.searchCardSub}>{t('enterPatientId')}</Text>
             <View style={styles.searchRow}>
               <TextInput
                 style={styles.searchInput}
@@ -89,19 +90,19 @@ const DoctorDashboard = ({ navigation, route }) => {
                 onPress={() => handlePatientSearch()}
                 disabled={searching}
               >
-                <Text style={styles.searchBtnText}>{searching ? '...' : 'Search'}</Text>
+                <Text style={styles.searchBtnText}>{searching ? '...' : t('search')}</Text>
               </TouchableOpacity>
             </View>
-            <Text style={styles.searchNote}>⚠️  Patient must approve access before records are visible</Text>
+            <Text style={styles.searchNote}>⚠️  {t('mustApproveAccess')}</Text>
           </LinearGradient>
 
           {/* Quick actions */}
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <Text style={styles.sectionTitle}>{t('quickActions')}</Text>
           <View style={styles.quickRow}>
             {[
-              { icon: '👥', label: 'My Patients',      screen: 'DoctorPatients',     bg: '#E6F1FB', color: '#185FA5' },
-              { icon: '➕', label: 'Create Patient',   screen: 'DoctorPatients',     bg: '#EAF3DE', color: '#1a5c38', params: { createMode: true } },
-              { icon: '📅', label: 'Appointments',     screen: 'DoctorAppointments', bg: '#fef3c7', color: '#d97706' },
+              { icon: '👥', label: t('myPatients'),      screen: 'DoctorPatients',     bg: '#E6F1FB', color: '#185FA5' },
+              { icon: '➕', label: t('createPatient'),   screen: 'DoctorPatients',     bg: '#EAF3DE', color: '#1a5c38', params: { createMode: true } },
+              { icon: '📅', label: t('appointments'),     screen: 'DoctorAppointments', bg: '#fef3c7', color: '#d97706' },
             ].map(q => (
               <TouchableOpacity
                 key={q.label}
@@ -116,9 +117,9 @@ const DoctorDashboard = ({ navigation, route }) => {
 
           {/* Today's appointments */}
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Today's Appointments</Text>
+            <Text style={styles.sectionTitle}>{t('todaysAppointments')}</Text>
             <TouchableOpacity onPress={() => navigation.navigate('DoctorAppointments')}>
-              <Text style={styles.seeAll}>See all</Text>
+              <Text style={styles.seeAll}>{t('seeAll')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -127,7 +128,7 @@ const DoctorDashboard = ({ navigation, route }) => {
           ) : appointments.length === 0 ? (
             <View style={styles.emptyCard}>
               <Text style={styles.emptyIcon}>📭</Text>
-              <Text style={styles.emptyText}>No appointments scheduled</Text>
+              <Text style={styles.emptyText}>{t('noAppointmentsScheduled')}</Text>
             </View>
           ) : (
             appointments.slice(0, 4).map(a => (
@@ -147,7 +148,7 @@ const DoctorDashboard = ({ navigation, route }) => {
           {/* Recently accessed patients */}
           {recentPatients.length > 0 && (
             <>
-              <Text style={styles.sectionTitle}>Recently Accessed Patients</Text>
+              <Text style={styles.sectionTitle}>{t('recentlyAccessedPatients')}</Text>
               {recentPatients.slice(0, 5).map(p => (
                 <TouchableOpacity
                   key={p.id}

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import DoctorLayout from '../../components/layouts/DoctorLayout';
 import ProtectedRoute from '../../components/ProtectedRoute';
-import api from '../../../client-services/api';
+import api from '@client-services/api';
 
 const STATUS_COLORS = { pending: '#f59e0b', completed: '#22c55e', cancelled: '#ef4444' };
 
