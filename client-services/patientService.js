@@ -14,6 +14,7 @@ export const patientAPI = {
   getAccessRequests: () => api.get('/api/patient/access-requests'),
   respondToAccessRequest: (id, decision) =>
     api.patch(`/api/patient/access-requests/${id}`, { decision }),
+  getDoctors: () => api.get('/api/patient/doctors'),
 };
 
 export default patientAPI;

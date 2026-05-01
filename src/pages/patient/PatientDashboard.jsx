@@ -8,12 +8,14 @@ import PatientLayout from '../../components/layouts/PatientLayout';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import PatientQRModal from '../../components/PatientQRModal';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../../client-services/api';
+import { useLanguage } from '../../context/LanguageContext';
+import api from '@client-services/api';
 
 const STATUS_COLORS = { pending: '#f59e0b', completed: '#22c55e', cancelled: '#ef4444' };
 
 const PatientDashboard = ({ navigation }) => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [appointments, setAppointments] = useState([]);
   const [accessRequests, setAccessRequests] = useState([]);
   const [history, setHistory] = useState([]);
@@ -37,20 +39,19 @@ const PatientDashboard = ({ navigation }) => {
 
   const handleCopyId = () => {
     Clipboard.setString(user?.patient_id || '');
-    Alert.alert('Copied!', `Patient ID ${user?.patient_id} copied to clipboard`);
+    Alert.alert(t('copied'), `${t('patientIdCopied')}`);
   };
 
   const handleAccessDecision = async (requestId, decision) => {
     try {
       await api.patch(`/api/patient/access-requests/${requestId}`, { decision });
       setAccessRequests(prev => prev.filter(r => r.id !== requestId));
-      Alert.alert('Done', `Access ${decision}`);
+      Alert.alert(t('success'), `${t('access')} ${decision}`);
     } catch (error) {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to update access');
+      Alert.alert(t('error'), error.response?.data?.error || 'Failed to update access');
     }
   };
 
-  // Derive summary counts from history
   const diagnosesCount    = history.filter(h => h.diagnosis).length;
   const prescriptionsCount = history.filter(h => h.prescription).length;
   const completedCount    = history.filter(h => h.status === 'completed').length;
@@ -63,7 +64,7 @@ const PatientDashboard = ({ navigation }) => {
           {/* Greeting */}
           <View style={styles.greetRow}>
             <View>
-              <Text style={styles.greetSub}>Good day,</Text>
+              <Text style={styles.greetSub}>{t('goodDay')},</Text>
               <Text style={styles.greetName}>{user?.name || 'Patient'} 👋</Text>
             </View>
             <View style={styles.avatarCircle}>
@@ -75,18 +76,18 @@ const PatientDashboard = ({ navigation }) => {
           <LinearGradient colors={['#1a5c38', '#2d8653']} style={styles.idCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
             <View style={styles.idCardTop}>
               <View>
-                <Text style={styles.idCardLabel}>Your Patient ID</Text>
+                <Text style={styles.idCardLabel}>{t('myPatientId')}</Text>
                 <Text style={styles.idCardValue}>{user?.patient_id || '—'}</Text>
               </View>
               <Text style={styles.idCardEmoji}>🪪</Text>
             </View>
-            <Text style={styles.idCardHint}>Share this ID with your doctor to grant them access to your records</Text>
+            <Text style={styles.idCardHint}>{t('shareYourId')}</Text>
             <View style={styles.idCardBtns}>
               <TouchableOpacity style={styles.copyBtn} onPress={handleCopyId}>
-                <Text style={styles.copyBtnText}>📋  Copy ID</Text>
+                <Text style={styles.copyBtnText}>📋  {t('copyId')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.qrBtn} onPress={() => setQrVisible(true)}>
-                <Text style={styles.qrBtnText}>📲  Show QR</Text>
+                <Text style={styles.qrBtnText}>📲  {t('showQR')}</Text>
               </TouchableOpacity>
             </View>
           </LinearGradient>
@@ -103,7 +104,7 @@ const PatientDashboard = ({ navigation }) => {
             <View style={styles.notifSection}>
               <View style={styles.notifHeader}>
                 <View style={styles.notifDot} />
-                <Text style={styles.sectionTitle}>Access Requests</Text>
+                <Text style={styles.sectionTitle}>{t('accessRequests')}</Text>
                 <View style={styles.notifBadge}>
                   <Text style={styles.notifBadgeText}>{accessRequests.length}</Text>
                 </View>
@@ -114,15 +115,15 @@ const PatientDashboard = ({ navigation }) => {
                     <Text style={styles.requestIcon}>👨⚕️</Text>
                     <View style={styles.requestInfo}>
                       <Text style={styles.requestDoctor}>{r.doctor_name}</Text>
-                      <Text style={styles.requestDesc}>is requesting access to your medical records</Text>
+                      <Text style={styles.requestDesc}>{t('isRequestingAccess')}</Text>
                     </View>
                   </View>
                   <View style={styles.requestActions}>
                     <TouchableOpacity style={styles.approveBtn} onPress={() => handleAccessDecision(r.id, 'approved')}>
-                      <Text style={styles.approveBtnText}>✓  Approve</Text>
+                      <Text style={styles.approveBtnText}>✓  {t('approve')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.denyBtn} onPress={() => handleAccessDecision(r.id, 'denied')}>
-                      <Text style={styles.denyBtnText}>✕  Deny</Text>
+                      <Text style={styles.denyBtnText}>✕  {t('deny')}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -131,16 +132,16 @@ const PatientDashboard = ({ navigation }) => {
           )}
 
           {/* Medical history summary */}
-          <Text style={styles.sectionTitle}>Medical History Summary</Text>
+          <Text style={styles.sectionTitle}>{t('medicalHistorySummary')}</Text>
           {loading ? (
             <ActivityIndicator color="#1a5c38" style={{ marginBottom: 20 }} />
           ) : (
             <>
               <View style={styles.summaryRow}>
                 {[
-                  { icon: '🩺', label: 'Diagnoses',     value: diagnosesCount,     color: '#185FA5', bg: '#E6F1FB' },
-                  { icon: '💊', label: 'Prescriptions', value: prescriptionsCount, color: '#1a5c38', bg: '#EAF3DE' },
-                  { icon: '✅', label: 'Completed',     value: completedCount,     color: '#22c55e', bg: '#f0fdf4' },
+                  { icon: '🩺', label: t('diagnoses'),     value: diagnosesCount,     color: '#185FA5', bg: '#E6F1FB' },
+                  { icon: '💊', label: t('prescriptions'), value: prescriptionsCount, color: '#1a5c38', bg: '#EAF3DE' },
+                  { icon: '✅', label: t('completed'),     value: completedCount,     color: '#22c55e', bg: '#f0fdf4' },
                 ].map(s => (
                   <View key={s.label} style={[styles.summaryCard, { backgroundColor: s.bg }]}>
                     <Text style={styles.summaryIcon}>{s.icon}</Text>
@@ -150,8 +151,14 @@ const PatientDashboard = ({ navigation }) => {
                 ))}
               </View>
 
-              {/* Recent history entries */}
-              {history.slice(0, 3).map(h => (
+              {history.length === 0 ? (
+                <View style={styles.emptyCard}>
+                  <Text style={styles.emptyIcon}>📋</Text>
+                  <Text style={styles.emptyText}>{t('noMedicalHistory')}</Text>
+                </View>
+              ) : (
+                <>
+                  {history.slice(0, 3).map(h => (
                 <View key={h.id} style={styles.historyCard}>
                   <View style={styles.historyHeader}>
                     <Text style={styles.historyDate}>
@@ -180,22 +187,24 @@ const PatientDashboard = ({ navigation }) => {
                     </View>
                   )}
                 </View>
-              ))}
+                  ))}
 
-              {history.length > 3 && (
-                <TouchableOpacity style={styles.viewMoreBtn} onPress={() => navigation.navigate('PatientAppointments')}>
-                  <Text style={styles.viewMoreText}>View full history →</Text>
-                </TouchableOpacity>
+                  {history.length > 3 && (
+                    <TouchableOpacity style={styles.viewMoreBtn} onPress={() => navigation.navigate('PatientAppointments')}>
+                      <Text style={styles.viewMoreText}>{t('viewFullHistory')}</Text>
+                    </TouchableOpacity>
+                  )}
+                </>
               )}
             </>
           )}
 
           {/* Quick actions */}
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <Text style={styles.sectionTitle}>{t('quickActions')}</Text>
           <View style={styles.quickRow}>
             {[
-              { icon: '📅', label: 'Book Appointment', screen: 'PatientAppointments', bg: '#EAF3DE', color: '#1a5c38' },
-              { icon: '👤', label: 'My Profile',        screen: 'PatientProfile',      bg: '#E6F1FB', color: '#185FA5' },
+              { icon: '📅', label: t('bookAppointment'), screen: 'PatientAppointments', bg: '#EAF3DE', color: '#1a5c38' },
+              { icon: '👤', label: t('myProfile'),        screen: 'PatientProfileEdit',      bg: '#E6F1FB', color: '#185FA5' },
             ].map(q => (
               <TouchableOpacity key={q.screen} style={[styles.quickCard, { backgroundColor: q.bg }]} onPress={() => navigation.navigate(q.screen)}>
                 <Text style={styles.quickIcon}>{q.icon}</Text>
@@ -206,9 +215,9 @@ const PatientDashboard = ({ navigation }) => {
 
           {/* Upcoming appointments */}
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Upcoming Appointments</Text>
+            <Text style={styles.sectionTitle}>{t('upcomingAppointments')}</Text>
             <TouchableOpacity onPress={() => navigation.navigate('PatientAppointments')}>
-              <Text style={styles.seeAll}>See all</Text>
+              <Text style={styles.seeAll}>{t('seeAll')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -217,9 +226,9 @@ const PatientDashboard = ({ navigation }) => {
           ) : appointments.length === 0 ? (
             <View style={styles.emptyCard}>
               <Text style={styles.emptyIcon}>📭</Text>
-              <Text style={styles.emptyText}>No upcoming appointments</Text>
+              <Text style={styles.emptyText}>{t('noUpcomingAppointments')}</Text>
               <TouchableOpacity style={styles.emptyBtn} onPress={() => navigation.navigate('PatientAppointments')}>
-                <Text style={styles.emptyBtnText}>Book your first appointment</Text>
+                <Text style={styles.emptyBtnText}>{t('bookYourFirstAppointment')}</Text>
               </TouchableOpacity>
             </View>
           ) : (

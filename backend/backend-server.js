@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fileUpload = require('express-fileupload');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const { verifyToken, requireAdmin, requireDoctor, requirePatient } = require('./middleware/roleGuard');
@@ -8,6 +9,7 @@ const authRoutes    = require('./routes/auth');
 const adminRoutes   = require('./routes/admin');
 const doctorRoutes  = require('./routes/doctor');
 const patientRoutes = require('./routes/patient');
+const profileRoutes = require('./routes/profile');
 
 const pool = require('./utils/db');
 
@@ -16,20 +18,35 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+app.use(fileUpload());
+
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.get('/', (req, res) => res.json({ message: 'Beral Care API is running' }));
 
 // Public — no token required
 app.use('/api/auth', authRoutes);
+const doctorRoutesPublic = require('./routes/doctor');
+app.get('/api/doctors', doctorRoutesPublic.getPublicDoctors);
 
 // Protected — token + role required
 // All role checks are enforced server-side here, never rely on frontend alone
+app.use('/api/profile', verifyToken, profileRoutes);
 app.use('/api/admin',   verifyToken, requireAdmin,   adminRoutes);
 app.use('/api/doctor',  verifyToken, requireDoctor,  doctorRoutes);
 app.use('/api/patient', verifyToken, requirePatient, patientRoutes);
 
-// Database setup — run once after deployment
+// Database setup — run once after deployment, then disable or protect this endpoint
 app.get('/setup-db', async (req, res) => {
+  // Simple protection: check for a setup key in environment
+  const setupKey = process.env.DB_SETUP_KEY;
+  const providedKey = req.query.key;
+  
+  if (setupKey && setupKey !== providedKey) {
+    return res.status(403).json({ error: 'Unauthorized: Invalid setup key' });
+  }
+  
   try {
     const shouldSeed = String(process.env.DB_SEED_SAMPLE_DATA || 'false').toLowerCase() === 'true';
 
@@ -42,6 +59,11 @@ app.get('/setup-db', async (req, res) => {
         password_hash VARCHAR(255) NOT NULL,
         role ENUM('patient', 'doctor', 'admin') DEFAULT 'patient',
         patient_id VARCHAR(20) UNIQUE DEFAULT NULL,
+        specialization VARCHAR(100),
+        hospital VARCHAR(200),
+        profile_image_url VARCHAR(500),
+        email_verified TINYINT(1) DEFAULT 0,
+        phone_verified TINYINT(1) DEFAULT 0,
         suspended TINYINT(1) DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -83,16 +105,31 @@ app.get('/setup-db', async (req, res) => {
         FOREIGN KEY (doctor_id) REFERENCES users(id) ON DELETE CASCADE
       );
 
-      CREATE TABLE IF NOT EXISTS doctor_patient_access (
+      CREATE TABLE IF NOT EXISTS consultation_requests (
         id INT PRIMARY KEY AUTO_INCREMENT,
+        patient_id INT NOT NULL,
         doctor_id INT NOT NULL,
-        patient_user_id INT NOT NULL,
-        status ENUM('pending', 'approved', 'denied') DEFAULT 'pending',
+        reason TEXT,
+        status ENUM('pending', 'accepted', 'rejected', 'completed') DEFAULT 'pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        UNIQUE KEY unique_access (doctor_id, patient_user_id),
-        FOREIGN KEY (doctor_id) REFERENCES users(id) ON DELETE CASCADE,
-        FOREIGN KEY (patient_user_id) REFERENCES users(id) ON DELETE CASCADE
+        UNIQUE KEY unique_request (patient_id, doctor_id),
+        FOREIGN KEY (patient_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (doctor_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+
+      CREATE TABLE IF NOT EXISTS notifications (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        user_id INT NOT NULL,
+        type VARCHAR(50),
+        related_user_id INT,
+        related_consultation_id INT,
+        message TEXT,
+        read_at TIMESTAMP NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (related_user_id) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (related_consultation_id) REFERENCES consultations(id) ON DELETE SET NULL
       );
     `;
 

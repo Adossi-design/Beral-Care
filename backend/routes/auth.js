@@ -1,7 +1,7 @@
 /**
  * auth.js — Public authentication routes.
  * No token required. Accessible by anyone.
- * Handles: POST /api/auth/register, POST /api/auth/login
+ * Handles: POST /api/auth/register, POST /api/auth/login, POST /api/auth/google
  */
 
 const express = require('express');
@@ -11,7 +11,7 @@ const auth = require('../utils/auth');
 // POST /api/auth/register — create a new patient or doctor account
 router.post('/register', async (req, res) => {
   try {
-    const { full_name, email, phone, password, role = 'patient' } = req.body;
+    const { full_name, email, phone, password, role = 'patient', specialization, hospital } = req.body;
 
     if (!full_name || !email || !phone || !password)
       return res.status(400).json({ error: 'All fields are required: full_name, email, phone, password' });
@@ -21,16 +21,18 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Password must be at least 8 characters with uppercase, lowercase, and number' });
     if (!auth.isValidPhone(phone))
       return res.status(400).json({ error: 'Invalid phone format' });
+    if (role === 'doctor' && (!specialization || !hospital))
+      return res.status(400).json({ error: 'Doctors must provide specialization and hospital' });
 
     // Prevent admin self-registration through public endpoint
     const safeRole = role === 'admin' ? 'patient' : role;
 
-    const user = await auth.registerUser({ full_name, email, phone, password, role: safeRole });
+    const user = await auth.registerUser({ full_name, email, phone, password, role: safeRole, specialization, hospital });
     const token = auth.generateToken(user);
 
     res.status(201).json({
       message: 'Account created successfully',
-      user: { id: user.id, full_name: user.full_name, name: user.full_name, email: user.email, phone: user.phone, role: user.role, patient_id: user.patient_id },
+      user: { id: user.id, full_name: user.full_name, name: user.full_name, email: user.email, phone: user.phone, role: user.role, patient_id: user.patient_id, specialization: user.specialization, hospital: user.hospital },
       token,
     });
   } catch (error) {
@@ -53,7 +55,7 @@ router.post('/login', async (req, res) => {
 
     res.json({
       message: 'Login successful',
-      user: { id: user.id, full_name: user.full_name, email: user.email, role: user.role, patient_id: user.patient_id },
+      user: { id: user.id, full_name: user.full_name, email: user.email, role: user.role, patient_id: user.patient_id, specialization: user.specialization, hospital: user.hospital },
       token,
     });
   } catch (error) {
@@ -61,5 +63,7 @@ router.post('/login', async (req, res) => {
     res.status(401).json({ error: 'Invalid email or password' });
   }
 });
+
+
 
 module.exports = router;

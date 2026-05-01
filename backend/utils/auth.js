@@ -52,26 +52,7 @@ const auth = {
     }
   },
 
-  // Middleware: verifies JWT and attaches decoded user to req.user
-  requireAuth: (req, res, next) => {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    if (!token) return res.status(401).json({ error: 'No token provided' });
-    const decoded = auth.verifyToken(token);
-    if (!decoded) return res.status(401).json({ error: 'Invalid or expired token' });
-    req.user = decoded;
-    next();
-  },
 
-  requireAdmin: (req, res, next) => {
-    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
-    next();
-  },
-
-  requireDoctor: (req, res, next) => {
-    if (req.user.role !== 'doctor' && req.user.role !== 'admin')
-      return res.status(403).json({ error: 'Doctor access required' });
-    next();
-  },
 
   isValidEmail: (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
 
@@ -81,7 +62,7 @@ const auth = {
 
   registerUser: async (userData) => {
     try {
-      const { full_name, email, phone, password, role = 'patient' } = userData;
+      const { full_name, email, phone, password, role = 'patient', specialization, hospital } = userData;
 
       const [existing] = await pool.execute('SELECT id FROM users WHERE email = ?', [email]);
       if (existing.length > 0) throw new Error('User with this email already exists');
@@ -93,8 +74,8 @@ const auth = {
       const patient_id = role === 'patient' ? await generatePatientId() : null;
 
       const [result] = await pool.execute(
-        'INSERT INTO users (full_name, email, phone, password_hash, role, patient_id) VALUES (?, ?, ?, ?, ?, ?)',
-        [full_name, email, phoneValue, hashedPassword, role, patient_id]
+        'INSERT INTO users (full_name, email, phone, password_hash, role, patient_id, specialization, hospital) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [full_name, email, phoneValue, hashedPassword, role, patient_id, specialization || null, hospital || null]
       );
       const userId = result.insertId;
 
@@ -109,7 +90,7 @@ const auth = {
         }
       }
 
-      return { id: userId, full_name, email, phone: phoneValue, role, patient_id };
+      return { id: userId, full_name, email, phone: phoneValue, role, patient_id, specialization, hospital };
     } catch (error) {
       throw new Error(`Error registering user: ${error.message}`);
     }
@@ -118,25 +99,31 @@ const auth = {
   loginUser: async (email, password) => {
     try {
       const [users] = await pool.execute(
-        'SELECT id, full_name, email, password_hash, role, patient_id FROM users WHERE email = ?',
+        'SELECT id, full_name, email, password_hash, role, patient_id, specialization, hospital, suspended FROM users WHERE email = ?',
         [email]
       );
       if (users.length === 0) throw new Error('Invalid email or password');
 
       const user = users[0];
+      
+      // Check if user is suspended
+      if (user.suspended) throw new Error('Account suspended. Please contact support.');
+      
       const valid = await auth.comparePassword(password, user.password_hash);
       if (!valid) throw new Error('Invalid email or password');
 
       const token = auth.generateToken(user);
       return {
         // Include both full_name and name so screens work regardless of which field they read
-        user: { id: user.id, full_name: user.full_name, name: user.full_name, email: user.email, role: user.role, patient_id: user.patient_id },
+        user: { id: user.id, full_name: user.full_name, name: user.full_name, email: user.email, role: user.role, patient_id: user.patient_id, specialization: user.specialization, hospital: user.hospital },
         token,
       };
     } catch (error) {
       throw new Error(`Error logging in: ${error.message}`);
     }
   },
+
+
 };
 
 module.exports = auth;

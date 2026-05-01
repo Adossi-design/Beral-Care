@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "Beral Care",
+    "slug": "beralcare-africa",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1a5c38"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.beralcare.africa",
+      "googleServicesFile": "./GoogleService-Info.plist"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1a5c38"
+      },
+      "package": "com.beralcare.africa",
+      "permissions": ["CAMERA"],
+      "googleServicesFile": "./google-services.json"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Beral Care to access your camera to scan patient QR codes."
+        }
+      ],
+      "@react-native-google-signin/google-signin"
+    ]
+  }
+}

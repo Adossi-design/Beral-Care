@@ -84,6 +84,9 @@ SENDGRID_FROM_EMAIL=you@example.com
 # Admin seeder (only needed when running backend/seeders/createAdmin.js)
 ADMIN_EMAIL=admin@beralcare.local
 ADMIN_PASSWORD=replace_with_strong_admin_password
+
+# Database setup protection (optional - if set, /setup-db requires ?key=YOUR_KEY)
+DB_SETUP_KEY=your_secret_setup_key
 ```
 
 ### 3. USSD Gateway — `ussd-gateway/.env`
@@ -99,6 +102,7 @@ REDIS_URL=redis://localhost:6379/0
 cd backend && npm install && node backend-server.js
 
 # Initialize DB tables (run once)
+# If you set DB_SETUP_KEY in .env, add ?key=YOUR_KEY to the URL
 GET http://localhost:3000/setup-db
 
 # Create admin account (run once, then delete the file)

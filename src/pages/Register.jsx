@@ -1,40 +1,69 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView, Alert, SafeAreaView,
+  View, Text, TextInput, TouchableOpacity, ScrollView,
+  StyleSheet, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, SafeAreaView,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../context/AuthContext';
-import api from '../../client-services/api';
+import { useLanguage } from '../context/LanguageContext';
+import api from '@client-services/api';
 
 const ROLE_DASHBOARDS = { doctor: 'DoctorDashboard', patient: 'PatientDashboard' };
 
-const ROLES = [
-  { key: 'patient', icon: '🧑⚕️', title: 'Patient',  desc: 'I need care',     activeColor: '#1a5c38', activeBg: '#EAF3DE' },
-  { key: 'doctor',  icon: '👨⚕️', title: 'Doctor',   desc: 'I provide care',  activeColor: '#185FA5', activeBg: '#E6F1FB' },
-];
-
 const Register = ({ navigation }) => {
   const { login } = useAuth();
+  const { language, changeLanguage, t } = useLanguage();
   const [role, setRole] = useState('patient');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [specialization, setSpecialization] = useState('');
+  const [hospitalName, setHospitalName] = useState('');
+  const [hospitalLocation, setHospitalLocation] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const activeRole = ROLES.find(r => r.key === role);
+  const validateForm = () => {
+    if (!fullName.trim()) return 'Full name is required';
+    if (!email.trim()) return 'Email is required';
+    if (!phone.trim()) return 'Phone number is required';
+    if (!password) return 'Password is required';
+    if (!confirmPassword) return 'Confirm password is required';
+    if (password !== confirmPassword) return 'Passwords do not match';
+    if (password.length < 8) return 'Password must be at least 8 characters';
+    if (!/[A-Z]/.test(password)) return 'Password must contain uppercase letter';
+    if (!/[a-z]/.test(password)) return 'Password must contain lowercase letter';
+    if (!/[0-9]/.test(password)) return 'Password must contain number';
+    if (role === 'doctor') {
+      if (!specialization.trim()) return 'Specialization is required for doctors';
+      if (!hospitalName.trim()) return 'Hospital name is required for doctors';
+      if (!hospitalLocation.trim()) return 'Hospital location is required for doctors';
+    }
+    return null;
+  };
 
   const handleRegister = async () => {
-    if (!fullName || !email || !phone || !password) {
-      Alert.alert('Missing fields', 'All fields are required');
+    const error = validateForm();
+    if (error) {
+      Alert.alert('Validation Error', error);
       return;
     }
+
     setLoading(true);
     try {
-      const res = await api.post('/api/auth/register', { full_name: fullName, email, phone, password, role });
+      const hospital = role === 'doctor' ? `${hospitalName}, ${hospitalLocation}` : undefined;
+      const res = await api.post('/api/auth/register', { 
+        full_name: fullName, 
+        email, 
+        phone, 
+        password, 
+        role, 
+        specialization: role === 'doctor' ? specialization : undefined,
+        hospital,
+      });
       await login(res.data.user, res.data.token);
       navigation.replace(ROLE_DASHBOARDS[res.data.user.role] || 'PatientDashboard');
     } catch (error) {
@@ -44,166 +73,421 @@ const Register = ({ navigation }) => {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    Alert.alert('Not Available', 'Google Sign-In has been disabled. Please use email and password to register.');
+  };
+
+  const toggleLanguage = () => {
+    changeLanguage(language === 'en' ? 'fr' : 'en');
+  };
+
   return (
-    <View style={styles.root}>
+    <SafeAreaView style={styles.safeArea}>
       <StatusBar style="light" />
-
-      <LinearGradient colors={['#185FA5', '#1a5c38']} style={styles.topBand} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
-        <SafeAreaView>
-          <View style={styles.topContent}>
-            <Text style={styles.topEmoji}>🩺</Text>
-            <Text style={styles.topTitle}>Create Account</Text>
-            <Text style={styles.topSub}>Join Beral Care today</Text>
-          </View>
-        </SafeAreaView>
-        <View style={styles.wave} />
-      </LinearGradient>
-
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={styles.card}>
-
-          {/* Google button */}
-          <TouchableOpacity style={styles.googleBtn} onPress={() => Alert.alert('Coming Soon', 'Google Sign-In will be available soon')}>
-            <Text style={styles.googleIcon}>G</Text>
-            <Text style={styles.googleText}>Continue with Google</Text>
-          </TouchableOpacity>
-
-          <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or register with email</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          {/* Role selector — admin never appears here */}
-          <Text style={styles.roleHeading}>I am joining as a...</Text>
-          <View style={styles.roleRow}>
-            {ROLES.map(r => (
-              <TouchableOpacity
-                key={r.key}
-                style={[styles.roleCard, role === r.key && { borderColor: r.activeColor, backgroundColor: r.activeBg }]}
-                onPress={() => setRole(r.key)}
-                activeOpacity={0.8}
-              >
-                {role === r.key && (
-                  <View style={[styles.roleCheck, { backgroundColor: r.activeColor }]}>
-                    <Text style={styles.roleCheckMark}>✓</Text>
-                  </View>
-                )}
-                <Text style={styles.roleCardIcon}>{r.icon}</Text>
-                <Text style={[styles.roleCardTitle, role === r.key && { color: r.activeColor }]}>{r.title}</Text>
-                <Text style={styles.roleCardDesc}>{r.desc}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Form fields */}
-          {[
-            { label: 'Full Name',     icon: '👤', value: fullName,  setter: setFullName,  placeholder: 'Your full name',        keyboard: 'default' },
-            { label: 'Email',         icon: '✉️', value: email,     setter: setEmail,     placeholder: 'your@email.com',        keyboard: 'email-address', caps: 'none' },
-            { label: 'Phone Number',  icon: '📱', value: phone,     setter: setPhone,     placeholder: '+250 788 000 000',      keyboard: 'phone-pad' },
-          ].map(f => (
-            <View key={f.label}>
-              <Text style={styles.label}>{f.label}</Text>
-              <View style={styles.inputWrap}>
-                <Text style={styles.inputIcon}>{f.icon}</Text>
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  placeholder={f.placeholder}
-                  placeholderTextColor="#b0bec5"
-                  value={f.value}
-                  onChangeText={f.setter}
-                  keyboardType={f.keyboard || 'default'}
-                  autoCapitalize={f.caps || 'words'}
-                />
-              </View>
-            </View>
-          ))}
-
-          <Text style={styles.label}>Password</Text>
-          <View style={styles.inputWrap}>
-            <Text style={styles.inputIcon}>🔒</Text>
-            <TextInput
-              style={[styles.input, { flex: 1 }]}
-              placeholder="Min 8 chars, uppercase & number"
-              placeholderTextColor="#b0bec5"
-              secureTextEntry={!showPassword}
-              value={password}
-              onChangeText={setPassword}
-              autoCapitalize="none"
-            />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-              <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁️'}</Text>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+      >
+        {/* Green Header */}
+        <View style={styles.header}>
+          <View style={styles.headerTop}>
+            <TouchableOpacity 
+              style={styles.backBtn}
+              onPress={() => navigation.goBack()}
+            >
+              <Text style={styles.backBtnText}>←</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.langBtn} onPress={toggleLanguage}>
+              <Text style={styles.langBtnText}>{language === 'en' ? '🇫🇷 FR' : '🇬🇧 EN'}</Text>
             </TouchableOpacity>
           </View>
-
-          {/* Register button */}
-          <TouchableOpacity onPress={handleRegister} disabled={loading} style={{ marginTop: 28 }}>
-            <LinearGradient
-              colors={loading ? ['#94a3b8', '#94a3b8'] : (role === 'doctor' ? ['#185FA5', '#1a5c38'] : ['#1a5c38', '#185FA5'])}
-              style={styles.registerBtn}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            >
-              <Text style={styles.registerBtnText}>{loading ? 'Creating account...' : `Create ${activeRole?.title} Account`}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.loginLink} onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.loginLinkText}>
-              Already have an account?{'  '}
-              <Text style={styles.loginLinkBold}>Sign In</Text>
-            </Text>
-          </TouchableOpacity>
+          <Text style={styles.title}>Create Account</Text>
+          <Text style={styles.subtitle}>Sign up to get started</Text>
         </View>
 
-        <View style={{ height: 32 }} />
-      </ScrollView>
-    </View>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Role Selection */}
+          <View style={styles.roleSection}>
+            <Text style={styles.roleLabel}>{t('iAmA')}</Text>
+            <View style={styles.roleRow}>
+              <TouchableOpacity
+                style={[styles.roleCard, role === 'patient' && styles.roleCardActive]}
+                onPress={() => setRole('patient')}
+              >
+                <Text style={styles.roleIcon}>🧑⚕️</Text>
+                <Text style={[styles.roleText, role === 'patient' && styles.roleTextActive]}>{t('patient')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.roleCard, role === 'doctor' && styles.roleCardActive]}
+                onPress={() => setRole('doctor')}
+              >
+                <Text style={styles.roleIcon}>👨⚕️</Text>
+                <Text style={[styles.roleText, role === 'doctor' && styles.roleTextActive]}>{t('doctor')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Form */}
+          <View style={styles.form}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>{t('fullName')}</Text>
+              <TextInput
+                style={styles.input}
+                placeholder={language === 'en' ? 'Your full name' : 'Votre nom complet'}
+                placeholderTextColor="#94a3b8"
+                value={fullName}
+                onChangeText={setFullName}
+                autoCapitalize="words"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>{t('email')}</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="your@email.com"
+                placeholderTextColor="#94a3b8"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>{t('phoneNumber')}</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="+250 788 000 000"
+                placeholderTextColor="#94a3b8"
+                value={phone}
+                onChangeText={setPhone}
+                keyboardType="phone-pad"
+              />
+            </View>
+
+            {role === 'doctor' && (
+              <>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>{t('specialization')}</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder={language === 'en' ? 'e.g. Cardiology, Pediatrics' : 'ex. Cardiologie, Pédiatrie'}
+                    placeholderTextColor="#94a3b8"
+                    value={specialization}
+                    onChangeText={setSpecialization}
+                    autoCapitalize="words"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Hospital Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="e.g. Kigali Central Hospital"
+                    placeholderTextColor="#94a3b8"
+                    value={hospitalName}
+                    onChangeText={setHospitalName}
+                    autoCapitalize="words"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Hospital Location</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="e.g. Kigali, Rwanda"
+                    placeholderTextColor="#94a3b8"
+                    value={hospitalLocation}
+                    onChangeText={setHospitalLocation}
+                    autoCapitalize="words"
+                  />
+                </View>
+              </>
+            )}
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Password</Text>
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  style={[styles.input, styles.passwordInput]}
+                  placeholder="••••••••"
+                  placeholderTextColor="#94a3b8"
+                  secureTextEntry={!showPassword}
+                  value={password}
+                  onChangeText={setPassword}
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity 
+                  style={styles.eyeBtn} 
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <Text style={styles.eyeIcon}>{showPassword ? '👁️' : '👁️🗨️'}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Confirm Password</Text>
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  style={[styles.input, styles.passwordInput]}
+                  placeholder="••••••••"
+                  placeholderTextColor="#94a3b8"
+                  secureTextEntry={!showConfirmPassword}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity 
+                  style={styles.eyeBtn} 
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  <Text style={styles.eyeIcon}>{showConfirmPassword ? '👁️' : '👁️🗨️'}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <TouchableOpacity 
+              style={[styles.registerBtn, loading && styles.registerBtnDisabled]} 
+              onPress={handleRegister}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.registerBtnText}>Sign Up</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.loginLink}
+              onPress={() => navigation.navigate('Login')}
+            >
+              <Text style={styles.loginLinkText}>
+                Already have an account? <Text style={styles.loginLinkBold}>Login</Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  root:             { flex: 1, backgroundColor: '#FFFFFF' },
-
-  topBand:          { paddingBottom: 44 },
-  topContent:       { alignItems: 'center', paddingHorizontal: 24, paddingTop: 16, paddingBottom: 10 },
-  topEmoji:         { fontSize: 40, marginBottom: 10 },
-  topTitle:         { fontSize: 26, fontWeight: '800', color: '#fff', marginBottom: 4 },
-  topSub:           { fontSize: 14, color: 'rgba(255,255,255,0.82)' },
-  wave:             { height: 32, backgroundColor: '#FFFFFF', borderTopLeftRadius: 32, borderTopRightRadius: 32 },
-
-  scroll:           { paddingHorizontal: 22, paddingTop: 4, paddingBottom: 32 },
-  card:             { backgroundColor: '#fff', borderRadius: 24, padding: 24, shadowColor: '#185FA5', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 20, elevation: 6, borderWidth: 1, borderColor: '#f1f5f9' },
-
-  googleBtn:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#e2e8f0', borderRadius: 14, paddingVertical: 13, gap: 10, backgroundColor: '#fafafa' },
-  googleIcon:       { fontSize: 16, fontWeight: '800', color: '#4285F4', width: 22, textAlign: 'center' },
-  googleText:       { fontSize: 15, fontWeight: '600', color: '#1a1a2e' },
-
-  dividerRow:       { flexDirection: 'row', alignItems: 'center', marginVertical: 18, gap: 10 },
-  dividerLine:      { flex: 1, height: 1, backgroundColor: '#e2e8f0' },
-  dividerText:      { color: '#94a3b8', fontSize: 12 },
-
-  roleHeading:      { fontSize: 14, fontWeight: '700', color: '#475569', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
-  roleRow:          { flexDirection: 'row', gap: 12, marginBottom: 20 },
-  roleCard:         { flex: 1, borderWidth: 2, borderColor: '#e2e8f0', borderRadius: 18, padding: 18, alignItems: 'center', position: 'relative' },
-  roleCheck:        { position: 'absolute', top: 10, right: 10, width: 20, height: 20, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  roleCheckMark:    { color: '#fff', fontSize: 11, fontWeight: '800' },
-  roleCardIcon:     { fontSize: 32, marginBottom: 8 },
-  roleCardTitle:    { fontSize: 15, fontWeight: '700', color: '#64748b', marginBottom: 2 },
-  roleCardDesc:     { fontSize: 12, color: '#94a3b8' },
-
-  label:            { fontSize: 13, fontWeight: '700', color: '#475569', marginBottom: 8, marginTop: 14, textTransform: 'uppercase', letterSpacing: 0.5 },
-  inputWrap:        { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f8fafc', borderRadius: 14, borderWidth: 1.5, borderColor: '#e2e8f0', paddingHorizontal: 14, paddingVertical: 2 },
-  inputIcon:        { fontSize: 16, marginRight: 10 },
-  input:            { fontSize: 15, color: '#1a1a2e', paddingVertical: 13 },
-  eyeBtn:           { padding: 6 },
-  eyeIcon:          { fontSize: 16 },
-
-  registerBtn:      { borderRadius: 16, paddingVertical: 16, alignItems: 'center', shadowColor: '#1a5c38', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6 },
-  registerBtnText:  { color: '#fff', fontSize: 16, fontWeight: '800', letterSpacing: 0.3 },
-
-  loginLink:        { alignItems: 'center', marginTop: 20 },
-  loginLinkText:    { color: '#64748b', fontSize: 14 },
-  loginLinkBold:    { color: '#185FA5', fontWeight: '700' },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#1a5c38',
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  header: {
+    backgroundColor: '#1a5c38',
+    paddingTop: Platform.OS === 'ios' ? 20 : 40,
+    paddingBottom: 32,
+    paddingHorizontal: 24,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backBtnText: {
+    fontSize: 24,
+    color: '#fff',
+  },
+  langBtn: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  langBtnText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#d1fae5',
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  roleSection: {
+    marginTop: 28,
+    marginBottom: 28,
+  },
+  roleLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#475569',
+    marginBottom: 14,
+  },
+  roleRow: {
+    flexDirection: 'row',
+    gap: 14,
+  },
+  roleCard: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+    borderRadius: 14,
+    padding: 22,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#e2e8f0',
+  },
+  roleCardActive: {
+    backgroundColor: '#EAF3DE',
+    borderColor: '#1a5c38',
+  },
+  roleIcon: {
+    fontSize: 36,
+    marginBottom: 10,
+  },
+  roleText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  roleTextActive: {
+    color: '#1a5c38',
+  },
+  form: {
+    flex: 1,
+  },
+  inputGroup: {
+    marginBottom: 22,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#475569',
+    marginBottom: 10,
+  },
+  input: {
+    backgroundColor: '#f8fafc',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    color: '#1a1a2e',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  passwordContainer: {
+    position: 'relative',
+  },
+  passwordInput: {
+    paddingRight: 50,
+  },
+  eyeBtn: {
+    position: 'absolute',
+    right: 16,
+    top: 16,
+    padding: 4,
+  },
+  eyeIcon: {
+    fontSize: 20,
+  },
+  registerBtn: {
+    backgroundColor: '#1a5c38',
+    borderRadius: 12,
+    padding: 18,
+    alignItems: 'center',
+    marginTop: 8,
+    shadowColor: '#1a5c38',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  registerBtnDisabled: {
+    opacity: 0.6,
+  },
+  registerBtnText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 28,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#e2e8f0',
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    color: '#94a3b8',
+    fontSize: 14,
+  },
+  googleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  googleIcon: {
+    fontSize: 20,
+    marginRight: 12,
+  },
+  googleBtnText: {
+    color: '#1a1a2e',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  loginLink: {
+    alignItems: 'center',
+    marginTop: 8,
+    paddingVertical: 12,
+  },
+  loginLinkText: {
+    color: '#64748b',
+    fontSize: 14,
+  },
+  loginLinkBold: {
+    color: '#1a5c38',
+    fontWeight: '700',
+  },
 });
 
 export default Register;

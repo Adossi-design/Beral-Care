@@ -1,5 +1,4 @@
 flask
-africastalking
 requests
 redis
 python-dotenv

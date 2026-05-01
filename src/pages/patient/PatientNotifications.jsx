@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import PatientLayout from '../../components/layouts/PatientLayout';
 import ProtectedRoute from '../../components/ProtectedRoute';
-import api from '../../../client-services/api';
+import api from '@client-services/api';
 
 const STATUS_CONFIG = {
   pending:  { color: '#d97706', bg: '#fef3c7', icon: '⏳', label: 'Pending' },

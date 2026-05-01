@@ -7,10 +7,12 @@ const consultationUtils = {
   getAllConsultations: async () => {
     try {
       const [rows] = await pool.execute(`
-        SELECT c.*, p.full_name as patient_name, d.full_name as doctor_name 
+        SELECT c.*, 
+               p.full_name as patient_name, 
+               d.full_name as doctor_name 
         FROM consultations c
-        JOIN patients p ON c.patient_id = p.id
-        JOIN doctors d ON c.doctor_id = d.id
+        JOIN users p ON c.patient_id = p.id
+        JOIN users d ON c.doctor_id = d.id
       `);
       return rows;
     } catch (error) {
@@ -22,10 +24,12 @@ const consultationUtils = {
   getConsultationById: async (id) => {
     try {
       const [rows] = await pool.execute(`
-        SELECT c.*, p.full_name as patient_name, d.full_name as doctor_name 
+        SELECT c.*, 
+               p.full_name as patient_name, 
+               d.full_name as doctor_name 
         FROM consultations c
-        JOIN patients p ON c.patient_id = p.id
-        JOIN doctors d ON c.doctor_id = d.id
+        JOIN users p ON c.patient_id = p.id
+        JOIN users d ON c.doctor_id = d.id
         WHERE c.id = ?
       `, [id]);
       return rows[0] || null;

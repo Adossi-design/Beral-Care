@@ -34,12 +34,15 @@ def ussd_callback():
 
     # Format phone number to match API expectations
     formatted_phone = phone_number
-    if phone_number.startswith('+') and phone_number[1:].isdigit():
-        pass
+    if phone_number.startswith('+'):
+        # Already has country code
+        formatted_phone = phone_number
     elif phone_number.startswith('0'):
-        formatted_phone = '+' + phone_number[1:]
-    elif phone_number.isdigit():
-        formatted_phone = '+' + phone_number
+        # Local format like 0788000000 -> +250788000000 (Rwanda)
+        formatted_phone = '+250' + phone_number[1:]
+    elif phone_number.isdigit() and len(phone_number) >= 9:
+        # Just digits, assume Rwanda country code
+        formatted_phone = '+250' + phone_number
 
     # Retrieve token and user_id from Redis if available
     user_session_data = {}
@@ -172,17 +175,28 @@ def ussd_callback():
                 return response, 200, {'Content-Type': 'text/plain'}
 
             try:
-                # Create consultation
-                consultation_data = {
-                    "doctor_id": 1,
-                    "notes": consultation_description,
-                    "status": "pending",
-                    "consultation_date": datetime.now().strftime('%Y-%m-%d')
-                }
+                # Get first available doctor or create a default consultation
                 headers = {"Authorization": f"Bearer {user_token}"}
-                consultation_response = requests.post(f"{API_BASE_URL}/api/patient/appointments", json=consultation_data, headers=headers)
-                consultation_response.raise_for_status()
-                response = "END Consultation request submitted successfully. A doctor will contact you."
+                doctors_response = requests.get(f"{API_BASE_URL}/api/patient/doctors", headers=headers)
+                doctors_response.raise_for_status()
+                doctors = doctors_response.json()
+                
+                # Use first doctor if available, otherwise fail gracefully
+                if not doctors or len(doctors) == 0:
+                    response = "END No doctors available. Please try again later."
+                else:
+                    doctor_id = doctors[0]['id']
+                    
+                    # Create consultation
+                    consultation_data = {
+                        "doctor_id": doctor_id,
+                        "notes": consultation_description,
+                        "status": "pending",
+                        "consultation_date": datetime.now().strftime('%Y-%m-%d')
+                    }
+                    consultation_response = requests.post(f"{API_BASE_URL}/api/patient/appointments", json=consultation_data, headers=headers)
+                    consultation_response.raise_for_status()
+                    response = "END Consultation request submitted successfully. A doctor will contact you."
                 
             except requests.exceptions.RequestException:
                 response = "END Consultation request failed. Please try again."

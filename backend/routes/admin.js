@@ -75,6 +75,11 @@ router.delete('/users/:id', async (req, res) => {
 router.patch('/users/:id/suspend', async (req, res) => {
   try {
     const { suspended } = req.body;
+    
+    // Check if user exists
+    const [existing] = await pool.execute('SELECT id FROM users WHERE id = ?', [req.params.id]);
+    if (existing.length === 0) return res.status(404).json({ error: 'User not found' });
+    
     await pool.execute('UPDATE users SET suspended = ? WHERE id = ?', [suspended ? 1 : 0, req.params.id]);
     res.json({ message: `User ${suspended ? 'suspended' : 'unsuspended'} successfully` });
   } catch (error) {

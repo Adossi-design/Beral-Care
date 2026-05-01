@@ -7,7 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import PatientLayout from '../../components/layouts/PatientLayout';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import PatientQRModal from '../../components/PatientQRModal';
-import api from '../../../client-services/api';
+import api from '@client-services/api';
 
 const STATUS_COLORS = { pending: '#f59e0b', completed: '#22c55e', cancelled: '#ef4444' };
 

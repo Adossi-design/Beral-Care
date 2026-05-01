@@ -9,9 +9,12 @@ CREATE TABLE IF NOT EXISTS users (
     full_name VARCHAR(200) NOT NULL,
     email VARCHAR(255) UNIQUE,
     phone VARCHAR(20) UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255),
     role ENUM('patient', 'doctor', 'admin') DEFAULT 'patient',
     patient_id VARCHAR(20) UNIQUE DEFAULT NULL,
+    specialization VARCHAR(100) DEFAULT NULL,
+    hospital VARCHAR(200) DEFAULT NULL,
+    google_id VARCHAR(255) UNIQUE DEFAULT NULL,
     suspended TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

@@ -4,9 +4,12 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { LanguageProvider } from './src/context/LanguageContext';
+import './src/config/googleSignIn';
 
 // Public screens
-import Landing   from './src/pages/Landing';
+import Splash    from './src/pages/Splash';
+import Welcome   from './src/pages/Welcome';
 import Login     from './src/pages/Login';
 import Register  from './src/pages/Register';
 
@@ -20,14 +23,21 @@ import AdminSettings  from './src/pages/admin/AdminSettings';
 
 // Doctor screens
 import DoctorDashboard    from './src/pages/doctor/DoctorDashboard';
-import DoctorPatients     from './src/pages/doctor/DoctorPatients';
+import DoctorPatientsList from './src/pages/doctor/DoctorPatientsList';
 import DoctorAppointments from './src/pages/doctor/DoctorAppointments';
+import DoctorIncomingRequests from './src/pages/doctor/DoctorIncomingRequests';
+import CreateConsultation from './src/pages/doctor/CreateConsultation';
+import DoctorProfileEdit from './src/pages/doctor/DoctorProfileEdit';
 
 // Patient screens
 import PatientDashboard    from './src/pages/patient/PatientDashboard';
 import PatientProfile      from './src/pages/patient/PatientProfile';
 import PatientAppointments from './src/pages/patient/PatientAppointments';
 import PatientNotifications from './src/pages/patient/PatientNotifications';
+import DoctorDiscovery from './src/pages/patient/DoctorDiscovery';
+import ConsultationRequests from './src/pages/patient/ConsultationRequests';
+import MedicalHistory from './src/pages/patient/MedicalHistory';
+import PatientProfileEdit from './src/pages/patient/PatientProfileEdit';
 
 const Stack = createNativeStackNavigator();
 
@@ -49,15 +59,16 @@ function RootNavigator() {
   }
 
   // Determine initial route based on auth state and role
-  const initialRoute = user ? (ROLE_INITIAL[user.role] || 'PatientDashboard') : 'Landing';
+  const initialRoute = user ? (ROLE_INITIAL[user.role] || 'PatientDashboard') : 'Welcome';
 
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={initialRoute}>
         {/* Public routes */}
-        <Stack.Screen name="Landing"  component={Landing} />
-        <Stack.Screen name="Login"    component={Login} />
-        <Stack.Screen name="Register" component={Register} />
+        <Stack.Screen name="Splash"    component={Splash} />
+        <Stack.Screen name="Welcome"   component={Welcome} />
+        <Stack.Screen name="Login"     component={Login} />
+        <Stack.Screen name="Register"  component={Register} />
 
         {/* Hidden system login — not referenced in any public UI */}
         <Stack.Screen name="SystemLogin" component={AdminLogin} />
@@ -69,14 +80,21 @@ function RootNavigator() {
 
         {/* Doctor routes */}
         <Stack.Screen name="DoctorDashboard"    component={DoctorDashboard} />
-        <Stack.Screen name="DoctorPatients"     component={DoctorPatients} />
+        <Stack.Screen name="DoctorPatients"     component={DoctorPatientsList} />
         <Stack.Screen name="DoctorAppointments" component={DoctorAppointments} />
+        <Stack.Screen name="DoctorIncomingRequests" component={DoctorIncomingRequests} />
+        <Stack.Screen name="CreateConsultation" component={CreateConsultation} />
+        <Stack.Screen name="DoctorProfileEdit" component={DoctorProfileEdit} />
 
         {/* Patient routes */}
         <Stack.Screen name="PatientDashboard"     component={PatientDashboard} />
         <Stack.Screen name="PatientProfile"       component={PatientProfile} />
+        <Stack.Screen name="PatientProfileEdit"   component={PatientProfileEdit} />
         <Stack.Screen name="PatientAppointments"  component={PatientAppointments} />
         <Stack.Screen name="PatientNotifications" component={PatientNotifications} />
+        <Stack.Screen name="DoctorDiscovery"      component={DoctorDiscovery} />
+        <Stack.Screen name="ConsultationRequests" component={ConsultationRequests} />
+        <Stack.Screen name="MedicalHistory"       component={MedicalHistory} />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -84,8 +102,10 @@ function RootNavigator() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <RootNavigator />
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <RootNavigator />
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
