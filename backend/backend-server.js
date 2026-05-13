@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fileUpload = require('express-fileupload');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const { verifyToken, requireAdmin, requireDoctor, requirePatient } = require('./middleware/roleGuard');
@@ -16,7 +17,30 @@ const pool = require('./utils/db');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// CORS: allow the mobile app origin and localhost during development
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:19006')
+  .split(',')
+  .map(o => o.trim());
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error('Not allowed by CORS'));
+  },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+// Rate limiting on auth routes: max 20 attempts per 15 minutes per IP
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: 'Too many attempts. Please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 app.use(express.json());
 app.use(fileUpload());
 
@@ -26,7 +50,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.get('/', (req, res) => res.json({ message: 'Beral Care API is running' }));
 
 // Public — no token required
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
 const doctorRoutesPublic = require('./routes/doctor');
 app.get('/api/doctors', doctorRoutesPublic.getPublicDoctors);
 
@@ -94,6 +118,7 @@ app.get('/setup-db', async (req, res) => {
         id INT PRIMARY KEY AUTO_INCREMENT,
         patient_id INT NOT NULL,
         doctor_id INT NOT NULL,
+        request_id INT DEFAULT NULL,
         consultation_date DATE NOT NULL,
         notes TEXT,
         diagnosis TEXT,
@@ -125,7 +150,7 @@ app.get('/setup-db', async (req, res) => {
         related_user_id INT,
         related_consultation_id INT,
         message TEXT,
-        read_at TIMESTAMP NULL,
+        is_read TINYINT(1) DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (related_user_id) REFERENCES users(id) ON DELETE SET NULL,
@@ -159,7 +184,7 @@ app.get('/setup-db', async (req, res) => {
 
     res.json({
       message: 'Database setup completed successfully!',
-      tables_created: ['users', 'patients', 'doctors', 'consultations', 'doctor_patient_access'],
+      tables_created: ['users', 'patients', 'doctors', 'consultations', 'consultation_requests', 'notifications'],
       sample_data: shouldSeed ? 'Sample records inserted' : 'Skipped (set DB_SEED_SAMPLE_DATA=true to enable)',
     });
   } catch (error) {

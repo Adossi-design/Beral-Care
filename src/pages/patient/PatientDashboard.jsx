@@ -25,12 +25,12 @@ const PatientDashboard = ({ navigation }) => {
   useEffect(() => {
     Promise.all([
       api.get('/api/patient/appointments'),
-      api.get('/api/patient/access-requests'),
-      api.get('/api/patient/history'),
+      api.get('/api/patient/consultation-requests'),
+      api.get('/api/patient/consultations'),
     ])
       .then(([apptRes, accessRes, histRes]) => {
         setAppointments(apptRes.data);
-        setAccessRequests(accessRes.data);
+        setAccessRequests(accessRes.data.filter(r => r.status === 'pending'));
         setHistory(histRes.data);
       })
       .catch(console.error)
@@ -44,7 +44,7 @@ const PatientDashboard = ({ navigation }) => {
 
   const handleAccessDecision = async (requestId, decision) => {
     try {
-      await api.patch(`/api/patient/access-requests/${requestId}`, { decision });
+      await api.patch(`/api/patient/consultation-requests/${requestId}`, { decision });
       setAccessRequests(prev => prev.filter(r => r.id !== requestId));
       Alert.alert(t('success'), `${t('access')} ${decision}`);
     } catch (error) {

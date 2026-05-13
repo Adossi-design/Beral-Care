@@ -49,6 +49,55 @@ router.post('/consultation-requests', async (req, res) => {
   }
 });
 
+// PATCH /api/patient/consultation-requests/:id - Patient approves or denies a doctor's request
+router.patch('/consultation-requests/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { decision } = req.body;
+    const patientId = req.user.id;
+
+    if (!['approved', 'denied'].includes(decision)) {
+      return res.status(400).json({ error: 'Decision must be "approved" or "denied"' });
+    }
+
+    // Map patient decision to the status used by the system
+    const newStatus = decision === 'approved' ? 'accepted' : 'rejected';
+
+    // Verify this request belongs to this patient
+    const [requests] = await pool.execute(
+      'SELECT doctor_id FROM consultation_requests WHERE id = ? AND patient_id = ?',
+      [id, patientId]
+    );
+
+    if (requests.length === 0) {
+      return res.status(404).json({ error: 'Request not found' });
+    }
+
+    const doctorId = requests[0].doctor_id;
+
+    await pool.execute(
+      'UPDATE consultation_requests SET status = ? WHERE id = ?',
+      [newStatus, id]
+    );
+
+    // Notify the doctor of the patient decision
+    const [patient] = await pool.execute('SELECT full_name FROM users WHERE id = ?', [patientId]);
+    const message = decision === 'approved'
+      ? `${patient[0].full_name} approved your access request`
+      : `${patient[0].full_name} denied your access request`;
+
+    await pool.execute(
+      'INSERT INTO notifications (user_id, type, related_user_id, message) VALUES (?, ?, ?, ?)',
+      [doctorId, `access_${decision}`, patientId, message]
+    );
+
+    res.json({ success: true, status: newStatus });
+  } catch (error) {
+    console.error('Error updating consultation request:', error);
+    res.status(500).json({ error: 'Failed to update request' });
+  }
+});
+
 // GET /api/patient/consultation-requests - Get request status
 router.get('/consultation-requests', async (req, res) => {
   try {
