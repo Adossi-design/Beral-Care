@@ -12,6 +12,7 @@ app = Flask(__name__)
 
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:3000")
 REDIS_URL = os.getenv("REDIS_URL")
+DEFAULT_COUNTRY_CODE = os.getenv("DEFAULT_COUNTRY_CODE", "+250")
 
 if REDIS_URL:
     redis_client = redis.from_url(REDIS_URL)
@@ -38,11 +39,11 @@ def ussd_callback():
         # Already has country code
         formatted_phone = phone_number
     elif phone_number.startswith('0'):
-        # Local format like 0788000000 -> +250788000000 (Rwanda)
-        formatted_phone = '+250' + phone_number[1:]
+        # Local format like 0788000000 -> +250788000000 (uses configured country code)
+        formatted_phone = DEFAULT_COUNTRY_CODE + phone_number[1:]
     elif phone_number.isdigit() and len(phone_number) >= 9:
-        # Just digits, assume Rwanda country code
-        formatted_phone = '+250' + phone_number
+        # Just digits, prepend configured country code
+        formatted_phone = DEFAULT_COUNTRY_CODE + phone_number
 
     # Retrieve token and user_id from Redis if available
     user_session_data = {}
@@ -144,7 +145,7 @@ def ussd_callback():
             elif menu_choice == "2":  # Consultation history
                 try:
                     headers = {"Authorization": f"Bearer {user_token}"}
-                    api_response = requests.get(f"{API_BASE_URL}/api/patient/history", headers=headers)
+                    api_response = requests.get(f"{API_BASE_URL}/api/patient/consultations", headers=headers)
                     api_response.raise_for_status()
                     
                     consultations = api_response.json()

@@ -4,12 +4,14 @@ const pool = require('./db');
 
 const JWT_TOKEN = process.env.JWT_TOKEN;
 
-// Generate unique patient ID in format BC-YYYY-NNNNN
-const generatePatientId = async () => {
+// Generate a unique patient ID in BC-YYYY-NNNNN format.
+// Uses a transaction with SELECT ... FOR UPDATE to prevent two simultaneous
+// registrations from receiving the same ID.
+const generatePatientId = async (connection) => {
   const year = new Date().getFullYear();
   const prefix = `BC-${year}-`;
-  const [rows] = await pool.execute(
-    "SELECT patient_id FROM users WHERE patient_id LIKE ? ORDER BY patient_id DESC LIMIT 1",
+  const [rows] = await connection.execute(
+    "SELECT patient_id FROM users WHERE patient_id LIKE ? ORDER BY patient_id DESC LIMIT 1 FOR UPDATE",
     [`${prefix}%`]
   );
   let nextNum = 1;
@@ -61,38 +63,41 @@ const auth = {
   isValidPassword: (password) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(password),
 
   registerUser: async (userData) => {
+    const conn = await pool.getConnection();
     try {
+      await conn.beginTransaction();
+
       const { full_name, email, phone, password, role = 'patient', specialization, hospital } = userData;
 
-      const [existing] = await pool.execute('SELECT id FROM users WHERE email = ?', [email]);
+      const [existing] = await conn.execute('SELECT id FROM users WHERE email = ?', [email]);
       if (existing.length > 0) throw new Error('User with this email already exists');
 
       const hashedPassword = await auth.hashPassword(password);
       const phoneValue = phone && phone.trim() !== '' ? phone : null;
 
-      // Auto-generate patient_id only for patients
-      const patient_id = role === 'patient' ? await generatePatientId() : null;
+      // Auto-generate patient_id inside the transaction to prevent duplicate IDs
+      const patient_id = role === 'patient' ? await generatePatientId(conn) : null;
 
-      const [result] = await pool.execute(
+      const [result] = await conn.execute(
         'INSERT INTO users (full_name, email, phone, password_hash, role, patient_id, specialization, hospital) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         [full_name, email, phoneValue, hashedPassword, role, patient_id, specialization || null, hospital || null]
       );
       const userId = result.insertId;
 
       if (role === 'patient') {
-        try {
-          await pool.execute(
-            'INSERT INTO patients (id, full_name, date_of_birth, gender, contact_info, address) VALUES (?, ?, ?, ?, ?, ?)',
-            [userId, full_name, null, null, email || phoneValue || '', null]
-          );
-        } catch (e) {
-          console.error('Failed to create patient record:', e.message);
-        }
+        await conn.execute(
+          'INSERT INTO patients (id, full_name, date_of_birth, gender, contact_info, address) VALUES (?, ?, ?, ?, ?, ?)',
+          [userId, full_name, null, null, email || phoneValue || '', null]
+        );
       }
 
+      await conn.commit();
       return { id: userId, full_name, email, phone: phoneValue, role, patient_id, specialization, hospital };
     } catch (error) {
+      await conn.rollback();
       throw new Error(`Error registering user: ${error.message}`);
+    } finally {
+      conn.release();
     }
   },
 

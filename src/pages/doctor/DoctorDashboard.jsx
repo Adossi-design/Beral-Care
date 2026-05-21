@@ -27,7 +27,12 @@ const DoctorDashboard = ({ navigation, route }) => {
       api.get('/api/doctor/recent-patients'),
     ])
       .then(([apptRes, recentRes]) => {
-        setAppointments(apptRes.data);
+        const todayStr = new Date().toISOString().split('T')[0];
+        const todaysOnly = apptRes.data.filter(a => {
+          const apptDate = new Date(a.consultation_date).toISOString().split('T')[0];
+          return apptDate === todayStr;
+        });
+        setAppointments(todaysOnly);
         setRecentPatients(recentRes.data);
       })
       .catch(console.error)
