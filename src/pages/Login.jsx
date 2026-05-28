@@ -39,10 +39,6 @@ const Login = ({ navigation }) => {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    Alert.alert('Not Available', 'Google Sign-In has been disabled. Please use email and password to login.');
-  };
-
   const toggleLanguage = () => {
     changeLanguage(language === 'en' ? 'fr' : 'en');
   };
