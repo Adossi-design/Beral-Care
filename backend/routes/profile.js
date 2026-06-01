@@ -16,7 +16,7 @@ router.get('/', async (req, res) => {
     const userId = req.user.id;
 
     const [users] = await pool.execute(
-      `SELECT id, full_name, email, phone, role, patient_id, specialization, hospital, 
+      `SELECT id, full_name, email, phone, role, patient_id, doctor_id, specialization, hospital,
               profile_image_url, email_verified, phone_verified, created_at, updated_at
        FROM users WHERE id = ?`,
       [userId]
@@ -82,7 +82,7 @@ router.put('/', async (req, res) => {
 
     // Fetch updated profile
     const [updated] = await pool.execute(
-      `SELECT id, full_name, email, phone, role, patient_id, specialization, hospital, 
+      `SELECT id, full_name, email, phone, role, patient_id, doctor_id, specialization, hospital,
               profile_image_url, email_verified, phone_verified, created_at, updated_at
        FROM users WHERE id = ?`,
       [userId]

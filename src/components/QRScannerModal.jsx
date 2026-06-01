@@ -4,15 +4,22 @@ import {
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 
-/**
- * QRScannerModal — lets a doctor scan a patient's QR code to auto-fill their Patient ID.
- * Props: visible, onScanned(patientId), onClose
- */
-const QRScannerModal = ({ visible, onScanned, onClose }) => {
+const QRScannerModal = ({ visible, onScanned, onClose, mode = 'patient', title = 'Scan QR Code' }) => {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
 
-  // Reset scanned state each time modal opens
+  const getValidationPattern = () => {
+    if (mode === 'doctor') return /^DR-\d{4}-\d{5}$/;
+    if (mode === 'any') return /^(BC|DR)-\d{4}-\d{5}$/;
+    return /^BC-\d{4}-\d{5}$/;
+  };
+
+  const getErrorMessage = () => {
+    if (mode === 'doctor') return 'This QR code does not contain a valid Beral Care Doctor ID.';
+    if (mode === 'any') return 'This QR code does not contain a valid Beral Care ID (Patient or Doctor).';
+    return 'This QR code does not contain a valid Beral Care Patient ID.';
+  };
+
   useEffect(() => {
     if (visible) setScanned(false);
   }, [visible]);
@@ -20,14 +27,14 @@ const QRScannerModal = ({ visible, onScanned, onClose }) => {
   const handleBarCodeScanned = ({ data }) => {
     if (scanned) return;
     setScanned(true);
-    // Validate it looks like a Beral Care Patient ID
-    if (/^BC-\d{4}-\d{5}$/.test(data)) {
+    const pattern = getValidationPattern();
+    if (pattern.test(data)) {
       onScanned(data);
       onClose();
     } else {
       Alert.alert(
         'Invalid QR Code',
-        'This QR code does not contain a valid Beral Care Patient ID.',
+        getErrorMessage(),
         [{ text: 'Try Again', onPress: () => setScanned(false) }, { text: 'Cancel', onPress: onClose }]
       );
     }
@@ -44,7 +51,7 @@ const QRScannerModal = ({ visible, onScanned, onClose }) => {
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Scan Patient QR Code</Text>
+          <Text style={styles.headerTitle}>{title}</Text>
           <TouchableOpacity onPress={onClose}>
             <Text style={styles.closeText}>✕ Close</Text>
           </TouchableOpacity>

@@ -83,6 +83,7 @@ app.get('/setup-db', async (req, res) => {
         password_hash VARCHAR(255) NOT NULL,
         role ENUM('patient', 'doctor', 'admin') DEFAULT 'patient',
         patient_id VARCHAR(20) UNIQUE DEFAULT NULL,
+        doctor_id VARCHAR(20) UNIQUE DEFAULT NULL,
         specialization VARCHAR(100),
         hospital VARCHAR(200),
         profile_image_url VARCHAR(500),
@@ -177,6 +178,11 @@ app.get('/setup-db', async (req, res) => {
 
     for (const stmt of setupSQL.split(';').filter(s => s.trim()))
       await pool.query(stmt);
+
+    // Add doctor_id column if it does not exist yet (safe to run on existing databases)
+    await pool.query(
+      'ALTER TABLE users ADD COLUMN IF NOT EXISTS doctor_id VARCHAR(20) UNIQUE DEFAULT NULL'
+    ).catch(() => {});
 
     if (shouldSeed)
       for (const stmt of sampleDataSQL.split(';').filter(s => s.trim()))

@@ -1,11 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator,
-  TextInput, Image, SafeAreaView
+  TextInput, Image, SafeAreaView, Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import api from '@client-services/api';
+
+const API_BASE = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+
+// Build the full URL for a profile image stored on the backend.
+const imageUrl = (url) => {
+  if (!url) return null;
+  if (url.startsWith('http')) return url;
+  return `${API_BASE}${url}`;
+};
 
 /**
  * Shared ProfileEdit Component
@@ -107,20 +116,30 @@ const ProfileEdit = ({ role, Layout, navigation, activeScreen }) => {
     try {
       setUploading(true);
       const formData = new FormData();
-      formData.append('image', {
-        uri: imageAsset.uri,
-        type: imageAsset.type || 'image/jpeg',
-        name: `profile_${Date.now()}.jpg`,
-      });
+      const filename = `profile_${Date.now()}.jpg`;
+
+      if (Platform.OS === 'web') {
+        // On web, expo-image-picker returns a blob URI or data URI.
+        // Fetch it as a Blob and append the real File object.
+        const response = await fetch(imageAsset.uri);
+        const blob = await response.blob();
+        formData.append('image', new File([blob], filename, { type: blob.type || 'image/jpeg' }));
+      } else {
+        formData.append('image', {
+          uri: imageAsset.uri,
+          type: imageAsset.type || 'image/jpeg',
+          name: filename,
+        });
+      }
 
       await api.post('/api/profile/upload-image', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      Alert.alert('Success', 'Image uploaded successfully');
+      Alert.alert('Success', 'Profile picture updated successfully');
       await fetchProfile();
     } catch (error) {
-      Alert.alert('Error', 'Failed to upload image');
+      Alert.alert('Error', 'Failed to upload image. Please try again.');
       console.error(error);
     } finally {
       setUploading(false);
@@ -153,7 +172,7 @@ const ProfileEdit = ({ role, Layout, navigation, activeScreen }) => {
         <View style={styles.avatarContainer}>
           {profile.profile_image_url ? (
             <Image
-              source={{ uri: profile.profile_image_url }}
+              source={{ uri: imageUrl(profile.profile_image_url) }}
               style={styles.avatar}
             />
           ) : (
@@ -161,15 +180,16 @@ const ProfileEdit = ({ role, Layout, navigation, activeScreen }) => {
               <Text style={styles.avatarText}>{profile.full_name?.[0]?.toUpperCase() || 'U'}</Text>
             </View>
           )}
-          {!editMode && (
-            <TouchableOpacity
-              style={styles.cameraBtn}
-              onPress={handlePickImage}
-              disabled={uploading}
-            >
-              <Text style={styles.cameraBtnText}>📷</Text>
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity
+            style={styles.cameraBtn}
+            onPress={handlePickImage}
+            disabled={uploading}
+          >
+            {uploading
+              ? <ActivityIndicator size="small" color="#1a5c38" />
+              : <Text style={styles.cameraBtnText}>📷</Text>
+            }
+          </TouchableOpacity>
         </View>
         <Text style={styles.headerName}>{profile.full_name}</Text>
         {role === 'patient' && <Text style={styles.headerPatientId}>{profile.patient_id}</Text>}

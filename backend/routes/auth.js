@@ -32,7 +32,7 @@ router.post('/register', async (req, res) => {
 
     res.status(201).json({
       message: 'Account created successfully',
-      user: { id: user.id, full_name: user.full_name, name: user.full_name, email: user.email, phone: user.phone, role: user.role, patient_id: user.patient_id, specialization: user.specialization, hospital: user.hospital },
+      user: { id: user.id, full_name: user.full_name, name: user.full_name, email: user.email, phone: user.phone, role: user.role, patient_id: user.patient_id, doctor_id: user.doctor_id, specialization: user.specialization, hospital: user.hospital },
       token,
     });
   } catch (error) {
@@ -55,7 +55,7 @@ router.post('/login', async (req, res) => {
 
     res.json({
       message: 'Login successful',
-      user: { id: user.id, full_name: user.full_name, email: user.email, role: user.role, patient_id: user.patient_id, specialization: user.specialization, hospital: user.hospital },
+      user: { id: user.id, full_name: user.full_name, name: user.full_name, email: user.email, role: user.role, patient_id: user.patient_id, doctor_id: user.doctor_id, specialization: user.specialization, hospital: user.hospital },
       token,
     });
   } catch (error) {

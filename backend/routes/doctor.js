@@ -5,10 +5,16 @@ const pool = require('../utils/db');
 // GET /api/doctors - Get all doctors (public endpoint for patient discovery)
 const getPublicDoctors = async (req, res) => {
   try {
-    const { specialization } = req.query;
+    const { specialization, search } = req.query;
 
-    let query = 'SELECT id, full_name, specialization, hospital FROM users WHERE role = "doctor" AND suspended = 0';
+    let query = 'SELECT id, full_name, doctor_id, specialization, hospital FROM users WHERE role = "doctor" AND suspended = 0';
     let params = [];
+
+    if (search && search.trim()) {
+      query += ' AND (full_name LIKE ? OR doctor_id LIKE ?)';
+      const searchTerm = `%${search.trim()}%`;
+      params.push(searchTerm, searchTerm);
+    }
 
     if (specialization && specialization.trim()) {
       query += ' AND specialization = ?';
@@ -294,6 +300,112 @@ router.get('/patients/:patient_id/consultations', async (req, res) => {
   } catch (error) {
     console.error('Error fetching consultations:', error);
     res.status(500).json({ error: 'Failed to fetch consultations' });
+  }
+});
+
+// POST /api/doctor/create-appointment - Doctor creates appointment with a patient
+router.post('/create-appointment', async (req, res) => {
+  try {
+    const { patient_id, appointment_date, notes } = req.body;
+    const doctorId = req.user.id;
+
+    if (!patient_id || !appointment_date) {
+      return res.status(400).json({ error: 'Patient ID and appointment date are required' });
+    }
+
+    // Find the patient by patient_id (BC-YYYY-NNNNN format)
+    const [patients] = await pool.execute(
+      'SELECT id FROM users WHERE patient_id = ? AND role = "patient"',
+      [patient_id]
+    );
+
+    if (patients.length === 0) {
+      return res.status(404).json({ error: 'Patient not found' });
+    }
+
+    const patientUserId = patients[0].id;
+
+    // Create the appointment (consultation record)
+    const [result] = await pool.execute(
+      `INSERT INTO consultations (patient_id, doctor_id, consultation_date, notes, status)
+       VALUES (?, ?, ?, ?, 'pending')`,
+      [patientUserId, doctorId, appointment_date, notes || null]
+    );
+
+    // Create notification for patient
+    const [doctor] = await pool.execute('SELECT full_name FROM users WHERE id = ?', [doctorId]);
+    const message = `Dr. ${doctor[0].full_name} scheduled an appointment for ${new Date(appointment_date).toLocaleDateString()}`;
+
+    await pool.execute(
+      'INSERT INTO notifications (user_id, type, related_user_id, related_consultation_id, message) VALUES (?, ?, ?, ?, ?)',
+      [patientUserId, 'appointment_created', doctorId, result.insertId, message]
+    );
+
+    res.status(201).json({
+      id: result.insertId,
+      patient_id: patientUserId,
+      doctor_id: doctorId,
+      appointment_date,
+      status: 'pending',
+      created_at: new Date()
+    });
+  } catch (error) {
+    console.error('Error creating appointment:', error);
+    res.status(500).json({ error: 'Failed to create appointment' });
+  }
+});
+
+// POST /api/doctor/assign-id - Assign a doctor_id if the doctor doesn't have one
+router.post('/assign-id', async (req, res) => {
+  try {
+    const doctorId = req.user.id;
+
+    const [doctor] = await pool.execute(
+      'SELECT doctor_id FROM users WHERE id = ? AND role = "doctor"',
+      [doctorId]
+    );
+
+    if (doctor.length === 0) {
+      return res.status(403).json({ error: 'Only doctors can use this endpoint' });
+    }
+
+    // If doctor already has an ID, return it
+    if (doctor[0].doctor_id) {
+      return res.json({
+        message: 'Doctor ID already exists',
+        doctor_id: doctor[0].doctor_id
+      });
+    }
+
+    // Generate new doctor ID
+    const year = new Date().getFullYear();
+    const prefix = `DR-${year}-`;
+    const [rows] = await pool.execute(
+      "SELECT doctor_id FROM users WHERE role = 'doctor' AND doctor_id LIKE ? ORDER BY doctor_id DESC LIMIT 1",
+      [`${prefix}%`]
+    );
+
+    let nextNum = 1;
+    if (rows.length > 0 && rows[0].doctor_id) {
+      const last = rows[0].doctor_id.split('-')[2];
+      nextNum = parseInt(last, 10) + 1;
+    }
+
+    const newDoctorId = `${prefix}${String(nextNum).padStart(5, '0')}`;
+
+    // Update the doctor's record
+    await pool.execute(
+      'UPDATE users SET doctor_id = ? WHERE id = ?',
+      [newDoctorId, doctorId]
+    );
+
+    res.json({
+      message: 'Doctor ID assigned successfully',
+      doctor_id: newDoctorId
+    });
+  } catch (error) {
+    console.error('Error assigning doctor ID:', error);
+    res.status(500).json({ error: 'Failed to assign doctor ID' });
   }
 });
 

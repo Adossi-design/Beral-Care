@@ -1,11 +1,16 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TextInput, TouchableOpacity, Alert, ActivityIndicator,
+  TextInput, TouchableOpacity, Alert, ActivityIndicator, Image, Clipboard,
 } from 'react-native';
+
+const API_BASE = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:3000';
 import { LinearGradient } from 'expo-linear-gradient';
 import DoctorLayout from '../../components/layouts/DoctorLayout';
 import ProtectedRoute from '../../components/ProtectedRoute';
+import AIChat from '../../components/AIChat';
+import DoctorQRModal from '../../components/DoctorQRModal';
+import QRScannerModal from '../../components/QRScannerModal';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import api from '@client-services/api';
@@ -19,7 +24,28 @@ const DoctorDashboard = ({ navigation, route }) => {
   const [searching, setSearching] = useState(false);
   const [appointments, setAppointments] = useState([]);
   const [recentPatients, setRecentPatients] = useState([]);
-  const [loadingAppts, setLoadingAppts] = useState(true);
+  const [loadingAppts, setLoadingAppts]     = useState(true);
+  const [aiOpen, setAiOpen]                 = useState(false);
+  const [profilePic, setProfilePic]         = useState(null);
+  const [qrVisible, setQrVisible]           = useState(false);
+  const [scannerVisible, setScannerVisible] = useState(false);
+
+  const displayName = user?.full_name || user?.name || 'Doctor';
+
+  useEffect(() => {
+    api.get('/api/profile').then(r => {
+      if (r.data.profile_image_url) {
+        const url = r.data.profile_image_url.startsWith('http')
+          ? r.data.profile_image_url
+          : `${API_BASE}${r.data.profile_image_url}`;
+        setProfilePic(url);
+      }
+      // Ensure doctor has an ID assigned
+      if (!r.data.doctor_id) {
+        api.post('/api/doctor/assign-id').catch(() => {});
+      }
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -53,6 +79,11 @@ const DoctorDashboard = ({ navigation, route }) => {
     }
   }, [patientIdInput, navigation, t]);
 
+  const handleQRScanned = (patientId) => {
+    setPatientIdInput(patientId);
+    handlePatientSearch(patientId);
+  };
+
   useEffect(() => {
     const prefill = route?.params?.prefillPatientId;
     if (prefill) {
@@ -70,12 +101,46 @@ const DoctorDashboard = ({ navigation, route }) => {
           <View style={styles.greetRow}>
             <View>
               <Text style={styles.greetSub}>{t('goodDay')},</Text>
-              <Text style={styles.greetName}>Dr. {user?.name || 'Doctor'} 👋</Text>
+              <Text style={styles.greetName}>Dr. {displayName} 👋</Text>
             </View>
-            <View style={styles.avatarCircle}>
-              <Text style={styles.avatarText}>{(user?.name || 'D')[0].toUpperCase()}</Text>
-            </View>
+            <TouchableOpacity
+              style={styles.avatarCircle}
+              onPress={() => navigation.navigate('DoctorProfileEdit')}
+              activeOpacity={0.8}
+            >
+              {profilePic
+                ? <Image source={{ uri: profilePic }} style={styles.avatarImage} />
+                : <Text style={styles.avatarText}>{displayName[0].toUpperCase()}</Text>
+              }
+            </TouchableOpacity>
           </View>
+
+          {/* Doctor ID Card */}
+          {user?.doctor_id && (
+            <View style={styles.idCard}>
+              <View style={styles.idCardLeft}>
+                <Text style={styles.idCardLabel}>Your Doctor ID</Text>
+                <Text style={styles.idCardValue}>{user.doctor_id}</Text>
+              </View>
+              <View style={styles.idCardActions}>
+                <TouchableOpacity
+                  style={styles.idCardBtn}
+                  onPress={() => {
+                    Clipboard.setString(user.doctor_id);
+                    Alert.alert('Copied!', `Doctor ID ${user.doctor_id} copied to clipboard`);
+                  }}
+                >
+                  <Text style={styles.idCardBtnText}>📋</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.idCardBtn}
+                  onPress={() => setQrVisible(true)}
+                >
+                  <Text style={styles.idCardBtnText}>📱</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
 
           {/* Patient search */}
           <LinearGradient colors={['#185FA5', '#1a6bbf']} style={styles.searchCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
@@ -96,6 +161,12 @@ const DoctorDashboard = ({ navigation, route }) => {
                 disabled={searching}
               >
                 <Text style={styles.searchBtnText}>{searching ? '...' : t('search')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.scanBtn}
+                onPress={() => setScannerVisible(true)}
+              >
+                <Text style={styles.scanBtnText}>📸</Text>
               </TouchableOpacity>
             </View>
             <Text style={styles.searchNote}>⚠️  {t('mustApproveAccess')}</Text>
@@ -177,6 +248,47 @@ const DoctorDashboard = ({ navigation, route }) => {
 
           <View style={{ height: 20 }} />
         </ScrollView>
+
+        {/* MedAssist floating button */}
+        <TouchableOpacity style={styles.aiFab} onPress={() => setAiOpen(true)} activeOpacity={0.85}>
+          <Text style={styles.aiFabIcon}>✦</Text>
+          <Text style={styles.aiFabLabel}>MedAssist</Text>
+        </TouchableOpacity>
+
+        <AIChat
+          visible={aiOpen}
+          onClose={() => setAiOpen(false)}
+          endpoint="/api/ai/doctor"
+          accentColor="#185FA5"
+          title="MedAssist"
+          greeting={`Hello Dr. ${user?.name || 'Doctor'}. I'm MedAssist, your clinical AI companion.\n\nI can help you with differential diagnoses, treatment protocols, drug interactions, dosage guidance, and more. When you have a patient open, I will automatically have their history as context.\n\nHow can I help you today?`}
+          quickPrompts={[
+            { label: '🔍 Differential diagnosis', prompt: 'Help me build a differential diagnosis for the following presentation:' },
+            { label: '💊 Drug interaction check',  prompt: 'Check for interactions between these medications:' },
+            { label: '📋 Treatment protocol',      prompt: 'What is the recommended treatment protocol for:' },
+            { label: '⚖️ Dosage guide',             prompt: 'What is the correct dose for:' },
+            { label: '🧪 Lab interpretation',       prompt: 'Help me interpret these lab results:' },
+            { label: '🚨 Refer or treat?',          prompt: 'Should I refer or treat this patient locally:' },
+          ]}
+          disclaimer="For clinical guidance only. Final judgment always rests with you."
+        />
+
+        {/* Doctor QR Modal */}
+        <DoctorQRModal
+          visible={qrVisible}
+          doctorId={user?.doctor_id}
+          doctorName={displayName}
+          onClose={() => setQrVisible(false)}
+        />
+
+        {/* QR Scanner Modal */}
+        <QRScannerModal
+          visible={scannerVisible}
+          onScanned={handleQRScanned}
+          onClose={() => setScannerVisible(false)}
+          mode="patient"
+          title="Scan Patient QR Code"
+        />
       </DoctorLayout>
     </ProtectedRoute>
   );
@@ -189,8 +301,17 @@ const styles = StyleSheet.create({
   greetRow:           { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   greetSub:           { fontSize: 13, color: '#94a3b8' },
   greetName:          { fontSize: 20, fontWeight: '800', color: '#1a1a2e' },
-  avatarCircle:       { width: 46, height: 46, borderRadius: 23, backgroundColor: '#185FA5', justifyContent: 'center', alignItems: 'center' },
+  avatarCircle:       { width: 46, height: 46, borderRadius: 23, backgroundColor: '#185FA5', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
   avatarText:         { color: '#fff', fontSize: 18, fontWeight: '800' },
+  avatarImage:        { width: 46, height: 46, borderRadius: 23 },
+
+  idCard:             { backgroundColor: '#E6F1FB', borderRadius: 18, padding: 18, marginBottom: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderLeftWidth: 4, borderLeftColor: '#185FA5' },
+  idCardLeft:         { flex: 1 },
+  idCardLabel:        { fontSize: 12, color: '#64748b', fontWeight: '600', textTransform: 'uppercase', marginBottom: 4 },
+  idCardValue:        { fontSize: 16, fontWeight: '800', color: '#185FA5', letterSpacing: 1 },
+  idCardActions:      { flexDirection: 'row', gap: 8 },
+  idCardBtn:          { backgroundColor: 'rgba(24, 95, 165, 0.15)', borderRadius: 10, width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
+  idCardBtnText:      { fontSize: 20 },
 
   searchCard:         { borderRadius: 22, padding: 22, marginBottom: 24, shadowColor: '#185FA5', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 14, elevation: 8 },
   searchCardTitle:    { color: '#fff', fontSize: 17, fontWeight: '800', marginBottom: 4 },
@@ -200,6 +321,8 @@ const styles = StyleSheet.create({
   searchBtn:          { backgroundColor: '#fff', borderRadius: 14, paddingHorizontal: 18, justifyContent: 'center' },
   searchBtnDisabled:  { opacity: 0.6 },
   searchBtnText:      { color: '#185FA5', fontWeight: '800', fontSize: 14 },
+  scanBtn:            { backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 14, paddingHorizontal: 14, justifyContent: 'center' },
+  scanBtnText:        { fontSize: 16 },
   searchNote:         { color: 'rgba(255,255,255,0.65)', fontSize: 11 },
 
   sectionHeader:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },

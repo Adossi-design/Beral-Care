@@ -4,9 +4,7 @@ const pool = require('./db');
 
 const JWT_TOKEN = process.env.JWT_TOKEN;
 
-// Generate a unique patient ID in BC-YYYY-NNNNN format.
-// Uses a transaction with SELECT ... FOR UPDATE to prevent two simultaneous
-// registrations from receiving the same ID.
+// Generate a unique patient ID in BC-YYYY-NNNNN format inside a transaction.
 const generatePatientId = async (connection) => {
   const year = new Date().getFullYear();
   const prefix = `BC-${year}-`;
@@ -22,6 +20,22 @@ const generatePatientId = async (connection) => {
   return `${prefix}${String(nextNum).padStart(5, '0')}`;
 };
 
+// Generate a unique doctor ID in DR-YYYY-NNNNN format inside a transaction.
+const generateDoctorId = async (connection) => {
+  const year = new Date().getFullYear();
+  const prefix = `DR-${year}-`;
+  const [rows] = await connection.execute(
+    "SELECT doctor_id FROM users WHERE doctor_id LIKE ? ORDER BY doctor_id DESC LIMIT 1 FOR UPDATE",
+    [`${prefix}%`]
+  );
+  let nextNum = 1;
+  if (rows.length > 0 && rows[0].doctor_id) {
+    const last = rows[0].doctor_id.split('-')[2];
+    nextNum = parseInt(last, 10) + 1;
+  }
+  return `${prefix}${String(nextNum).padStart(5, '0')}`;
+};
+
 const auth = {
   hashPassword: async (password) => {
     return await bcrypt.hash(password, 10);
@@ -31,7 +45,7 @@ const auth = {
     return await bcrypt.compare(plainPassword, hashedPassword);
   },
 
-  // JWT includes id, email, role, name, patient_id — expires in 24h
+  // JWT includes id, email, role, name, patient_id, doctor_id — expires in 24h
   generateToken: (user) => {
     return jwt.sign(
       {
@@ -40,6 +54,7 @@ const auth = {
         role: user.role,
         name: user.full_name,
         patient_id: user.patient_id || null,
+        doctor_id: user.doctor_id || null,
       },
       JWT_TOKEN,
       { expiresIn: '24h' }
@@ -75,12 +90,13 @@ const auth = {
       const hashedPassword = await auth.hashPassword(password);
       const phoneValue = phone && phone.trim() !== '' ? phone : null;
 
-      // Auto-generate patient_id inside the transaction to prevent duplicate IDs
+      // Auto-generate unique IDs for patients and doctors inside the transaction
       const patient_id = role === 'patient' ? await generatePatientId(conn) : null;
+      const doctor_id  = role === 'doctor'  ? await generateDoctorId(conn)  : null;
 
       const [result] = await conn.execute(
-        'INSERT INTO users (full_name, email, phone, password_hash, role, patient_id, specialization, hospital) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [full_name, email, phoneValue, hashedPassword, role, patient_id, specialization || null, hospital || null]
+        'INSERT INTO users (full_name, email, phone, password_hash, role, patient_id, doctor_id, specialization, hospital) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [full_name, email, phoneValue, hashedPassword, role, patient_id, doctor_id, specialization || null, hospital || null]
       );
       const userId = result.insertId;
 
@@ -92,7 +108,7 @@ const auth = {
       }
 
       await conn.commit();
-      return { id: userId, full_name, email, phone: phoneValue, role, patient_id, specialization, hospital };
+      return { id: userId, full_name, email, phone: phoneValue, role, patient_id, doctor_id, specialization, hospital };
     } catch (error) {
       await conn.rollback();
       throw new Error(`Error registering user: ${error.message}`);
@@ -104,7 +120,7 @@ const auth = {
   loginUser: async (email, password) => {
     try {
       const [users] = await pool.execute(
-        'SELECT id, full_name, email, password_hash, role, patient_id, specialization, hospital, suspended FROM users WHERE email = ?',
+        'SELECT id, full_name, email, password_hash, role, patient_id, doctor_id, specialization, hospital, suspended FROM users WHERE email = ?',
         [email]
       );
       if (users.length === 0) throw new Error('Invalid email or password');
@@ -120,7 +136,7 @@ const auth = {
       const token = auth.generateToken(user);
       return {
         // Include both full_name and name so screens work regardless of which field they read
-        user: { id: user.id, full_name: user.full_name, name: user.full_name, email: user.email, role: user.role, patient_id: user.patient_id, specialization: user.specialization, hospital: user.hospital },
+        user: { id: user.id, full_name: user.full_name, name: user.full_name, email: user.email, role: user.role, patient_id: user.patient_id, doctor_id: user.doctor_id, specialization: user.specialization, hospital: user.hospital },
         token,
       };
     } catch (error) {

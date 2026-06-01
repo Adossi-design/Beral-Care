@@ -1,15 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Alert, ActivityIndicator, Clipboard,
+  TouchableOpacity, Alert, ActivityIndicator, Clipboard, Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import PatientLayout from '../../components/layouts/PatientLayout';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import PatientQRModal from '../../components/PatientQRModal';
+import QRScannerModal from '../../components/QRScannerModal';
+import AIChat from '../../components/AIChat';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import api from '@client-services/api';
+
+const API_BASE = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:3000';
 
 const STATUS_COLORS = { pending: '#f59e0b', completed: '#22c55e', cancelled: '#ef4444' };
 
@@ -18,9 +22,25 @@ const PatientDashboard = ({ navigation }) => {
   const { t } = useLanguage();
   const [appointments, setAppointments] = useState([]);
   const [accessRequests, setAccessRequests] = useState([]);
-  const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [qrVisible, setQrVisible] = useState(false);
+  const [history, setHistory]             = useState([]);
+  const [loading, setLoading]             = useState(true);
+  const [qrVisible, setQrVisible]         = useState(false);
+  const [scannerVisible, setScannerVisible] = useState(false);
+  const [aiOpen, setAiOpen]               = useState(false);
+  const [profilePic, setProfilePic]       = useState(null);
+
+  const displayName = user?.full_name || user?.name || 'Patient';
+
+  useEffect(() => {
+    api.get('/api/profile').then(r => {
+      if (r.data.profile_image_url) {
+        const url = r.data.profile_image_url.startsWith('http')
+          ? r.data.profile_image_url
+          : `${API_BASE}${r.data.profile_image_url}`;
+        setProfilePic(url);
+      }
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -52,6 +72,11 @@ const PatientDashboard = ({ navigation }) => {
     }
   };
 
+  const handleDoctorQRScanned = (doctorId) => {
+    navigation.navigate('PatientAppointments', { prefillDoctorId: doctorId });
+    setScannerVisible(false);
+  };
+
   const diagnosesCount    = history.filter(h => h.diagnosis).length;
   const prescriptionsCount = history.filter(h => h.prescription).length;
   const completedCount    = history.filter(h => h.status === 'completed').length;
@@ -65,11 +90,18 @@ const PatientDashboard = ({ navigation }) => {
           <View style={styles.greetRow}>
             <View>
               <Text style={styles.greetSub}>{t('goodDay')},</Text>
-              <Text style={styles.greetName}>{user?.name || 'Patient'} 👋</Text>
+              <Text style={styles.greetName}>{displayName} 👋</Text>
             </View>
-            <View style={styles.avatarCircle}>
-              <Text style={styles.avatarText}>{(user?.name || 'P')[0].toUpperCase()}</Text>
-            </View>
+            <TouchableOpacity
+              style={styles.avatarCircle}
+              onPress={() => navigation.navigate('PatientProfileEdit')}
+              activeOpacity={0.8}
+            >
+              {profilePic
+                ? <Image source={{ uri: profilePic }} style={styles.avatarImage} />
+                : <Text style={styles.avatarText}>{displayName[0].toUpperCase()}</Text>
+              }
+            </TouchableOpacity>
           </View>
 
           {/* Patient ID card */}
@@ -205,8 +237,13 @@ const PatientDashboard = ({ navigation }) => {
             {[
               { icon: '📅', label: t('bookAppointment'), screen: 'PatientAppointments', bg: '#EAF3DE', color: '#1a5c38' },
               { icon: '👤', label: t('myProfile'),        screen: 'PatientProfileEdit',      bg: '#E6F1FB', color: '#185FA5' },
+              { icon: '📸', label: 'Scan Doctor', action: () => setScannerVisible(true), bg: '#fef3c7', color: '#d97706' },
             ].map(q => (
-              <TouchableOpacity key={q.screen} style={[styles.quickCard, { backgroundColor: q.bg }]} onPress={() => navigation.navigate(q.screen)}>
+              <TouchableOpacity
+                key={q.screen || q.label}
+                style={[styles.quickCard, { backgroundColor: q.bg }]}
+                onPress={() => q.action ? q.action() : navigation.navigate(q.screen)}
+              >
                 <Text style={styles.quickIcon}>{q.icon}</Text>
                 <Text style={[styles.quickLabel, { color: q.color }]}>{q.label}</Text>
               </TouchableOpacity>
@@ -248,6 +285,38 @@ const PatientDashboard = ({ navigation }) => {
 
           <View style={{ height: 20 }} />
         </ScrollView>
+
+        {/* HealthGuide floating button */}
+        <TouchableOpacity style={styles.aiFab} onPress={() => setAiOpen(true)} activeOpacity={0.85}>
+          <Text style={styles.aiFabIcon}>✦</Text>
+          <Text style={styles.aiFabLabel}>HealthGuide</Text>
+        </TouchableOpacity>
+
+        <AIChat
+          visible={aiOpen}
+          onClose={() => setAiOpen(false)}
+          endpoint="/api/ai/patient"
+          accentColor="#1a5c38"
+          title="HealthGuide"
+          greeting={`Hello ${user?.name || 'there'}! 👋 I'm HealthGuide, your personal health AI.\n\nI can explain your diagnoses, tell you about your medications, answer health questions, or help you prepare for your next doctor visit.\n\nWhat would you like to know?`}
+          quickPrompts={[
+            { label: '🩺 My diagnosis',         prompt: 'Can you explain my diagnosis to me in simple words?' },
+            { label: '💊 My medication',         prompt: 'Can you tell me about my medication, what it does and how to take it?' },
+            { label: '⚠️ Side effects',           prompt: 'What side effects should I watch out for with my medication?' },
+            { label: '❓ Before my appointment',  prompt: 'Help me prepare questions to ask my doctor at my next appointment.' },
+            { label: '🥗 Healthy habits',         prompt: 'What healthy habits would help with my condition?' },
+          ]}
+          disclaimer="For information only. Always speak to your doctor for medical decisions."
+        />
+
+        {/* Doctor QR Scanner Modal */}
+        <QRScannerModal
+          visible={scannerVisible}
+          onScanned={handleDoctorQRScanned}
+          onClose={() => setScannerVisible(false)}
+          mode="doctor"
+          title="Scan Doctor QR Code"
+        />
       </PatientLayout>
     </ProtectedRoute>
   );
@@ -260,8 +329,9 @@ const styles = StyleSheet.create({
   greetRow:         { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   greetSub:         { fontSize: 13, color: '#94a3b8' },
   greetName:        { fontSize: 22, fontWeight: '800', color: '#1a1a2e' },
-  avatarCircle:     { width: 46, height: 46, borderRadius: 23, backgroundColor: '#1a5c38', justifyContent: 'center', alignItems: 'center' },
+  avatarCircle:     { width: 46, height: 46, borderRadius: 23, backgroundColor: '#1a5c38', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
   avatarText:       { color: '#fff', fontSize: 18, fontWeight: '800' },
+  avatarImage:      { width: 46, height: 46, borderRadius: 23 },
 
   idCard:           { borderRadius: 22, padding: 22, marginBottom: 24, shadowColor: '#1a5c38', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.25, shadowRadius: 14, elevation: 8 },
   idCardTop:        { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
