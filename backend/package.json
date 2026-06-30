@@ -4,7 +4,12 @@
   "private": true,
   "main": "backend-server.js",
   "scripts": {
-    "start": "node backend-server.js"
+    "start": "node backend-server.js",
+    "test": "jest --runInBand --forceExit"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": ["**/tests/**/*.test.js"]
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.5",
@@ -13,8 +18,13 @@
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "express-fileupload": "^1.5.0",
+    "express-rate-limit": "^8.5.2",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.14.2",
     "twilio": "^5.10.0"
+  },
+  "devDependencies": {
+    "jest": "^30.4.2",
+    "supertest": "^7.2.2"
   }
 }

@@ -8,3 +8,5 @@ dist/
 build/
 *.log
 backend/seeders/createAdmin.js
+android/
+ussd-gateway/__pycache__/
