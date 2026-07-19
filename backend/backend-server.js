@@ -1,9 +1,23 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const fileUpload = require('express-fileupload');
 const rateLimit = require('express-rate-limit');
-require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+// Load .env manually so the values are never transformed by dotenvx.
+const envPath = path.join(__dirname, '.env');
+if (fs.existsSync(envPath)) {
+  fs.readFileSync(envPath, 'utf8').split('\n').forEach(line => {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) return;
+    const eqIdx = trimmed.indexOf('=');
+    if (eqIdx === -1) return;
+    const key = trimmed.slice(0, eqIdx).trim();
+    const val = trimmed.slice(eqIdx + 1).trim();
+    if (key && !(key in process.env)) process.env[key] = val;
+  });
+}
 
 const { verifyToken, requireAdmin, requireDoctor, requirePatient } = require('./middleware/roleGuard');
 const authRoutes    = require('./routes/auth');
@@ -11,6 +25,7 @@ const adminRoutes   = require('./routes/admin');
 const doctorRoutes  = require('./routes/doctor');
 const patientRoutes = require('./routes/patient');
 const profileRoutes = require('./routes/profile');
+const aiRoutes      = require('./routes/ai');
 
 const pool = require('./utils/db');
 
@@ -41,6 +56,15 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Rate limiting on AI routes: max 30 messages per minute per user
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: { error: 'Too many AI requests. Please wait a moment before sending another message.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 app.use(express.json());
 app.use(fileUpload());
 
@@ -56,10 +80,11 @@ app.get('/api/doctors', doctorRoutesPublic.getPublicDoctors);
 
 // Protected — token + role required
 // All role checks are enforced server-side here, never rely on frontend alone
-app.use('/api/profile', verifyToken, profileRoutes);
-app.use('/api/admin',   verifyToken, requireAdmin,   adminRoutes);
-app.use('/api/doctor',  verifyToken, requireDoctor,  doctorRoutes);
-app.use('/api/patient', verifyToken, requirePatient, patientRoutes);
+app.use('/api/profile', verifyToken,                    profileRoutes);
+app.use('/api/admin',   verifyToken, requireAdmin,       adminRoutes);
+app.use('/api/doctor',  verifyToken, requireDoctor,      doctorRoutes);
+app.use('/api/patient', verifyToken, requirePatient,     patientRoutes);
+app.use('/api/ai',      aiLimiter,   verifyToken,        aiRoutes);
 
 // Database setup — run once after deployment, then disable or protect this endpoint
 app.get('/setup-db', async (req, res) => {

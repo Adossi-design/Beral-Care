@@ -7,7 +7,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import PatientLayout from '../../components/layouts/PatientLayout';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import PatientQRModal from '../../components/PatientQRModal';
-import QRScannerModal from '../../components/QRScannerModal';
 import AIChat from '../../components/AIChat';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -20,27 +19,12 @@ const STATUS_COLORS = { pending: '#f59e0b', completed: '#22c55e', cancelled: '#e
 const PatientDashboard = ({ navigation }) => {
   const { user } = useAuth();
   const { t } = useLanguage();
-  const [appointments, setAppointments] = useState([]);
+  const [appointments, setAppointments]   = useState([]);
   const [accessRequests, setAccessRequests] = useState([]);
   const [history, setHistory]             = useState([]);
   const [loading, setLoading]             = useState(true);
   const [qrVisible, setQrVisible]         = useState(false);
-  const [scannerVisible, setScannerVisible] = useState(false);
   const [aiOpen, setAiOpen]               = useState(false);
-  const [profilePic, setProfilePic]       = useState(null);
-
-  const displayName = user?.full_name || user?.name || 'Patient';
-
-  useEffect(() => {
-    api.get('/api/profile').then(r => {
-      if (r.data.profile_image_url) {
-        const url = r.data.profile_image_url.startsWith('http')
-          ? r.data.profile_image_url
-          : `${API_BASE}${r.data.profile_image_url}`;
-        setProfilePic(url);
-      }
-    }).catch(() => {});
-  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -283,7 +267,7 @@ const PatientDashboard = ({ navigation }) => {
             ))
           )}
 
-          <View style={{ height: 20 }} />
+          <View style={{ height: 90 }} />
         </ScrollView>
 
         {/* HealthGuide floating button */}
@@ -307,15 +291,6 @@ const PatientDashboard = ({ navigation }) => {
             { label: '🥗 Healthy habits',         prompt: 'What healthy habits would help with my condition?' },
           ]}
           disclaimer="For information only. Always speak to your doctor for medical decisions."
-        />
-
-        {/* Doctor QR Scanner Modal */}
-        <QRScannerModal
-          visible={scannerVisible}
-          onScanned={handleDoctorQRScanned}
-          onClose={() => setScannerVisible(false)}
-          mode="doctor"
-          title="Scan Doctor QR Code"
         />
       </PatientLayout>
     </ProtectedRoute>
@@ -403,6 +378,26 @@ const styles = StyleSheet.create({
   apptNotes:        { color: '#64748b', fontSize: 12, marginTop: 3 },
   apptBadge:        { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20 },
   apptBadgeText:    { fontSize: 12, fontWeight: '600', textTransform: 'capitalize' },
+
+  aiFab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1a5c38',
+    borderRadius: 30,
+    paddingVertical: 13,
+    paddingHorizontal: 20,
+    gap: 8,
+    shadowColor: '#1a5c38',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 14,
+    elevation: 10,
+  },
+  aiFabIcon:  { color: '#fff', fontSize: 16, fontWeight: '900' },
+  aiFabLabel: { color: '#fff', fontSize: 14, fontWeight: '800', letterSpacing: 0.3 },
 });
 
 export default PatientDashboard;

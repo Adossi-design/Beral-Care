@@ -9,8 +9,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import DoctorLayout from '../../components/layouts/DoctorLayout';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import AIChat from '../../components/AIChat';
-import DoctorQRModal from '../../components/DoctorQRModal';
-import QRScannerModal from '../../components/QRScannerModal';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import api from '@client-services/api';
@@ -21,31 +19,11 @@ const DoctorDashboard = ({ navigation, route }) => {
   const { user } = useAuth();
   const { t } = useLanguage();
   const [patientIdInput, setPatientIdInput] = useState(route?.params?.prefillPatientId || '');
-  const [searching, setSearching] = useState(false);
-  const [appointments, setAppointments] = useState([]);
+  const [searching, setSearching]           = useState(false);
+  const [appointments, setAppointments]     = useState([]);
   const [recentPatients, setRecentPatients] = useState([]);
   const [loadingAppts, setLoadingAppts]     = useState(true);
   const [aiOpen, setAiOpen]                 = useState(false);
-  const [profilePic, setProfilePic]         = useState(null);
-  const [qrVisible, setQrVisible]           = useState(false);
-  const [scannerVisible, setScannerVisible] = useState(false);
-
-  const displayName = user?.full_name || user?.name || 'Doctor';
-
-  useEffect(() => {
-    api.get('/api/profile').then(r => {
-      if (r.data.profile_image_url) {
-        const url = r.data.profile_image_url.startsWith('http')
-          ? r.data.profile_image_url
-          : `${API_BASE}${r.data.profile_image_url}`;
-        setProfilePic(url);
-      }
-      // Ensure doctor has an ID assigned
-      if (!r.data.doctor_id) {
-        api.post('/api/doctor/assign-id').catch(() => {});
-      }
-    }).catch(() => {});
-  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -246,7 +224,7 @@ const DoctorDashboard = ({ navigation, route }) => {
             </>
           )}
 
-          <View style={{ height: 20 }} />
+          <View style={{ height: 90 }} />
         </ScrollView>
 
         {/* MedAssist floating button */}
@@ -271,23 +249,6 @@ const DoctorDashboard = ({ navigation, route }) => {
             { label: '🚨 Refer or treat?',          prompt: 'Should I refer or treat this patient locally:' },
           ]}
           disclaimer="For clinical guidance only. Final judgment always rests with you."
-        />
-
-        {/* Doctor QR Modal */}
-        <DoctorQRModal
-          visible={qrVisible}
-          doctorId={user?.doctor_id}
-          doctorName={displayName}
-          onClose={() => setQrVisible(false)}
-        />
-
-        {/* QR Scanner Modal */}
-        <QRScannerModal
-          visible={scannerVisible}
-          onScanned={handleQRScanned}
-          onClose={() => setScannerVisible(false)}
-          mode="patient"
-          title="Scan Patient QR Code"
         />
       </DoctorLayout>
     </ProtectedRoute>
@@ -353,6 +314,26 @@ const styles = StyleSheet.create({
   recentName:         { fontWeight: '700', color: '#1a1a2e', fontSize: 14 },
   recentId:           { color: '#185FA5', fontSize: 12, marginTop: 2 },
   recentArrow:        { color: '#94a3b8', fontSize: 20 },
+
+  aiFab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#185FA5',
+    borderRadius: 30,
+    paddingVertical: 13,
+    paddingHorizontal: 20,
+    gap: 8,
+    shadowColor: '#185FA5',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 14,
+    elevation: 10,
+  },
+  aiFabIcon:  { color: '#fff', fontSize: 16, fontWeight: '900' },
+  aiFabLabel: { color: '#fff', fontSize: 14, fontWeight: '800', letterSpacing: 0.3 },
 });
 
 export default DoctorDashboard;
