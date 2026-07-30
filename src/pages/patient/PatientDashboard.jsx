@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import PatientLayout from '../../components/layouts/PatientLayout';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import PatientQRModal from '../../components/PatientQRModal';
+import QRScannerModal from '../../components/QRScannerModal';
 import AIChat from '../../components/AIChat';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -24,7 +25,22 @@ const PatientDashboard = ({ navigation }) => {
   const [history, setHistory]             = useState([]);
   const [loading, setLoading]             = useState(true);
   const [qrVisible, setQrVisible]         = useState(false);
+  const [scannerVisible, setScannerVisible] = useState(false);
   const [aiOpen, setAiOpen]               = useState(false);
+  const [profilePic, setProfilePic]       = useState(null);
+
+  const displayName = user?.full_name || user?.name || 'Patient';
+
+  useEffect(() => {
+    api.get('/api/profile').then(r => {
+      if (r.data.profile_image_url) {
+        const url = r.data.profile_image_url.startsWith('http')
+          ? r.data.profile_image_url
+          : `${API_BASE}${r.data.profile_image_url}`;
+        setProfilePic(url);
+      }
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -291,6 +307,15 @@ const PatientDashboard = ({ navigation }) => {
             { label: '🥗 Healthy habits',         prompt: 'What healthy habits would help with my condition?' },
           ]}
           disclaimer="For information only. Always speak to your doctor for medical decisions."
+        />
+
+        {/* Doctor QR Scanner Modal */}
+        <QRScannerModal
+          visible={scannerVisible}
+          onScanned={handleDoctorQRScanned}
+          onClose={() => setScannerVisible(false)}
+          mode="doctor"
+          title="Scan Doctor QR Code"
         />
       </PatientLayout>
     </ProtectedRoute>

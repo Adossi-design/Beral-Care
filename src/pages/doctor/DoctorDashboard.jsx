@@ -9,6 +9,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import DoctorLayout from '../../components/layouts/DoctorLayout';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import AIChat from '../../components/AIChat';
+import DoctorQRModal from '../../components/DoctorQRModal';
+import QRScannerModal from '../../components/QRScannerModal';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import api from '@client-services/api';
@@ -24,6 +26,26 @@ const DoctorDashboard = ({ navigation, route }) => {
   const [recentPatients, setRecentPatients] = useState([]);
   const [loadingAppts, setLoadingAppts]     = useState(true);
   const [aiOpen, setAiOpen]                 = useState(false);
+  const [profilePic, setProfilePic]         = useState(null);
+  const [qrVisible, setQrVisible]           = useState(false);
+  const [scannerVisible, setScannerVisible] = useState(false);
+
+  const displayName = user?.full_name || user?.name || 'Doctor';
+
+  useEffect(() => {
+    api.get('/api/profile').then(r => {
+      if (r.data.profile_image_url) {
+        const url = r.data.profile_image_url.startsWith('http')
+          ? r.data.profile_image_url
+          : `${API_BASE}${r.data.profile_image_url}`;
+        setProfilePic(url);
+      }
+      // Ensure doctor has an ID assigned
+      if (!r.data.doctor_id) {
+        api.post('/api/doctor/assign-id').catch(() => {});
+      }
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -249,6 +271,23 @@ const DoctorDashboard = ({ navigation, route }) => {
             { label: '🚨 Refer or treat?',          prompt: 'Should I refer or treat this patient locally:' },
           ]}
           disclaimer="For clinical guidance only. Final judgment always rests with you."
+        />
+
+        {/* Doctor QR Modal */}
+        <DoctorQRModal
+          visible={qrVisible}
+          doctorId={user?.doctor_id}
+          doctorName={displayName}
+          onClose={() => setQrVisible(false)}
+        />
+
+        {/* QR Scanner Modal */}
+        <QRScannerModal
+          visible={scannerVisible}
+          onScanned={handleQRScanned}
+          onClose={() => setScannerVisible(false)}
+          mode="patient"
+          title="Scan Patient QR Code"
         />
       </DoctorLayout>
     </ProtectedRoute>
