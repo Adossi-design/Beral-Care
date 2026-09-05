@@ -158,15 +158,21 @@ These are consequences of the current (free/trial) hosting tiers, not bugs:
 - **Rate limiting is per-instance.** `express-rate-limit` keeps its counters in
   memory, so limits reset on restart and are not shared if the service is ever
   scaled to more than one instance.
-- **The AI assistants need a provider key.** They are wired to Google Gemini by
-  default, which has a free tier, but the key is not set yet. Create one at
-  [aistudio.google.com/apikey](https://aistudio.google.com/apikey) and set
-  `GEMINI_API_KEY` on the Render service, then redeploy for it to take effect.
-  `GET /api/ai/status` shows which provider is currently active.
+- **Gemini's free tier has request limits.** Both assistants run on
+  `gemini-3.6-flash` through Google AI Studio, which is free but rate limited per
+  minute and per day. Under load the API returns 429 and the assistant reports
+  that it is rate limited rather than failing silently. Moving to a paid AI
+  Studio plan raises the ceiling with no code change.
 
-  The previous Anthropic integration is still available (`AI_PROVIDER=anthropic`)
-  but that account has no credit, so it returns
-  `invalid_request_error: Your credit balance is too low`.
+  `GET /api/ai/status` reports the active provider and model.
+
+  The Anthropic integration is retained (`AI_PROVIDER=anthropic`) but that
+  account has no credit, so it returns `Your credit balance is too low`.
+
+- **Gemini flash models reason before answering, and that is billed against the
+  output limit.** If `GEMINI_MODEL` is ever changed, check that the token ceiling
+  in `backend/utils/ai/providers/gemini.js` still leaves room for a reply —
+  too low a limit produces an empty answer rather than an error from the API.
 
 ---
 

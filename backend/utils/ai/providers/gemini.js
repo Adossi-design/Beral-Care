@@ -15,7 +15,18 @@ const id = 'gemini';
 
 const apiKey = () => process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
 
-const model = () => process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+const model = () => process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+
+/**
+ * Current Gemini flash models reason before answering, and those reasoning
+ * tokens are billed against maxOutputTokens. A 1024 ceiling can be consumed
+ * entirely by reasoning, returning a successful response with empty content —
+ * so the default leaves clear headroom for the reply itself.
+ *
+ * Capping reasoning is not an option: thinkingBudget: 0 is rejected outright,
+ * and a small budget is treated as advisory rather than a hard limit.
+ */
+const DEFAULT_MAX_TOKENS = 2048;
 
 const isConfigured = () => Boolean(apiKey());
 
@@ -30,7 +41,7 @@ function toContents(messages) {
   }));
 }
 
-async function complete({ system, messages, maxTokens = 1024, temperature = 0.6 }) {
+async function complete({ system, messages, maxTokens = DEFAULT_MAX_TOKENS, temperature = 0.6 }) {
   const key = apiKey();
   if (!key) throw new Error('GEMINI_API_KEY is not set');
 
@@ -95,7 +106,18 @@ async function complete({ system, messages, maxTokens = 1024, temperature = 0.6 
     .join('\n')
     .trim();
 
-  if (!text) throw new Error('The assistant returned an empty response.');
+  if (!text) {
+    // Distinguish "ran out of room" from a genuinely empty answer: the former
+    // is a configuration problem an operator can fix, and says so.
+    if (candidate.finishReason === 'MAX_TOKENS') {
+      const thoughts = data?.usageMetadata?.thoughtsTokenCount;
+      throw new Error(
+        `The reply was cut off before any text was produced${thoughts ? ` (${thoughts} reasoning tokens used)` : ''}. `
+        + 'Raise the token limit for this model.',
+      );
+    }
+    throw new Error('The assistant returned an empty response.');
+  }
   return text;
 }
 
