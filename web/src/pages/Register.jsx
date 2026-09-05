@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button, Field, Notice, Icon } from '../components/ui';
+import LanguageToggle from '../components/LanguageToggle';
 import AuthAside from './AuthAside';
 import { auth as authApi } from '../lib/services';
 import { useAuth, homeFor } from '../lib/auth';
@@ -76,6 +77,7 @@ export default function Register() {
 
       <main className="auth__main">
         <div className="auth__form">
+          <div className="auth__lang"><LanguageToggle /></div>
           {step === 1 ? (
             <>
               <h1 className="auth__title">{t('createAccountTitle')}</h1>

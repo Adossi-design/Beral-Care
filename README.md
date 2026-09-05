@@ -310,4 +310,5 @@ back to English rather than showing a raw key.
 
 ---
 
-Built by Adossi Fred William.
+Built by Adossi Fred William, software engineer and machine learning engineer at
+African Leadership University, Rwanda.

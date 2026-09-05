@@ -1,45 +1,22 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Icon } from '../components/ui';
+import LanguageToggle from '../components/LanguageToggle';
 import { useI18n } from '../lib/i18n';
 
 const FEATURES = [
-  {
-    icon: 'idCard',
-    title: 'Your own health ID',
-    body: 'You get one health ID that is yours for life. Your visits, diagnoses, and medicines stay with you, even when you change clinic or move to a new town.',
-  },
-  {
-    icon: 'lock',
-    title: 'You choose who can see your records',
-    body: 'A doctor must ask before they can open your file. You say yes or no. Until you say yes, nobody can read it.',
-  },
-  {
-    icon: 'stethoscope',
-    title: 'Help for doctors during a visit',
-    body: 'MedAssist helps doctors check possible causes, spot drug reactions, and follow WHO Africa treatment steps, using medicines that are available nearby.',
-  },
-  {
-    icon: 'heart',
-    title: 'Health answers in simple words',
-    body: 'HealthGuide explains your diagnosis and your medicine in words that are easy to follow. For anything serious, it tells you to speak with your doctor.',
-  },
-  {
-    icon: 'qr',
-    title: 'Scan instead of writing',
-    body: 'Show your code and the doctor opens your file at once. No spelling your name, no long forms, no repeated files for the same person.',
-  },
-  {
-    icon: 'signal',
-    title: 'Works with or without internet',
-    body: 'Use the full website on any phone or computer. If you have no internet, you can still use the main services by dialling a short code.',
-  },
+  { icon: 'idCard', key: 'f1' },
+  { icon: 'lock', key: 'f2' },
+  { icon: 'stethoscope', key: 'f3' },
+  { icon: 'heart', key: 'f4' },
+  { icon: 'qr', key: 'f5' },
+  { icon: 'signal', key: 'f6' },
 ];
 
 const CHANNELS = [
-  { n: '01', title: 'On a computer', body: 'The full website on a laptop or tablet. Nothing to download or install.' },
-  { n: '02', title: 'On a smartphone', body: 'The same website, made to fit a small screen. You can add it to your home screen.' },
-  { n: '03', title: 'On a basic phone', body: 'No internet needed. Dial a short code to sign up, log in, ask for a visit, and check your last visits.' },
+  { n: '01', key: 'c1' },
+  { n: '02', key: 'c2' },
+  { n: '03', key: 'c3' },
 ];
 
 export default function Landing() {
@@ -53,9 +30,10 @@ export default function Landing() {
           <span className="pubnav__name">Beral Care</span>
         </Link>
         <nav className="pubnav__links">
-          <a className="pubnav__link" href="#how">What you get</a>
-          <a className="pubnav__link" href="#channels">Ways to use it</a>
-          <Link className="pubnav__link" to="/about">Why we built this</Link>
+          <a className="pubnav__link" href="#how">{t('nav.what')}</a>
+          <a className="pubnav__link" href="#channels">{t('nav.ways')}</a>
+          <Link className="pubnav__link" to="/about">{t('nav.why')}</Link>
+          <LanguageToggle />
           <Button to="/login" size="sm">{t('signIn')}</Button>
           <Button to="/register" variant="primary" size="sm">{t('signUp')}</Button>
         </nav>
@@ -68,22 +46,18 @@ export default function Landing() {
             <div>
               <span className="eyebrow">
                 <Icon name="shield" size={14} />
-                Your records. Your choice.
+                {t('hero.badge')}
               </span>
 
               <h1 className="hero__title">
-                Your health records go <em>wherever you go</em>.
+                {t('hero.titleA')} <em>{t('hero.titleB')}</em>.
               </h1>
 
-              <p className="hero__lede">
-                Beral Care brings patients and doctors together, on a computer, a
-                smartphone, or a basic phone. You keep your own health records, and you decide
-                which doctor can see them.
-              </p>
+              <p className="hero__lede">{t('hero.lede')}</p>
 
               <div className="hero__cta">
                 <Button to="/register" variant="primary" size="lg" iconRight="arrowRight">
-                  Create a free account
+                  {t('hero.cta')}
                 </Button>
                 <Button to="/login" size="lg">{t('signIn')}</Button>
               </div>
@@ -91,15 +65,15 @@ export default function Landing() {
               <div className="hero__proof">
                 <div>
                   <div className="proof__value">3</div>
-                  <div className="proof__label">Ways to connect</div>
+                  <div className="proof__label">{t('hero.proof1')}</div>
                 </div>
                 <div>
                   <div className="proof__value">2</div>
-                  <div className="proof__label">Health assistants</div>
+                  <div className="proof__label">{t('hero.proof2')}</div>
                 </div>
                 <div>
                   <div className="proof__value">100%</div>
-                  <div className="proof__label">You control access</div>
+                  <div className="proof__label">{t('hero.proof3')}</div>
                 </div>
               </div>
             </div>
@@ -149,21 +123,17 @@ export default function Landing() {
         {/* -------------------------------------------------------- features */}
         <section className="section-pad" id="how">
           <div className="section-inner">
-            <h2 className="section-title">What you can do here</h2>
+            <h2 className="section-title">{t('features.title')}</h2>
             <p className="section-lede">
-              This started with a simple problem. When you are sick and need to
-              know what happened during your last treatment, that information is
-              often held by one hospital or one doctor, and if you cannot reach
-              them, you cannot reach it either. Everything below grew out of
-              trying to fix that. <Link to="/about">Read the full story</Link>.
+              {t('features.lede1')} <Link to="/about">{t('features.readStory')}</Link>.
             </p>
 
             <div className="grid grid--three">
               {FEATURES.map((f) => (
-                <article className="feature" key={f.title}>
+                <article className="feature" key={f.key}>
                   <div className="feature__icon"><Icon name={f.icon} size={20} /></div>
-                  <h3 className="feature__title">{f.title}</h3>
-                  <p className="feature__body">{f.body}</p>
+                  <h3 className="feature__title">{t(`${f.key}.title`)}</h3>
+                  <p className="feature__body">{t(`${f.key}.body`)}</p>
                 </article>
               ))}
             </div>
@@ -173,19 +143,16 @@ export default function Landing() {
         {/* -------------------------------------------------------- channels */}
         <section className="section-pad section-pad--tint" id="channels">
           <div className="section-inner">
-            <h2 className="section-title">Three ways to use it, one health record</h2>
-            <p className="section-lede">
-              It does not matter what phone you have. New or old, you reach the same health record
-              and get the same care.
-            </p>
+            <h2 className="section-title">{t('channels.title')}</h2>
+            <p className="section-lede">{t('channels.lede')}</p>
 
             <div className="grid grid--2">
               {CHANNELS.map((c) => (
                 <div className="channel" key={c.n}>
                   <span className="channel__num">{c.n}</span>
                   <div>
-                    <h3 className="feature__title">{c.title}</h3>
-                    <p className="feature__body">{c.body}</p>
+                    <h3 className="feature__title">{t(`${c.key}.title`)}</h3>
+                    <p className="feature__body">{t(`${c.key}.body`)}</p>
                   </div>
                 </div>
               ))}
@@ -196,13 +163,12 @@ export default function Landing() {
         {/* ------------------------------------------------------------- cta */}
         <section className="section-pad">
           <div className="section-inner" style={{ textAlign: 'center', maxWidth: 640 }}>
-            <h2 className="section-title section-title--center">Ready to start?</h2>
+            <h2 className="section-title section-title--center">{t('cta.title')}</h2>
             <p className="section-lede" style={{ margin: '0 auto var(--sp-7)' }}>
-              Signing up takes about one minute and costs nothing. You get your health ID straight
-              away, and you can use it at any clinic on Beral Care.
+              {t('cta.lede')}
             </p>
             <Button to="/register" variant="primary" size="lg" iconRight="arrowRight">
-              Create a free account
+              {t('hero.cta')}
             </Button>
           </div>
         </section>
@@ -214,10 +180,10 @@ export default function Landing() {
             <span className="brand-mark"><Icon name="heart" size={16} /></span>
             <div>
               <div style={{ color: '#fff', fontWeight: 650 }}>Beral Care</div>
-              <div className="text-xs">Health care and health records for everyone</div>
+              <div className="text-xs">{t('footer.tagline')}</div>
             </div>
           </div>
-          <div className="text-xs">Built by Adossi Fred William</div>
+          <div className="text-xs">{t('footer.built')}</div>
         </div>
       </footer>
     </div>

@@ -1,6 +1,7 @@
 # Beral Care: Project Report
 
-**Author:** Adossi Fred William
+**Author:** Adossi Fred William, software engineer and machine learning engineer
+**Institution:** African Leadership University, Rwanda
 **Started:** 27 April 2026
 **Status:** Working prototype, deployed, no real users
 

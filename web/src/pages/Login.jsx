@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button, Field, Notice } from '../components/ui';
+import LanguageToggle from '../components/LanguageToggle';
 import AuthAside from './AuthAside';
 import { auth as authApi } from '../lib/services';
 import { useAuth, homeFor } from '../lib/auth';
@@ -56,6 +57,7 @@ export default function Login() {
 
       <main className="auth__main">
         <div className="auth__form">
+          <div className="auth__lang"><LanguageToggle /></div>
           <h1 className="auth__title">{t('welcomeBack')}</h1>
           <p className="auth__sub">{t('signInSub')}</p>
 

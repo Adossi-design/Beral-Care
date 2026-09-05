@@ -18,6 +18,16 @@
 .pubnav__brand:hover { text-decoration: none; }
 .pubnav__name { font-weight: 700; letter-spacing: -0.02em; font-size: var(--fs-md); white-space: nowrap; }
 .pubnav__links { display: flex; align-items: center; gap: var(--sp-5); margin-left: auto; }
+
+.langswitch {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 32px; padding: 0 var(--sp-3);
+  border: 1px solid var(--border); border-radius: var(--r-md);
+  background: var(--surface); color: var(--text-secondary);
+  font-size: var(--fs-sm); font-weight: 600;
+  transition: all var(--dur-fast) var(--ease);
+}
+.langswitch:hover { border-color: var(--pine-300); color: var(--pine-700); background: var(--pine-50); }
 .pubnav__link { color: var(--text-secondary); font-size: var(--fs-sm); font-weight: 500; }
 .pubnav__link:hover { color: var(--text); text-decoration: none; }
 
@@ -204,6 +214,30 @@
   border-top: 1px solid var(--border);
 }
 
+.byline {
+  display: flex; align-items: center; gap: var(--sp-4);
+  margin-bottom: var(--sp-7);
+}
+/* The source is a full upper body portrait, so the image is enlarged and
+   offset inside the circle to frame the head rather than the jacket. */
+.byline__photo {
+  position: relative;
+  width: 76px; height: 76px; border-radius: 50%;
+  overflow: hidden; flex-shrink: 0; display: block;
+  border: 2px solid var(--pine-100); background: var(--pine-50);
+}
+.byline__photo img {
+  position: absolute;
+  /* max-width from the base reset would clamp this back to the container */
+  max-width: none;
+  width: 200%; height: 200%;
+  left: -52%; top: -2%;
+  object-fit: cover;
+}
+.byline__name { font-weight: 650; color: var(--pine-900); }
+.byline__role { font-size: var(--fs-sm); color: var(--text-secondary); }
+.byline__place { font-size: var(--fs-xs); color: var(--text-muted); margin-top: 1px; }
+
 .footer {
   margin-top: auto; padding: var(--sp-8) var(--sp-6);
   background: var(--pine-900); color: var(--pine-200);
@@ -247,6 +281,7 @@
   padding: var(--sp-8) var(--sp-5); background: var(--surface);
 }
 .auth__form { width: 100%; max-width: 400px; }
+.auth__lang { display: flex; justify-content: flex-end; margin-bottom: var(--sp-5); }
 .auth__title { font-size: var(--fs-xl); font-weight: 700; letter-spacing: -0.025em; margin-bottom: var(--sp-2); }
 .auth__sub { color: var(--text-muted); margin-bottom: var(--sp-7); }
 
