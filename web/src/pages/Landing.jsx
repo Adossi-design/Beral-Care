@@ -19,6 +19,13 @@ const CHANNELS = [
   { n: '03', key: 'c3' },
 ];
 
+// The three reasons to sign up, shown under the opening paragraph
+const BENEFITS = [
+  { icon: 'records', key: 'b1' },
+  { icon: 'lock', key: 'b2' },
+  { icon: 'heart', key: 'b3' },
+];
+
 export default function Landing() {
   const { t } = useI18n();
 
@@ -63,18 +70,13 @@ export default function Landing() {
               </div>
 
               <div className="hero__proof">
-                <div>
-                  <div className="proof__value">3</div>
-                  <div className="proof__label">{t('hero.proof1')}</div>
-                </div>
-                <div>
-                  <div className="proof__value">2</div>
-                  <div className="proof__label">{t('hero.proof2')}</div>
-                </div>
-                <div>
-                  <div className="proof__value">100%</div>
-                  <div className="proof__label">{t('hero.proof3')}</div>
-                </div>
+                {BENEFITS.map((b) => (
+                  <div key={b.key}>
+                    <span className="proof__icon"><Icon name={b.icon} size={17} /></span>
+                    <div className="proof__value">{t(`${b.key}.title`)}</div>
+                    <div className="proof__label">{t(`${b.key}.body`)}</div>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -105,15 +107,27 @@ export default function Landing() {
                   </div>
                 </div>
 
-                <div className="card card--pad">
-                  <div className="row gap-3">
-                    <span className="avatar" style={{ width: 32, height: 32, fontSize: 12 }}>AK</span>
-                    <div className="grow">
-                      <div className="preview__bar-line" style={{ width: '65%' }} />
-                      <div className="preview__bar-line" style={{ width: '40%', marginTop: 6, height: 6 }} />
-                    </div>
-                    <span className="badge badge--completed">Completed</span>
+                <div className="card card--flush">
+                  <div className="preview__list-head">
+                    <span className="preview__bar-line" style={{ width: 92, height: 7 }} />
+                    <span className="preview__bar-line" style={{ width: 40, height: 7 }} />
                   </div>
+                  {[
+                    { who: 'AK', w: '68%', w2: '44%', state: 'completed' },
+                    { who: 'MN', w: '54%', w2: '38%', state: 'completed' },
+                    { who: 'JU', w: '61%', w2: '35%', state: 'pending' },
+                  ].map((row) => (
+                    <div className="preview__row-item" key={row.who}>
+                      <span className="avatar" style={{ width: 30, height: 30, fontSize: 11 }}>{row.who}</span>
+                      <div className="grow">
+                        <div className="preview__bar-line" style={{ width: row.w }} />
+                        <div className="preview__bar-line" style={{ width: row.w2, marginTop: 6, height: 6 }} />
+                      </div>
+                      <span className={`badge badge--${row.state}`}>
+                        {row.state === 'completed' ? 'Completed' : 'Waiting'}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

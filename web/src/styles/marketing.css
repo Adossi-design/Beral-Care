@@ -92,21 +92,28 @@
 }
 .hero__cta { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-bottom: var(--sp-7); }
 
-/* Each figure sits in its own card so the row holds together against the
-   green wash, which a plain text row does not. */
-.hero__proof { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
+/* Three reasons to sign up, each in its own card so the row holds together
+   against the green wash. */
+.hero__proof { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }
+@media (max-width: 940px) { .hero__proof { grid-template-columns: 1fr; } }
+
 .hero__proof > div {
-  flex: 1 1 auto; min-width: 132px;
-  padding: var(--sp-3) var(--sp-4);
-  background: rgba(255, 255, 255, 0.72);
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+  background: rgba(255, 255, 255, 0.78);
   border: 1px solid var(--pine-100);
   border-radius: var(--r-lg);
 }
-.proof__value {
-  font-size: var(--fs-xl); font-weight: 700; letter-spacing: -0.02em;
-  color: var(--pine-600); line-height: 1.15;
+.proof__icon {
+  display: grid; place-items: center;
+  width: 28px; height: 28px; border-radius: var(--r-sm);
+  background: var(--pine-50); color: var(--pine-600);
+  margin-bottom: var(--sp-2);
 }
-.proof__label { font-size: var(--fs-xs); color: var(--text-secondary); font-weight: 500; }
+.proof__value {
+  font-size: var(--fs-base); font-weight: 650; letter-spacing: -0.01em;
+  color: var(--pine-900); line-height: 1.3; margin-bottom: 4px;
+}
+.proof__label { font-size: var(--fs-xs); color: var(--text-secondary); line-height: var(--lh-normal); }
 
 /* Device preview built from real markup rather than a screenshot, so it stays
    sharp at any resolution and never goes stale as the product changes. */
@@ -123,6 +130,18 @@
 .preview__body { padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); }
 .preview__row { display: flex; align-items: center; gap: var(--sp-3); }
 .preview__bar-line { height: 8px; border-radius: var(--r-pill); background: var(--pine-100); }
+.preview__row-item {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--pine-50);
+}
+.preview__row-item:last-child { border-bottom: none; }
+.preview__list-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--pine-100);
+  background: #fafdfb;
+}
 
 /* The panel is an illustration, not the real product, so its pieces are tinted
    green to sit with the hero. Scoped to .preview so the dashboards that use
