@@ -11,3 +11,4 @@ backend/seeders/createAdmin.js
 android/
 ussd-gateway/__pycache__/
 uploads/
+.vercel

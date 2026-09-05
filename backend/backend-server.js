@@ -32,6 +32,12 @@ const pool = require('./utils/db');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Behind a hosting proxy (Render), the client IP arrives in X-Forwarded-For.
+// Without this, express-rate-limit sees every request as coming from the proxy
+// and cannot tell callers apart, which defeats the brute-force protection on
+// the auth routes. Trust exactly one hop — the platform load balancer.
+app.set('trust proxy', 1);
+
 // CORS: allow the mobile app origin and localhost during development
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:19006')
   .split(',')
