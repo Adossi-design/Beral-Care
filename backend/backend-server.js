@@ -204,10 +204,15 @@ app.get('/setup-db', async (req, res) => {
     for (const stmt of setupSQL.split(';').filter(s => s.trim()))
       await pool.query(stmt);
 
-    // Add doctor_id column if it does not exist yet (safe to run on existing databases)
-    await pool.query(
-      'ALTER TABLE users ADD COLUMN IF NOT EXISTS doctor_id VARCHAR(20) UNIQUE DEFAULT NULL'
-    ).catch(() => {});
+    // Add doctor_id column if it does not exist yet (safe to run on existing databases).
+    // MySQL has no ADD COLUMN IF NOT EXISTS, so check information_schema first.
+    const [[{ has_doctor_id }]] = await pool.query(
+      `SELECT COUNT(*) AS has_doctor_id FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'doctor_id'`
+    );
+    if (!has_doctor_id) {
+      await pool.query('ALTER TABLE users ADD COLUMN doctor_id VARCHAR(20) UNIQUE DEFAULT NULL');
+    }
 
     if (shouldSeed)
       for (const stmt of sampleDataSQL.split(';').filter(s => s.trim()))
