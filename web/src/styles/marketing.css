@@ -1,0 +1,232 @@
+/* ==========================================================================
+   Public surfaces — landing page and authentication
+   ========================================================================== */
+
+.public { display: flex; flex-direction: column; min-height: 100dvh; }
+
+/* ------------------------------------------------------------------ header */
+
+.pubnav {
+  position: sticky; top: 0; z-index: var(--z-sticky);
+  display: flex; align-items: center; gap: var(--sp-4);
+  padding: var(--sp-4) var(--sp-6);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: saturate(160%) blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+.pubnav__brand { display: flex; align-items: center; gap: var(--sp-3); color: var(--text); }
+.pubnav__brand:hover { text-decoration: none; }
+.pubnav__name { font-weight: 700; letter-spacing: -0.02em; font-size: var(--fs-md); white-space: nowrap; }
+.pubnav__links { display: flex; align-items: center; gap: var(--sp-5); margin-left: auto; }
+.pubnav__link { color: var(--text-secondary); font-size: var(--fs-sm); font-weight: 500; }
+.pubnav__link:hover { color: var(--text); text-decoration: none; }
+
+/* Below tablet the section anchors go first, then the gap tightens. On the
+   narrowest screens only "Sign in" survives — the hero already carries a
+   prominent create-account call to action, so duplicating it here is what was
+   pushing the bar off the edge of the viewport. */
+@media (max-width: 800px) {
+  .pubnav { padding: var(--sp-3) var(--sp-4); gap: var(--sp-3); }
+  .pubnav__links { gap: var(--sp-2); }
+  .pubnav__links .pubnav__link { display: none; }
+}
+@media (max-width: 460px) {
+  .pubnav__name { font-size: var(--fs-sm); }
+  .pubnav__links .btn--primary { display: none; }
+}
+
+/* -------------------------------------------------------------------- hero */
+
+.hero {
+  padding: var(--sp-12) var(--sp-6) var(--sp-10);
+  background:
+    radial-gradient(900px 420px at 82% -8%, var(--pine-100), transparent 62%),
+    radial-gradient(700px 360px at 6% 4%, var(--azure-50), transparent 58%),
+    var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.hero__inner {
+  max-width: var(--content-max); margin: 0 auto;
+  display: grid; grid-template-columns: 1.05fr 0.95fr; gap: var(--sp-10); align-items: center;
+}
+@media (max-width: 940px) {
+  .hero { padding: var(--sp-9) var(--sp-5) var(--sp-8); }
+  .hero__inner { grid-template-columns: 1fr; gap: var(--sp-8); }
+}
+
+.eyebrow {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  padding: 5px var(--sp-3); border-radius: var(--r-pill);
+  background: var(--pine-50); border: 1px solid var(--pine-100);
+  color: var(--pine-700); font-size: var(--fs-xs); font-weight: 650;
+  letter-spacing: 0.02em; margin-bottom: var(--sp-5);
+}
+
+.hero__title {
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 5.2vw, var(--fs-4xl));
+  font-weight: 600; line-height: 1.06; letter-spacing: -0.03em;
+  margin-bottom: var(--sp-5);
+}
+.hero__title em { font-style: normal; color: var(--primary); }
+
+.hero__lede {
+  font-size: var(--fs-md); line-height: var(--lh-loose);
+  color: var(--text-secondary); max-width: 56ch; margin-bottom: var(--sp-7);
+}
+.hero__cta { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-bottom: var(--sp-7); }
+
+.hero__proof { display: flex; flex-wrap: wrap; gap: var(--sp-7); }
+.proof__value { font-size: var(--fs-xl); font-weight: 700; letter-spacing: -0.02em; }
+.proof__label { font-size: var(--fs-xs); color: var(--text-muted); font-weight: 500; }
+
+/* Device preview built from real markup rather than a screenshot, so it stays
+   sharp at any resolution and never goes stale as the product changes. */
+.preview {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-xl); box-shadow: var(--sh-xl); overflow: hidden;
+}
+.preview__bar {
+  display: flex; align-items: center; gap: 6px;
+  padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--border);
+  background: var(--slate-50);
+}
+.preview__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--slate-300); }
+.preview__body { padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); }
+.preview__row { display: flex; align-items: center; gap: var(--sp-3); }
+.preview__bar-line { height: 8px; border-radius: var(--r-pill); background: var(--slate-200); }
+
+/* ---------------------------------------------------------------- sections */
+
+.section-pad { padding: var(--sp-10) var(--sp-6); }
+.section-pad--tint { background: var(--surface); border-block: 1px solid var(--border); }
+.section-inner { max-width: var(--content-max); margin: 0 auto; }
+
+.section-title {
+  font-family: var(--font-display); font-size: clamp(1.6rem, 3vw, var(--fs-2xl));
+  font-weight: 600; letter-spacing: -0.025em; margin-bottom: var(--sp-3);
+}
+.section-lede { color: var(--text-secondary); max-width: 62ch; margin-bottom: var(--sp-8); }
+
+.feature {
+  padding: var(--sp-6); background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--r-lg);
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+.feature:hover { border-color: var(--border-strong); box-shadow: var(--sh-md); transform: translateY(-2px); }
+.feature__icon {
+  width: 42px; height: 42px; border-radius: var(--r-md);
+  display: grid; place-items: center; margin-bottom: var(--sp-4);
+  background: var(--primary-subtle); color: var(--primary);
+}
+.feature__title { font-size: var(--fs-md); font-weight: 650; margin-bottom: var(--sp-2); }
+.feature__body { font-size: var(--fs-sm); color: var(--text-secondary); line-height: var(--lh-loose); }
+
+/* Channel strip — phone / web / USSD */
+.channel {
+  display: flex; gap: var(--sp-4); padding: var(--sp-5);
+  border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--surface);
+}
+.channel__num {
+  font-family: var(--font-display); font-size: var(--fs-xl); font-weight: 600;
+  color: var(--pine-300); line-height: 1;
+}
+
+.footer {
+  margin-top: auto; padding: var(--sp-8) var(--sp-6);
+  background: var(--pine-900); color: var(--pine-200);
+}
+.footer__inner {
+  max-width: var(--content-max); margin: 0 auto;
+  display: flex; flex-wrap: wrap; gap: var(--sp-6); justify-content: space-between; align-items: center;
+}
+
+/* -------------------------------------------------------------------- auth */
+
+.auth { display: grid; grid-template-columns: 1fr 1fr; min-height: 100dvh; }
+@media (max-width: 900px) { .auth { grid-template-columns: 1fr; } }
+
+/* Left panel: brand statement. Hidden on small screens where the form matters
+   more than the storytelling. */
+.auth__aside {
+  background:
+    radial-gradient(700px 400px at 20% 10%, var(--pine-700), transparent 60%),
+    var(--pine-900);
+  color: #fff; padding: var(--sp-9) var(--sp-8);
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+@media (max-width: 900px) { .auth__aside { display: none; } }
+
+.auth__quote {
+  font-family: var(--font-display); font-size: var(--fs-2xl);
+  font-weight: 600; line-height: 1.25; letter-spacing: -0.02em; max-width: 20ch;
+}
+.auth__points { display: flex; flex-direction: column; gap: var(--sp-4); margin-top: var(--sp-8); }
+.auth__point { display: flex; gap: var(--sp-3); align-items: flex-start; }
+.auth__point-icon {
+  width: 32px; height: 32px; border-radius: var(--r-md); flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.1); display: grid; place-items: center; color: var(--pine-200);
+}
+.auth__point-title { font-weight: 600; font-size: var(--fs-sm); }
+.auth__point-body { font-size: var(--fs-sm); color: var(--pine-200); line-height: var(--lh-normal); }
+
+.auth__main {
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--sp-8) var(--sp-5); background: var(--surface);
+}
+.auth__form { width: 100%; max-width: 400px; }
+.auth__title { font-size: var(--fs-xl); font-weight: 700; letter-spacing: -0.025em; margin-bottom: var(--sp-2); }
+.auth__sub { color: var(--text-muted); margin-bottom: var(--sp-7); }
+
+.auth__divider {
+  display: flex; align-items: center; gap: var(--sp-3);
+  margin: var(--sp-6) 0; color: var(--text-muted); font-size: var(--fs-xs);
+}
+.auth__divider::before, .auth__divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+.rolepick { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+.rolecard {
+  padding: var(--sp-4); border: 1px solid var(--border); border-radius: var(--r-lg);
+  background: var(--surface); text-align: left;
+  transition: all var(--dur-fast) var(--ease);
+}
+.rolecard:hover { border-color: var(--border-strong); background: var(--slate-50); }
+.rolecard[aria-pressed='true'] {
+  border-color: var(--primary); background: var(--primary-subtle);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+.rolecard__icon { color: var(--primary); margin-bottom: var(--sp-2); }
+.rolecard__title { font-weight: 650; font-size: var(--fs-sm); }
+.rolecard__desc { font-size: var(--fs-xs); color: var(--text-muted); margin-top: 2px; }
+
+/* ----------------------------------------------------------- health ID card */
+
+.idcard {
+  border-radius: var(--r-lg); padding: var(--sp-5); color: #fff;
+  background: linear-gradient(135deg, var(--pine-700), var(--pine-900) 70%);
+  position: relative; overflow: hidden; box-shadow: var(--sh-md);
+}
+.idcard::after {
+  content: ''; position: absolute; right: -50px; top: -50px;
+  width: 190px; height: 190px; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+}
+.idcard__label {
+  font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--pine-200); font-weight: 600;
+}
+.idcard__value {
+  font-family: var(--font-mono); font-size: var(--fs-lg); font-weight: 600;
+  letter-spacing: 0.06em; margin-top: 4px;
+}
+.idcard__actions { display: flex; gap: var(--sp-2); margin-top: var(--sp-5); position: relative; }
+.idcard__btn {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 36px; border-radius: var(--r-md); font-size: var(--fs-sm); font-weight: 600;
+  background: rgba(255, 255, 255, 0.14); color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: background var(--dur-fast) var(--ease);
+}
+.idcard__btn:hover { background: rgba(255, 255, 255, 0.24); }

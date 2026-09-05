@@ -1,0 +1,101 @@
+/**
+ * Stroke icon set.
+ *
+ * Hand-drawn on a 24x24 grid with a consistent 1.75 stroke, round caps and
+ * joins. Inline SVG rather than an icon font: no extra network request, no
+ * flash of missing glyphs, and each icon can take its colour from context.
+ *
+ * These replace the emoji the prototype used for navigation and actions. Emoji
+ * render differently on every operating system and are the single loudest
+ * signal that an interface was assembled rather than designed.
+ */
+
+const P = {
+  // Navigation
+  home: 'M3 10.5 12 3l9 7.5M5.5 9.5V20a1 1 0 0 0 1 1H10v-6h4v6h3.5a1 1 0 0 0 1-1V9.5',
+  calendar: 'M7 3v3M17 3v3M3.5 9.5h17M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v12A1.5 1.5 0 0 1 19 20.5H5A1.5 1.5 0 0 1 3.5 19V7A1.5 1.5 0 0 1 5 5.5Z',
+  records: 'M7.5 3.5h9A1.5 1.5 0 0 1 18 5v14a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 19V5a1.5 1.5 0 0 1 1.5-1.5ZM9.5 8h5M9.5 12h5M9.5 16h3',
+  users: 'M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20M10 11.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM20 20v-1.5a3.5 3.5 0 0 0-2.6-3.38M15 4.62a3.5 3.5 0 0 1 0 6.76',
+  user: 'M19 20v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z',
+  stethoscope: 'M6 3v5a4 4 0 0 0 8 0V3M6 3H4.5M6 3h1.5M14 3h-1.5M14 3h1.5M10 16v-4M10 16a4.5 4.5 0 0 0 9 0v-1.5M19 12.5a1.75 1.75 0 1 0 0-3.5 1.75 1.75 0 0 0 0 3.5Z',
+  bell: 'M18 8.5a6 6 0 1 0-12 0c0 5-2 6.5-2 6.5h16s-2-1.5-2-6.5ZM13.7 19a2 2 0 0 1-3.4 0',
+  settings: 'M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4ZM19.1 14.5a1.4 1.4 0 0 0 .3 1.55l.05.05a1.7 1.7 0 1 1-2.4 2.4l-.05-.05a1.4 1.4 0 0 0-1.55-.3 1.4 1.4 0 0 0-.85 1.29v.14a1.7 1.7 0 1 1-3.4 0v-.07a1.4 1.4 0 0 0-.92-1.29 1.4 1.4 0 0 0-1.55.3l-.05.05a1.7 1.7 0 1 1-2.4-2.4l.05-.05a1.4 1.4 0 0 0 .3-1.55 1.4 1.4 0 0 0-1.29-.85H4.9a1.7 1.7 0 0 1 0-3.4h.07a1.4 1.4 0 0 0 1.29-.92 1.4 1.4 0 0 0-.3-1.55l-.05-.05a1.7 1.7 0 1 1 2.4-2.4l.05.05a1.4 1.4 0 0 0 1.55.3h.07a1.4 1.4 0 0 0 .85-1.29V4.9a1.7 1.7 0 0 1 3.4 0v.07a1.4 1.4 0 0 0 .85 1.29 1.4 1.4 0 0 0 1.55-.3l.05-.05a1.7 1.7 0 1 1 2.4 2.4l-.05.05a1.4 1.4 0 0 0-.3 1.55v.07a1.4 1.4 0 0 0 1.29.85h.14a1.7 1.7 0 0 1 0 3.4h-.07a1.4 1.4 0 0 0-1.29.85Z',
+  shield: 'M12 21s7-3.5 7-9V6l-7-3-7 3v6c0 5.5 7 9 7 9Z',
+  activity: 'M21 12h-4l-3 8-4-16-3 8H3',
+  chart: 'M4 20V10M10 20V4M16 20v-7M22 20H2',
+  inbox: 'M3.5 13h4l1.5 3h6l1.5-3h4M3.5 13 6 5.5A1.5 1.5 0 0 1 7.4 4.5h9.2A1.5 1.5 0 0 1 18 5.5L20.5 13v5.5A1.5 1.5 0 0 1 19 20H5a1.5 1.5 0 0 1-1.5-1.5V13Z',
+
+  // Actions
+  plus: 'M12 5v14M5 12h14',
+  search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14ZM20 20l-4-4',
+  check: 'M20 6 9 17l-5-5',
+  x: 'M18 6 6 18M6 6l12 12',
+  chevronRight: 'm9 6 6 6-6 6',
+  chevronLeft: 'm15 6-6 6 6 6',
+  chevronDown: 'm6 9 6 6 6-6',
+  arrowRight: 'M5 12h14M13 6l6 6-6 6',
+  arrowLeft: 'M19 12H5M11 18l-6-6 6-6',
+  menu: 'M4 7h16M4 12h16M4 17h16',
+  logout: 'M15 17v1.5A1.5 1.5 0 0 1 13.5 20h-7A1.5 1.5 0 0 1 5 18.5v-13A1.5 1.5 0 0 1 6.5 4h7A1.5 1.5 0 0 1 15 5.5V7M11 12h9M17 9l3 3-3 3',
+  copy: 'M9 9.5A1.5 1.5 0 0 1 10.5 8h8A1.5 1.5 0 0 1 20 9.5v8a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 9 17.5v-8ZM15 8V6.5A1.5 1.5 0 0 0 13.5 5h-8A1.5 1.5 0 0 0 4 6.5v8A1.5 1.5 0 0 0 5.5 16H7',
+  edit: 'M4 20h4l10.5-10.5a2.12 2.12 0 0 0-3-3L5 17v3ZM13.5 6.5l3 3',
+  trash: 'M4 7h16M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M6 7v12.5A1.5 1.5 0 0 0 7.5 21h9a1.5 1.5 0 0 0 1.5-1.5V7M10 11v6M14 11v6',
+  filter: 'M3 5h18l-7 8v6l-4-2v-4L3 5Z',
+  refresh: 'M20 11A8 8 0 0 0 6.3 6.3L3 9M4 13a8 8 0 0 0 13.7 4.7L21 15M21 9V4M3 15v5M21 9h-5M3 15h5',
+  send: 'M21 3 3 10.5l7 3M21 3l-6 18-4.5-7.5M21 3 10 13.5',
+  download: 'M12 4v11M8 11l4 4 4-4M4 19h16',
+  eye: 'M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12ZM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
+  eyeOff: 'M10.6 6.2A7.9 7.9 0 0 1 12 6c6 0 9.5 6 9.5 6a15 15 0 0 1-2.7 3.5M6.3 7.8A15 15 0 0 0 2.5 12S6 18 12 18a8.6 8.6 0 0 0 3.5-.7M3 3l18 18M10 10a2.8 2.8 0 0 0 4 4',
+  print: 'M6.5 9V4.5h11V9M6.5 17.5H5A1.5 1.5 0 0 1 3.5 16v-5A1.5 1.5 0 0 1 5 9.5h14a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 1-1.5 1.5h-1.5M6.5 14h11v5.5h-11V14Z',
+  external: 'M14 4h6v6M20 4l-9 9M18 14v4.5A1.5 1.5 0 0 1 16.5 20h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10',
+
+  // Domain
+  idCard: 'M3.5 6.5h17A1.5 1.5 0 0 1 22 8v9a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 2 17V8a1.5 1.5 0 0 1 1.5-1.5ZM8.5 13.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM5.5 16.5a3.2 3.2 0 0 1 6 0M14.5 11h4M14.5 14.5h3',
+  qr: 'M4 4h5v5H4V4ZM15 4h5v5h-5V4ZM4 15h5v5H4v-5ZM15 15h2M20 15v2M15 18v2M18 20h2',
+  scan: 'M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16M3.5 12h17',
+  pill: 'M10.5 3.5a5 5 0 0 1 7 7l-7 7a5 5 0 1 1-7-7l7-7ZM7 7l7 7',
+  clipboard: 'M9 4.5h6M9 4.5A1.5 1.5 0 0 0 7.5 6v.5h9V6A1.5 1.5 0 0 0 15 4.5M7.5 6H6a1.5 1.5 0 0 0-1.5 1.5v12A1.5 1.5 0 0 0 6 21h12a1.5 1.5 0 0 0 1.5-1.5v-12A1.5 1.5 0 0 0 18 6h-1.5M9 11h6M9 15h4',
+  heart: 'M12 20s-7-4.35-7-9.5A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 7 3.5c0 5.15-7 9.5-7 9.5Z',
+  sparkle: 'M12 3.5 13.8 9l5.7 1.8-5.7 1.8L12 18.5l-1.8-5.9L4.5 10.8 10.2 9 12 3.5ZM18.5 16l.7 2.1 2.1.7-2.1.7-.7 2.1-.7-2.1-2.1-.7 2.1-.7.7-2.1Z',
+  clock: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM12 7.5V12l3 1.75',
+  location: 'M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11ZM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z',
+  phone: 'M8 3.5H5.5A1.5 1.5 0 0 0 4 5.15 16.5 16.5 0 0 0 18.85 20 1.5 1.5 0 0 0 20.5 18.5V16l-4-1.5-2 2a12.5 12.5 0 0 1-5-5l2-2L10 5.5 8 3.5Z',
+  mail: 'M3.5 6.5h17A1.5 1.5 0 0 1 22 8v8a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 2 16V8a1.5 1.5 0 0 1 1.5-1.5ZM2.5 8l9.5 6 9.5-6',
+  hospital: 'M5 21V6.5A1.5 1.5 0 0 1 6.5 5h11A1.5 1.5 0 0 1 19 6.5V21M3 21h18M12 8v5M9.5 10.5h5M9.5 21v-3.5h5V21',
+  alert: 'M12 8.5V13M12 16.5h.01M10.3 4.2 2.9 17a2 2 0 0 0 1.7 3h14.8a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0Z',
+  info: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM12 16v-4.5M12 8h.01',
+  checkCircle: 'M21 11.1V12a9 9 0 1 1-5.3-8.2M21 5l-9 9-2.7-2.7',
+  globe: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM3.5 9h17M3.5 15h17M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18',
+  lock: 'M6.5 10.5h11A1.5 1.5 0 0 1 19 12v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 19v-7a1.5 1.5 0 0 1 1.5-1.5ZM8 10.5V7.5a4 4 0 1 1 8 0v3',
+  signal: 'M4 20V10M9.5 20V5M15 20v-8M20.5 20V8',
+};
+
+export const iconNames = Object.keys(P);
+
+export default function Icon({ name, size = 20, strokeWidth = 1.75, className = '', title }) {
+  const d = P[name];
+  if (!d) {
+    if (import.meta.env.DEV) console.warn(`Icon: unknown glyph "${name}"`);
+    return null;
+  }
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden={title ? undefined : 'true'}
+      role={title ? 'img' : undefined}
+      focusable="false"
+    >
+      {title ? <title>{title}</title> : null}
+      <path d={d} />
+    </svg>
+  );
+}

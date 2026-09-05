@@ -13,7 +13,7 @@ provider's dashboard, and locally in the gitignored `.env` files.
 | Piece | Provider | URL |
 |---|---|---|
 | Backend API | Render (web service, Virginia) | https://beral-care-api.onrender.com |
-| Web app | Vercel (static export) | https://beral-care.vercel.app |
+| Web app | Vercel (Vite build) | https://beral-care.vercel.app |
 | USSD gateway | Vercel (Python serverless) | https://beral-care-ussd.vercel.app |
 | Database | Railway MySQL 9.4 (US East) | private TCP proxy, see Railway dashboard |
 | Session store | Upstash Redis (us-east-1) | `included-doe-161931.upstash.io` |
@@ -63,39 +63,44 @@ This creates the six tables and their foreign keys. It is safe to re-run.
 integrations were disconnected on purpose.
 
 When a Vercel project is linked to this repository, its Root Directory defaults
-to the repository root, so a push deploys the repo root as a static site. That
-silently replaces the working production deployment: the USSD gateway starts
-serving the Expo entry file instead of Flask, and `/ussd` returns 404. This
-happened once and was fixed by disconnecting Git and redeploying from the CLI.
+to the repository root, so a push deploys the repo root rather than the intended
+subdirectory. That silently replaces the working production deployment: the USSD
+gateway once began serving a frontend entry file instead of Flask, and `/ussd`
+returned 404.
 
-If you want push-to-deploy back, reconnect Git **and** set the project's Root
-Directory in the Vercel dashboard first — `ussd-gateway` for the gateway. The web
-project cannot use Git deploys at all, because it ships the prebuilt `dist/`
-directory, which is gitignored.
+If you want push-to-deploy back, reconnect Git **and** set each project's Root
+Directory in the Vercel dashboard first — `web` for the site, `ussd-gateway` for
+the gateway.
 
 ---
 
 ## Web app (Vercel)
 
-The Expo web export is built locally and deployed as static files, because the
-build needs the Expo toolchain rather than a plain Vercel build step.
+Vercel builds the Vite app from source; nothing is uploaded from a local `dist`.
 
 ```bash
-npx expo export --platform web        # writes to dist/
-npx vercel deploy --prod --cwd dist
+npx vercel deploy --prod --cwd web
 ```
 
-`dist/` is gitignored, so it also holds a small `vercel.json` that rewrites all
-routes to `index.html` for client-side routing. **That file is recreated by the
-export, so re-add it after each build** if client-side routes start 404ing on
-refresh.
+Configuration lives in `web/vercel.json`: the build command, the output
+directory, the SPA rewrite that sends every path to `index.html`, immutable
+caching for hashed assets, and a small set of security headers.
 
-The API base URL is baked in at build time from `EXPO_PUBLIC_API_BASE_URL` in
-the root `.env`. Point it at the Render URL before exporting for production, and
-back at `http://localhost:3000` for local development.
+The API base URL comes from `VITE_API_URL`, set as a Vercel environment variable
+for the production environment and baked in at build time. To change it:
+
+```bash
+npx vercel env rm VITE_API_URL production --cwd web
+printf '%s' 'https://your-api-host' | npx vercel env add VITE_API_URL production --cwd web
+npx vercel deploy --prod --cwd web
+```
+
+Locally, `web/.env.local` sets the same variable; the dev server also proxies
+`/api` to `localhost:3000`, so local work needs no CORS configuration at all.
 
 Any new web origin must be added to `ALLOWED_ORIGINS` on the backend, or the
-browser will be blocked by CORS.
+browser will be blocked by CORS. The current value already includes the Vite dev
+ports (5173, 4173).
 
 ---
 
@@ -153,14 +158,31 @@ These are consequences of the current (free/trial) hosting tiers, not bugs:
 - **Rate limiting is per-instance.** `express-rate-limit` keeps its counters in
   memory, so limits reset on restart and are not shared if the service is ever
   scaled to more than one instance.
-- **The AI assistants are not working yet.** MedAssist and HealthGuide return
-  "AI assistant is currently unavailable" because the Anthropic account has no
-  credit: the API responds `invalid_request_error: Your credit balance is too
-  low to access the Anthropic API`. The key itself is valid and correctly
-  configured — purchase credits at console.anthropic.com and the feature starts
-  working with no code or deployment change.
+- **The AI assistants need a provider key.** They are wired to Google Gemini by
+  default, which has a free tier, but the key is not set yet. Create one at
+  [aistudio.google.com/apikey](https://aistudio.google.com/apikey) and set
+  `GEMINI_API_KEY` on the Render service, then redeploy for it to take effect.
+  `GET /api/ai/status` shows which provider is currently active.
 
-  Separately, the assistants pin the pinned model. That is a valid model, but
-  a newer model is both newer and cheaper ($2/$10 per million input/output
-  tokens versus $3/$15), so it is worth switching in `backend/routes/ai.js` when
-  there is credit available to test the change.
+  The previous Anthropic integration is still available (`AI_PROVIDER=anthropic`)
+  but that account has no credit, so it returns
+  `invalid_request_error: Your credit balance is too low`.
+
+---
+
+## Demo accounts
+
+Seeded so the platform can be shown without creating data on the spot. Both use
+the password `DemoPass123!`.
+
+| Role | Email | ID |
+|---|---|---|
+| Patient | `demo.patient@beralcare.test` | `BC-2026-00001` |
+| Clinician | `demo.doctor@beralcare.test` | `DR-2026-00001` |
+
+The patient has two written-up consultations (malaria, hypertension) and two
+upcoming appointments, and has approved the clinician's access — so both the
+patient record and the clinical view show real content rather than empty states.
+
+Delete them from the Railway database when they are no longer wanted; removing
+the two user rows cascades to their consultations, requests, and notifications.

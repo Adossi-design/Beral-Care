@@ -1,0 +1,235 @@
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  PageHeader, Section, Card, CardHeader, Stat, Badge, Button, Avatar,
+  EmptyState, SkeletonRows, Icon, useToast,
+} from '../../components/ui';
+import { QrScannerDialog, QrDialog } from '../../components/QrCode';
+import { useAuth } from '../../lib/auth';
+import { useI18n } from '../../lib/i18n';
+import { useAsyncAll } from '../../lib/useAsync';
+import { clinic as clinicApi } from '../../lib/services';
+import { formatDate, relativeDate, greetingKey, isUpcoming } from '../../lib/format';
+
+/**
+ * Clinician overview.
+ *
+ * Built around the two things a clinician does at the start of a session: pull
+ * up the patient in front of them, and clear the requests blocking their work.
+ * Patient lookup is therefore the primary action, not a link buried in a menu.
+ */
+export default function Overview({ pendingCount }) {
+  const { user } = useAuth();
+  const { t, lang } = useI18n();
+  const navigate = useNavigate();
+  const toast = useToast();
+
+  const [scanning, setScanning] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
+  const [lookup, setLookup] = useState('');
+
+  const { data, loading } = useAsyncAll({
+    patients: () => clinicApi.patients(),
+    appointments: () => clinicApi.appointments(),
+    requests: () => clinicApi.requests(),
+  }, []);
+
+  const patients = data?.patients || [];
+  const appointments = data?.appointments || [];
+  const pending = (data?.requests || []).filter((r) => r.status === 'pending');
+
+  const todayStr = new Date().toDateString();
+  const today = appointments.filter((a) => new Date(a.consultation_date).toDateString() === todayStr);
+  const upcoming = appointments
+    .filter((a) => isUpcoming(a.consultation_date) && a.status !== 'cancelled')
+    .sort((x, y) => new Date(x.consultation_date) - new Date(y.consultation_date));
+
+  const openPatient = (patientId) => {
+    const id = String(patientId || '').trim().toUpperCase();
+    if (!id) return;
+    setScanning(false);
+    navigate(`/clinic/patients/${encodeURIComponent(id)}`);
+  };
+
+  const firstName = (user?.full_name || '').replace(/^Dr\.?\s*/i, '').split(' ')[0];
+
+  return (
+    <>
+      <PageHeader
+        title={`${t(greetingKey())}, ${user?.full_name?.startsWith('Dr') ? user.full_name : `Dr ${firstName || ''}`.trim()}`}
+        description="Look up a patient, or work through what is waiting for you."
+        actions={
+          <>
+            <Button icon="qr" onClick={() => setQrOpen(true)}>My code</Button>
+            <Button variant="primary" icon="scan" onClick={() => setScanning(true)}>Scan patient</Button>
+          </>
+        }
+      />
+
+      {/* Patient lookup — the first thing a clinician needs */}
+      <Card className="mb-6">
+        <CardHeader
+          title="Open a patient record"
+          subtitle="Enter a Health ID or scan the patient's code."
+          icon="search"
+        />
+        <form
+          className="row gap-2 wrap"
+          onSubmit={(e) => { e.preventDefault(); openPatient(lookup); }}
+        >
+          <div className="input-wrap grow" style={{ minWidth: 220 }}>
+            <span className="input-icon"><Icon name="idCard" size={17} /></span>
+            <input
+              className="input mono"
+              placeholder="BC-2026-00001"
+              value={lookup}
+              onChange={(e) => setLookup(e.target.value.toUpperCase())}
+              aria-label="Patient Health ID"
+            />
+          </div>
+          <Button type="submit" variant="primary" icon="arrowRight" disabled={!lookup.trim()}>
+            Open record
+          </Button>
+          <Button type="button" icon="scan" onClick={() => setScanning(true)}>Scan</Button>
+        </form>
+        <p className="muted text-xs mt-4">
+          You will only see records for patients who have approved your access.
+        </p>
+      </Card>
+
+      <div className="grid grid--stats mb-6">
+        <Stat label={t('totalPatients')} value={loading ? '–' : patients.length} icon="users" />
+        <Stat label="Today" value={loading ? '–' : today.length} icon="calendar" tone="accent" />
+        <Stat label={t('upcoming')} value={loading ? '–' : upcoming.length} icon="clock" tone="success" />
+        <Stat
+          label={t('pendingRequests')}
+          value={loading ? '–' : pendingCount ?? pending.length}
+          icon="inbox"
+          tone={pending.length ? 'warning' : 'primary'}
+        />
+      </div>
+
+      <div className="grid grid--main">
+        <Section
+          title="Upcoming appointments"
+          action={<Link className="text-sm" to="/clinic/appointments">{t('viewAll')}</Link>}
+        >
+          {loading ? (
+            <SkeletonRows rows={3} />
+          ) : upcoming.length === 0 ? (
+            <Card>
+              <EmptyState compact icon="calendar" title="No upcoming appointments"
+                description="Appointments booked by patients will appear here." />
+            </Card>
+          ) : (
+            <Card flush>
+              <div className="rows">
+                {upcoming.slice(0, 6).map((a) => (
+                  <div className="row-item" key={a.id}>
+                    <Avatar name={a.patient_name} size={36} />
+                    <div className="grow">
+                      <div className="row-item__title">{a.patient_name}</div>
+                      <div className="row-item__meta">
+                        <span className="mono">{a.patient_id}</span> · {formatDate(a.consultation_date, lang)}
+                        {' · '}{relativeDate(a.consultation_date, lang)}
+                      </div>
+                    </div>
+                    <Badge status={a.status} />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      icon="chevronRight"
+                      onClick={() => openPatient(a.patient_id)}
+                      aria-label={`Open ${a.patient_name}`}
+                    />
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+        </Section>
+
+        <div className="stack gap-4">
+          <Card>
+            <CardHeader
+              title={t('pendingRequests')}
+              subtitle={pending.length ? 'Patients waiting on your response' : 'Nothing waiting'}
+              icon="inbox"
+            />
+            {loading ? (
+              <SkeletonRows rows={2} height={48} />
+            ) : pending.length === 0 ? (
+              <p className="muted text-sm">You have cleared every access request.</p>
+            ) : (
+              <div className="stack gap-3">
+                {pending.slice(0, 3).map((r) => (
+                  <div className="row gap-3" key={r.id}>
+                    <Avatar name={r.patient_name} size={32} />
+                    <div className="grow">
+                      <div className="text-sm strong">{r.patient_name}</div>
+                      <div className="muted text-xs">{relativeDate(r.created_at, lang)}</div>
+                    </div>
+                  </div>
+                ))}
+                <Button to="/clinic/requests" variant="primary" size="sm" block>
+                  Review {pending.length} request{pending.length === 1 ? '' : 's'}
+                </Button>
+              </div>
+            )}
+          </Card>
+
+          <Card>
+            <CardHeader title="Recent patients" icon="users" />
+            {loading ? (
+              <SkeletonRows rows={2} height={44} />
+            ) : patients.length === 0 ? (
+              <p className="muted text-sm">
+                Patients appear here once they approve your access and you record a consultation.
+              </p>
+            ) : (
+              <div className="stack gap-3">
+                {patients.slice(0, 5).map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className="row gap-3"
+                    style={{ background: 'none', textAlign: 'left', width: '100%' }}
+                    onClick={() => openPatient(p.patient_id)}
+                  >
+                    <Avatar name={p.full_name} size={32} />
+                    <div className="grow">
+                      <div className="text-sm strong">{p.full_name}</div>
+                      <div className="muted text-xs mono">{p.patient_id}</div>
+                    </div>
+                    <Icon name="chevronRight" size={16} />
+                  </button>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
+      </div>
+
+      <QrScannerDialog
+        open={scanning}
+        onClose={() => setScanning(false)}
+        onResult={(value) => {
+          const match = String(value).match(/BC-\d{4}-\d+/i);
+          openPatient(match ? match[0] : value);
+          toast.info(`Opening ${match ? match[0] : value}`);
+        }}
+        title="Scan patient code"
+        pattern={/BC-\d{4}-\d+/i}
+      />
+
+      <QrDialog
+        open={qrOpen}
+        onClose={() => setQrOpen(false)}
+        value={user?.doctor_id}
+        name={user?.full_name}
+        label={t('clinicianId')}
+        caption="Patients can scan this to book an appointment with you directly."
+      />
+    </>
+  );
+}

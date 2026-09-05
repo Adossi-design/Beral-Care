@@ -1,14 +1,24 @@
+# Environment
 .env
 .env.*
 backend/.env
 ussd-gateway/.env
+
+# Dependencies and build output
 node_modules/
-.expo/
 dist/
 build/
-*.log
-backend/seeders/createAdmin.js
-android/
-ussd-gateway/__pycache__/
+web/dist/
+
+# Runtime artefacts
 uploads/
+*.log
+__pycache__/
+ussd-gateway/__pycache__/
+
+# Tooling
 .vercel
+.DS_Store
+
+# One-off seeder holding admin credentials
+backend/seeders/createAdmin.js

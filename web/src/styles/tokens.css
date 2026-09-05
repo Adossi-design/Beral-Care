@@ -1,0 +1,148 @@
+/**
+ * Design tokens.
+ *
+ * Every colour, space, radius, and type step in the application is declared
+ * here. Components reference variables only — no component file should contain
+ * a raw hex value.
+ */
+
+:root {
+  /* ---------------------------------------------------------------- colour */
+
+  /* Brand — deep pine. Health and continent association, but far more serious
+     than a flat mid-green. 600 is the primary; it holds AA contrast on white. */
+  --pine-50:  #eff6f3;
+  --pine-100: #d7eae3;
+  --pine-200: #b0d5c8;
+  --pine-300: #7fb9a5;
+  --pine-400: #4e9880;
+  --pine-500: #2e7d64;
+  --pine-600: #1f6350;
+  --pine-700: #1a4f41;
+  --pine-800: #153e34;
+  --pine-900: #0f2c25;
+
+  /* Accent — clinical azure, for data, links, and informational states */
+  --azure-50:  #eff5fb;
+  --azure-100: #dae8f6;
+  --azure-200: #b6d1ed;
+  --azure-300: #85b2df;
+  --azure-500: #3372b3;
+  --azure-600: #255a94;
+  --azure-700: #1e4877;
+
+  /* Neutrals */
+  --slate-0:   #ffffff;
+  --slate-50:  #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
+
+  /* Semantic */
+  --green-50: #f0fdf4;  --green-100: #dcfce7;  --green-600: #16a34a;  --green-700: #15803d;
+  --amber-50: #fffbeb;  --amber-100: #fef3c7;  --amber-600: #d97706;  --amber-700: #b45309;
+  --red-50:   #fef2f2;  --red-100:   #fee2e2;  --red-600:   #dc2626;  --red-700:   #b91c1c;
+  --violet-50:#f5f3ff;  --violet-100:#ede9fe;  --violet-600:#7c3aed;
+
+  /* Roles */
+  --primary:        var(--pine-600);
+  --primary-hover:  var(--pine-700);
+  --primary-active: var(--pine-800);
+  --primary-subtle: var(--pine-50);
+  --primary-border: var(--pine-200);
+  --on-primary:     #ffffff;
+
+  --accent:         var(--azure-600);
+  --accent-subtle:  var(--azure-50);
+
+  --canvas:         var(--slate-50);
+  --surface:        #ffffff;
+  --surface-sunken: var(--slate-100);
+  --surface-raised: #ffffff;
+
+  --text:           var(--slate-900);
+  --text-secondary: var(--slate-600);
+  --text-muted:     var(--slate-500);
+  --text-disabled:  var(--slate-400);
+
+  --border:         var(--slate-200);
+  --border-strong:  var(--slate-300);
+  --divider:        var(--slate-100);
+
+  --focus-ring:     0 0 0 3px var(--pine-100);
+  --focus-ring-dark:0 0 0 3px rgba(255, 255, 255, 0.28);
+
+  /* ------------------------------------------------------------ typography */
+
+  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
+
+  /* A 1.20 modular scale, rounded to whole pixels */
+  --fs-xs:   0.75rem;   /* 12 */
+  --fs-sm:   0.8125rem; /* 13 */
+  --fs-base: 0.875rem;  /* 14 — the app's body size; dense but readable */
+  --fs-md:   1rem;      /* 16 */
+  --fs-lg:   1.1875rem; /* 19 */
+  --fs-xl:   1.5rem;    /* 24 */
+  --fs-2xl:  1.875rem;  /* 30 */
+  --fs-3xl:  2.5rem;    /* 40 */
+  --fs-4xl:  3.25rem;   /* 52 */
+
+  --lh-tight: 1.2;
+  --lh-snug:  1.35;
+  --lh-normal:1.55;
+  --lh-loose: 1.7;
+
+  /* ---------------------------------------------------------------- space */
+  /* 4pt grid */
+  --sp-1: 0.25rem;  --sp-2: 0.5rem;   --sp-3: 0.75rem;  --sp-4: 1rem;
+  --sp-5: 1.25rem;  --sp-6: 1.5rem;   --sp-7: 2rem;     --sp-8: 2.5rem;
+  --sp-9: 3rem;     --sp-10: 4rem;    --sp-11: 5rem;    --sp-12: 6rem;
+
+  /* --------------------------------------------------------------- shape */
+  /* Deliberately tighter than the prototype's 22px. Large radii read as a
+     consumer app; small radii read as professional software. */
+  --r-sm: 5px;  --r-md: 8px;  --r-lg: 12px;  --r-xl: 16px;  --r-pill: 999px;
+
+  /* ------------------------------------------------------------ elevation */
+  /* Depth comes from borders first, shadow second. */
+  --sh-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --sh-md: 0 2px 8px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --sh-lg: 0 8px 24px rgba(15, 23, 42, 0.10), 0 2px 6px rgba(15, 23, 42, 0.05);
+  --sh-xl: 0 24px 48px rgba(15, 23, 42, 0.16);
+
+  /* --------------------------------------------------------------- layout */
+  --sidebar-w: 256px;
+  --rail-w: 72px;
+  --topbar-h: 60px;
+  --content-max: 1240px;
+  --readable-max: 68ch;
+
+  /* --------------------------------------------------------------- motion */
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-fast: 120ms;
+  --dur: 180ms;
+  --dur-slow: 320ms;
+
+  --z-sticky: 20;
+  --z-drawer: 60;
+  --z-modal: 80;
+  --z-toast: 100;
+}
+
+/* Respect users who ask the system to reduce motion. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

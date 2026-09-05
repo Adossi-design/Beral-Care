@@ -1,134 +1,154 @@
-# Beral Care: Telemedicine and AI Health Assistant
+# Beral Care
 
-Beral Care is a telemedicine platform that connects patients with doctors across the continent, available as a mobile app on any smartphone, as a web application, and through a USSD dial code that works on basic phones without requiring internet access. The platform includes two AI health assistants: MedAssist, which provides real-time clinical support to doctors, and HealthGuide, which helps patients understand their health in plain, accessible language.
+Telemedicine and patient-held medical records for the continent. Patients carry a
+permanent Health ID, hold their own consultation history, and decide which
+clinicians may read it. Clinicians look up a patient by ID or QR scan, write
+consultations, and get clinical decision support at the point of care. People
+without a smartphone reach the same record over USSD on any handset.
 
-For the full account of what this project is, the problem it addresses, and the impact it is designed to create, read the [project documentation](DOCUMENTATION.md).
-
----
-
-## Why This Project Matters
-
-Across much of Africa, millions of patients live far from the nearest clinic, and the doctors serving those communities frequently work without reliable access to patient records, clinical reference tools, or colleagues to consult on difficult cases. A patient who receives a diagnosis and a prescription often leaves the consultation without fully understanding either, carrying questions they were too uncertain to ask and no accessible way to find answers later. Beral Care was built as a direct response to that reality, equipping every person in the healthcare chain with the tools they need: the patient, the doctor, and the administrator managing the platform.
+**Live:** [beral-care.vercel.app](https://beral-care.vercel.app)
 
 ---
 
-## What the App Does
+## Why it exists
 
-The platform supports three distinct roles, each with a purpose-built set of features.
+Across much of Africa the nearest clinic can be hours away, a clinician may be
+managing hundreds of patients with no digital tools, and a patient's history
+lives in a paper file in one building. Three specific failures follow from that,
+and the platform is built around them:
 
-**Patients** hold a personal health ID card that they can copy or share as a QR code, book appointments with available doctors, review their complete medical history including all diagnoses and prescriptions, and control precisely which doctors are permitted to access their records through an explicit approve or deny system.
+**Records do not travel.** A patient changing clinic starts from nothing. Here
+the record belongs to the patient and follows them.
 
-**Doctors** can search for any patient by their unique ID or by scanning a QR code, access the records of patients who have granted permission, create detailed consultation notes covering diagnosis, prescription, and clinical observations, and receive real-time guidance from the MedAssist AI assistant throughout the consultation.
+**Access is assumed rather than granted.** Most health software treats a
+clinician's right to read a file as automatic. Here a clinician requests access,
+the patient approves or declines, and the record stays sealed until they do —
+enforced by the API, not by the interface.
 
-**Admins** can monitor platform-wide statistics, search and filter all registered users, suspend accounts where necessary, and manage deletions, all without access to any patient medical records, which are protected at the system level.
-
----
-
-## The Two AI Assistants
-
-### MedAssist: Clinical Support for Doctors
-
-A floating **✦ MedAssist** button appears at the bottom right of the doctor dashboard, and tapping it opens a full clinical chat panel that greets the doctor by name and offers six ready-made prompt shortcuts covering the most common clinical needs:
-
-- Differential diagnosis
-- Drug interaction check
-- Treatment protocol
-- Dosage guide
-- Lab result interpretation
-- Refer or treat?
-
-When the doctor is viewing a patient for whom they hold approved access, MedAssist automatically loads that patient's full consultation history as context, ensuring every response is grounded in the actual case rather than a generic scenario. All guidance follows WHO Africa region protocols, emergency presentations are flagged explicitly at the top of the response, and each recommendation includes its evidence source. Every reply concludes with a reminder that clinical judgment belongs to the treating physician.
-
-### HealthGuide: Health Companion for Patients
-
-A floating **✦ HealthGuide** button appears at the bottom right of the patient dashboard, opening a personal chat that addresses the patient by name and draws on their medical history to give contextually relevant answers. Five prompt shortcuts cover the questions patients ask most often:
-
-- Explain my diagnosis
-- Tell me about my medication
-- Side effects to watch out for
-- Help me prepare for my appointment
-- Healthy habits for my condition
-
-HealthGuide communicates entirely in plain language, defines any medical term it uses, and consistently redirects serious or uncertain concerns back to the treating doctor, because that boundary was built into the system intentionally.
+**Connectivity decides who gets care.** The full platform runs in any browser,
+and the essentials run over USSD with no internet at all.
 
 ---
 
-## USSD Gateway
+## What each role can do
 
-The USSD gateway extends the platform to users who do not own a smartphone, allowing them to access the following services by dialling a short code from any mobile phone, with no internet connection required:
+**Patients** hold a Health ID (`BC-YYYY-NNNNN`) they can copy or show as a QR
+code, book appointments, read their full consultation history including every
+diagnosis and prescription, manage which clinicians have access, and ask
+HealthGuide to explain any of it in plain language.
 
-- Register a new patient account
-- Log in with a password
-- Request a consultation
-- Check recent consultation history
-- Log out
+**Clinicians** open a patient record by typing an ID or scanning a code, record
+consultations with diagnosis, prescription, and notes, manage their schedule and
+incoming access requests, and consult MedAssist for differential diagnoses, drug
+interactions, dosing, and WHO Africa treatment protocols.
 
-The gateway is built with Python and Flask, uses Redis to maintain session state during a call, and deploys to Vercel. The country code applied to local phone numbers is configured through a single environment variable, making the gateway deployable across different African countries without any code changes.
-
----
-
-## Backend
-
-The backend is a Node.js and Express server connected to a MySQL database, built with security enforced at every layer rather than applied as an afterthought.
-
-- Passwords are hashed with bcrypt, and sessions are managed with JWT tokens carrying a 24-hour expiry
-- Authentication attempts are rate-limited to 20 per 15-minute window per IP address to prevent brute force access
-- CORS is restricted to explicitly allowed origins, configured through the `ALLOWED_ORIGINS` variable in the environment file
-- Access levels for admin, doctor, and patient are enforced on every protected route on the server, independent of any front-end logic
-- Patient IDs are generated inside database transactions to guarantee uniqueness even under concurrent registrations
-- Patients approve or deny each doctor's access request individually, giving them direct ownership of their data
-- SMS notifications are available through Twilio, and email notifications through SendGrid, both optional
-- The AI assistants use the Anthropic API and require a valid API key with credits at `console.anthropic.com`
-- A test suite of 13 automated tests can be run with `npm test` from the `backend/` directory
+**Administrators** see platform totals, manage accounts, and suspend or delete
+users. They cannot read medical records — the API does not expose consultation
+content to that role at all.
 
 ---
 
-## Setup
+## Architecture
 
-### 1. Mobile app: root `.env`
+| Part | Stack | Location |
+|---|---|---|
+| Web application | React 18, Vite, React Router, plain CSS | `web/` |
+| API | Node, Express 5, MySQL | `backend/` |
+| USSD gateway | Python, Flask, Redis | `ussd-gateway/` |
 
-```env
-EXPO_PUBLIC_API_BASE_URL=http://localhost:3000
+The web app is the only client. It is responsive from 360 px to widescreen and
+installs to a phone home screen, so a smartphone user needs nothing from an app
+store.
+
+### Web application
+
+No UI framework. The design system is CSS custom properties in
+`web/src/styles/tokens.css` — colour, type scale, spacing, radii, elevation —
+and no component file contains a raw hex value. The application shell provides
+three navigation chromes (sidebar, icon rail, bottom tab bar) switched entirely
+by CSS media query, so there is no layout flash and no resize listener.
+
+Icons are a hand-drawn stroke set in `web/src/components/ui/Icon.jsx`, not an
+icon font and not emoji.
+
+Routes are split per role, so a patient never downloads the clinician or
+administrator bundle.
+
+### API
+
+JWT authentication with a 24-hour expiry, bcrypt password hashing, rate limiting
+on auth and AI routes, CORS restricted to an allow-list, and role checks enforced
+by middleware on every protected route. Patient IDs are generated inside a
+transaction so concurrent registrations cannot collide.
+
+### AI assistants
+
+`backend/utils/ai/` holds one adapter per provider behind a common interface.
+Routes call `ai.ask()` and never learn which model answered; changing provider is
+an environment variable, not a code change.
+
+Default is **Google Gemini** through AI Studio, whose free tier covers this
+workload. Anthropic is retained as an alternative.
+
+```
+AI_PROVIDER=gemini          # or anthropic; omit to auto-select what is configured
+GEMINI_API_KEY=...          # free key from aistudio.google.com/apikey
+GEMINI_MODEL=gemini-2.0-flash
 ```
 
-### 2. Backend: `backend/.env`
+`GET /api/ai/status` reports which provider is active.
+
+---
+
+## Running locally
+
+```bash
+# API — needs a MySQL database
+cd backend && npm install && npm start
+
+# Create the schema once
+curl "http://localhost:3000/setup-db?key=$DB_SETUP_KEY"
+
+# Web application
+cd web && npm install && npm run dev     # http://localhost:5173
+```
+
+The dev server proxies `/api` to `localhost:3000`, so there is no CORS setup for
+local work.
+
+```bash
+cd backend && npm test    # 13 tests
+```
+
+### Environment
+
+`backend/.env`
 
 ```env
 PORT=3000
-ALLOWED_ORIGINS=http://localhost:3000,http://localhost:19006
+ALLOWED_ORIGINS=http://localhost:5173
 
-# Database
-DB_HOST=your_db_host
-DB_PORT=3306
-DB_USER=your_db_user
-DB_PASSWORD=your_db_password
-DB_NAME=beral_care
-DB_SEED_SAMPLE_DATA=false
+DB_HOST=       DB_PORT=3306
+DB_USER=       DB_PASSWORD=
+DB_NAME=       DB_SEED_SAMPLE_DATA=false
 
-# Auth
-JWT_TOKEN=replace_with_a_long_random_secret
+JWT_TOKEN=              # long random string
+DB_SETUP_KEY=           # protects /setup-db
 
-# AI assistants (get your key at console.anthropic.com)
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
+AI_PROVIDER=gemini
+GEMINI_API_KEY=
 
-# Twilio (SMS, optional)
-TWILIO_ACCOUNT_SID=your_twilio_account_sid
-TWILIO_AUTH_TOKEN=your_twilio_auth_token
-TWILIO_PHONE_NUMBER=+1xxxxxxxxxx
-
-# SendGrid (Email, optional)
-SENDGRID_API_KEY=your_sendgrid_api_key
-SENDGRID_FROM_EMAIL=you@example.com
-
-# Admin seeder (only needed when running backend/seeders/createAdmin.js)
-ADMIN_EMAIL=admin@beralcare.local
-ADMIN_PASSWORD=replace_with_strong_admin_password
-
-# Database setup protection
-DB_SETUP_KEY=your_secret_setup_key
+TWILIO_ACCOUNT_SID=     TWILIO_AUTH_TOKEN=     TWILIO_PHONE_NUMBER=
+SENDGRID_API_KEY=       SENDGRID_FROM_EMAIL=
 ```
 
-### 3. USSD gateway: `ussd-gateway/.env`
+`web/.env.local`
+
+```env
+VITE_API_URL=http://localhost:3000
+```
+
+`ussd-gateway/.env`
 
 ```env
 API_BASE_URL=http://localhost:3000
@@ -136,46 +156,13 @@ REDIS_URL=redis://localhost:6379/0
 DEFAULT_COUNTRY_CODE=+250
 ```
 
-### 4. Run
+---
 
-```bash
-# Backend
-cd backend && npm install && node backend-server.js
+## Deployment
 
-# Set up database tables (run once after first deploy)
-GET http://localhost:3000/setup-db?key=YOUR_DB_SETUP_KEY
-
-# Create the admin account (run once)
-node backend/seeders/createAdmin.js
-
-# Run backend tests
-cd backend && npm test
-
-# Mobile and web app
-npm install && npx expo start
-```
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the hosted setup, how to redeploy each
+piece, and the limitations of the current tiers.
 
 ---
 
-## Project Structure
-
-```
-Beral-Care/
-├── backend/
-│   ├── routes/          auth, admin, doctor, patient, profile, ai
-│   ├── middleware/       roleGuard.js
-│   ├── utils/            auth, db, consultation, email, twilio
-│   ├── database/         SQL schema
-│   └── tests/            Jest test suite (13 tests)
-├── client-services/      Axios API instance and auth service
-├── src/
-│   ├── components/       Layouts, ProtectedRoute, QR scanner, AIChat
-│   ├── context/          AuthContext, LanguageContext (English and French)
-│   └── pages/            admin/, doctor/, patient/, Login, Register, Splash
-├── ussd-gateway/         Python/Flask USSD service
-└── main-app.js           Root navigator with role-based routing
-```
-
----
-
-Created and maintained by Adossi Fred William
+Created and maintained by Adossi Fred William.
