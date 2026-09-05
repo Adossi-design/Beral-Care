@@ -23,7 +23,7 @@ export default function Settings() {
     <>
       <PageHeader
         title={t('settings')}
-        description="Your administrator account and platform configuration."
+        description="Your admin account and how Beral Care is set up."
       />
 
       <div className="grid grid--2">
@@ -31,8 +31,8 @@ export default function Settings() {
           <CardHeader title="Your account" icon="user" />
           <DetailRow label="Name" value={user?.full_name} icon="user" />
           <DetailRow label="Email" value={user?.email} icon="mail" />
-          <DetailRow label="Role" value="Administrator" icon="shield" />
-          <DetailRow label="Member since" value={formatDate(user?.created_at, lang)} icon="clock" />
+          <DetailRow label="Role" value="Admin" icon="shield" />
+          <DetailRow label="Joined" value={formatDate(user?.created_at, lang)} icon="clock" />
 
           <div className="row gap-2 mt-4">
             <Button variant="danger-quiet" icon="logout" onClick={signOut}>{t('signOut')}</Button>
@@ -51,7 +51,7 @@ export default function Settings() {
                     type="button"
                     className="chip"
                     aria-pressed={lang === o.v}
-                    onClick={() => { setLang(o.v); toast.success('Language updated.'); }}
+                    onClick={() => { setLang(o.v); toast.success('Language changed.'); }}
                   >
                     {lang === o.v ? <Icon name="check" size={14} /> : null}
                     {o.l}
@@ -65,23 +65,21 @@ export default function Settings() {
         <Card>
           <CardHeader title="Platform" icon="activity" />
           <DetailRow label="API endpoint" value={API_URL || 'Same origin'} icon="globe" />
-          <DetailRow label="Interface version" value="2.0.0" icon="info" />
+          <DetailRow label="Website version" value="2.0.0" icon="info" />
           <p className="muted text-xs mt-4">
-            Database credentials, allowed origins, rate limits, and AI provider keys are configured
-            through environment variables on the server.
+            Settings such as database access and AI keys are changed on the server, not here.
           </p>
         </Card>
 
         <Card>
-          <CardHeader title="Privacy boundary" icon="lock" />
-          <Notice tone="info" title="Records are not accessible to this role">
-            The API does not expose diagnoses, prescriptions, or consultation notes to administrator
-            accounts. This is enforced server-side by role middleware, so it cannot be bypassed by
-            modifying the interface.
+          <CardHeader title="Privacy rules" icon="lock" />
+          <Notice tone="info" title="Admins cannot read health records">
+            Admin accounts never receive anyone's illness, medicine, or doctor notes. This is
+            blocked on the server, so it cannot be worked around from the website.
           </Notice>
           <p className="muted text-xs mt-4">
-            Patients grant and revoke clinician access themselves. Administrators can suspend an
-            account, which blocks sign-in, but cannot read what it contains.
+            Patients decide for themselves which doctors can see their records. An admin can block
+            an account, which stops that person logging in, but cannot read what is inside it.
           </p>
         </Card>
       </div>

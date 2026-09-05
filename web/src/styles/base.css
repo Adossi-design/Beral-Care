@@ -36,7 +36,12 @@ svg { flex-shrink: 0; }
 input, button, textarea, select { font: inherit; color: inherit; }
 button { background: none; border: none; padding: 0; cursor: pointer; }
 
-h1, h2, h3, h4, h5, h6 { font-weight: 650; line-height: var(--lh-tight); letter-spacing: -0.02em; }
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 650;
+  line-height: var(--lh-tight);
+  letter-spacing: -0.02em;
+  color: var(--heading);
+}
 h1 { font-size: var(--fs-xl); }
 h2 { font-size: var(--fs-lg); }
 h3 { font-size: var(--fs-md); letter-spacing: -0.01em; }

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Icon, IconButton, Notice } from './ui';
+import Markdown from '../lib/markdown';
 import { assistant } from '../lib/services';
 import { errorMessage } from '../lib/api';
 
@@ -51,7 +52,7 @@ export default function Assistant({ audience, name, patientId, greeting, prompts
       const data = await assistant.ask(audience, next, patientId);
       setMessages([...next, { role: 'assistant', content: data.reply }]);
     } catch (err) {
-      setError(errorMessage(err, 'The assistant is unavailable right now.'));
+      setError(errorMessage(err, 'The assistant is not available right now. Please try again in a moment.'));
       setMessages(next);
     } finally {
       setBusy(false);
@@ -81,7 +82,7 @@ export default function Assistant({ audience, name, patientId, greeting, prompts
         <div className="grow">
           <div className="strong">{title}</div>
           <div className="text-xs" style={{ color: 'var(--pine-200)' }}>
-            {audience === 'doctor' ? 'Clinical decision support' : 'Your health companion'}
+            {audience === 'doctor' ? 'Help while you work' : 'Your health helper'}
           </div>
         </div>
         <button
@@ -99,7 +100,7 @@ export default function Assistant({ audience, name, patientId, greeting, prompts
         {messages.length === 0 ? (
           <>
             <div className="bubble bubble--ai">
-              {greeting || `Hello ${name || 'there'} — how can I help?`}
+              {greeting || `Hello ${name || 'there'}. How can I help?`}
             </div>
             <div className="ai-prompts">
               {(prompts || []).map((p) => (
@@ -112,7 +113,9 @@ export default function Assistant({ audience, name, patientId, greeting, prompts
         ) : (
           messages.map((m, i) => (
             <div key={i} className={`bubble ${m.role === 'user' ? 'bubble--me' : 'bubble--ai'}`}>
-              {String(m.content).split('\n').filter(Boolean).map((line, j) => <p key={j}>{line}</p>)}
+              {m.role === 'user'
+                ? String(m.content).split('\n').filter(Boolean).map((line, j) => <p key={j}>{line}</p>)
+                : <Markdown text={m.content} />}
             </div>
           ))
         )}
@@ -136,7 +139,7 @@ export default function Assistant({ audience, name, patientId, greeting, prompts
             className="input"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder={audience === 'doctor' ? 'Ask a clinical question…' : 'Ask about your health…'}
+            placeholder={audience === 'doctor' ? 'Ask a medical question' : 'Ask about your health'}
             aria-label="Message"
             disabled={busy}
           />
@@ -152,18 +155,18 @@ export default function Assistant({ audience, name, patientId, greeting, prompts
 }
 
 export const PATIENT_PROMPTS = [
-  { label: 'Explain my diagnosis', prompt: 'Can you explain my most recent diagnosis in simple words?' },
-  { label: 'About my medication', prompt: 'Tell me about my medication — what it does and how to take it.' },
+  { label: 'Explain my illness', prompt: 'Can you explain my most recent diagnosis in simple words?' },
+  { label: 'About my medicine', prompt: 'Tell me about my medicine. What does it do, and how do I take it?' },
   { label: 'Side effects', prompt: 'What side effects should I watch out for with my medication?' },
-  { label: 'Prepare for my visit', prompt: 'Help me prepare questions to ask my doctor at my next appointment.' },
-  { label: 'Healthy habits', prompt: 'What healthy habits would help with my condition?' },
+  { label: 'Get ready for my visit', prompt: 'Help me prepare questions to ask my doctor at my next visit.' },
+  { label: 'Staying healthy', prompt: 'What healthy habits would help with my condition?' },
 ];
 
 export const DOCTOR_PROMPTS = [
-  { label: 'Differential diagnosis', prompt: 'Help me build a differential diagnosis for this presentation.' },
-  { label: 'Drug interactions', prompt: 'Check for interactions between the medications in this patient’s record.' },
-  { label: 'Treatment protocol', prompt: 'What is the current WHO Africa treatment protocol for this condition?' },
-  { label: 'Dosage guide', prompt: 'Give me the dosing guidance for this medication, including renal adjustment.' },
-  { label: 'Interpret labs', prompt: 'Help me interpret these laboratory results.' },
+  { label: 'Possible diagnoses', prompt: 'Help me build a differential diagnosis for this presentation.' },
+  { label: 'Drug reactions', prompt: 'Check for interactions between the medicines in this patient record.' },
+  { label: 'Treatment steps', prompt: 'What is the current WHO Africa treatment protocol for this condition?' },
+  { label: 'Dose guide', prompt: 'Give me the dosing guidance for this medicine, including renal adjustment.' },
+  { label: 'Read lab results', prompt: 'Help me interpret these laboratory results.' },
   { label: 'Refer or treat?', prompt: 'Should this patient be referred, or can this be managed at primary level?' },
 ];

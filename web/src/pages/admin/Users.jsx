@@ -40,12 +40,12 @@ export default function Users() {
       if (kind === 'delete') {
         await adminApi.remove(user.id);
         setData((list) => list.filter((u) => u.id !== user.id));
-        toast.success(`${user.full_name} deleted.`);
+        toast.success(`${user.full_name} was deleted.`);
       } else {
         const next = user.suspended ? 0 : 1;
         await adminApi.setSuspended(user.id, next);
         setData((list) => list.map((u) => (u.id === user.id ? { ...u, suspended: next } : u)));
-        toast.success(next ? `${user.full_name} suspended.` : `${user.full_name} reinstated.`);
+        toast.success(next ? `${user.full_name} is now blocked.` : `${user.full_name} can log in again.`);
       }
       setConfirm(null);
     } catch (err) {
@@ -59,7 +59,7 @@ export default function Users() {
     <>
       <PageHeader
         title={t('users')}
-        description="Every account on the platform. Suspending blocks sign-in without deleting records."
+        description="Every account on Beral Care. Blocking stops someone logging in, but keeps their records."
         actions={<Button icon="refresh" onClick={refetch}>Refresh</Button>}
       />
 
@@ -68,7 +68,7 @@ export default function Users() {
           <SearchInput
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name, email, phone, or Health ID…"
+            placeholder="Search by name, email, phone, or health ID"
           />
         </div>
         <ChipGroup
@@ -77,7 +77,7 @@ export default function Users() {
           options={[
             { value: 'all', label: 'All' },
             { value: 'patient', label: 'Patients' },
-            { value: 'doctor', label: 'Clinicians' },
+            { value: 'doctor', label: 'Doctors' },
             { value: 'admin', label: 'Admins' },
           ]}
         />
@@ -92,8 +92,8 @@ export default function Users() {
         <Card>
           <EmptyState
             icon="users"
-            title="No matching accounts"
-            description="Try a different search term or role filter."
+            title="No accounts found"
+            description="Try another word, or change the filter."
             action={<Button onClick={() => { setQuery(''); setRole('all'); }}>Clear filters</Button>}
           />
         </Card>
@@ -131,7 +131,7 @@ export default function Users() {
                       {u.phone ? <div className="muted text-xs">{u.phone}</div> : null}
                     </td>
                     <td data-label="Identifier">
-                      <span className="mono text-sm">{u.patient_id || '—'}</span>
+                      <span className="mono text-sm">{u.patient_id || '-'}</span>
                     </td>
                     <td data-label="Joined">{formatDate(u.created_at, lang)}</td>
                     <td data-label="Status">
@@ -144,7 +144,7 @@ export default function Users() {
                           icon={u.suspended ? 'check' : 'lock'}
                           onClick={() => setConfirm({ kind: 'suspend', user: u })}
                         >
-                          {u.suspended ? 'Reinstate' : 'Suspend'}
+                          {u.suspended ? 'Unblock' : 'Block'}
                         </Button>
                         <Button
                           size="sm"
@@ -173,19 +173,19 @@ export default function Users() {
           confirm?.kind === 'delete'
             ? `Delete ${confirm?.user?.full_name}?`
             : confirm?.user?.suspended
-              ? `Reinstate ${confirm?.user?.full_name}?`
-              : `Suspend ${confirm?.user?.full_name}?`
+              ? `Unblock ${confirm?.user?.full_name}?`
+              : `Block ${confirm?.user?.full_name}?`
         }
         message={
           confirm?.kind === 'delete'
-            ? 'This permanently removes the account and every consultation, request, and notification attached to it. This cannot be undone.'
+            ? 'This deletes the account and everything in it: visits, requests, and messages. This cannot be undone.'
             : confirm?.user?.suspended
-              ? 'They will be able to sign in again immediately.'
-              : 'They will be signed out and blocked from signing in. Their records are kept.'
+              ? 'They will be able to log in again straight away.'
+              : 'They will be logged out and cannot log in again. Their records are kept.'
         }
         confirmLabel={
-          confirm?.kind === 'delete' ? 'Delete permanently'
-            : confirm?.user?.suspended ? 'Reinstate' : 'Suspend'
+          confirm?.kind === 'delete' ? 'Yes, delete'
+            : confirm?.user?.suspended ? 'Yes, unblock' : 'Yes, block'
         }
       />
     </>

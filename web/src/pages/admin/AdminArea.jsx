@@ -8,8 +8,8 @@ import Users from './Users';
 import Settings from './Settings';
 
 const TITLES = {
-  '/admin': 'Platform overview',
-  '/admin/users': 'User management',
+  '/admin': 'Home',
+  '/admin/users': 'Users',
   '/admin/settings': 'Settings',
 };
 
@@ -20,11 +20,10 @@ export default function AdminArea() {
   const nav = [
     { to: '/admin', end: true, label: t('overview'), icon: 'chart' },
     { to: '/admin/users', label: t('users'), icon: 'users' },
-    { to: '/admin/settings', label: t('settings'), icon: 'settings', profile: true },
   ];
 
   return (
-    <AppShell nav={nav} title={TITLES[location.pathname] || 'Administration'}>
+    <AppShell nav={nav} profileTo="/admin/settings" title={TITLES[location.pathname] || 'Administration'}>
       <Routes>
         <Route index element={<Overview />} />
         <Route path="users" element={<Users />} />

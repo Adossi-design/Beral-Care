@@ -91,6 +91,12 @@
 .grid { display: grid; gap: var(--sp-4); }
 .grid--stats { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
 .grid--cards { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+
+/* Fixed three across rather than auto-fill, so six items read as two even
+   rows instead of four and a stranded two. */
+.grid--three { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 1000px) { .grid--three { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .grid--three { grid-template-columns: 1fr; } }
 .grid--2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
 .grid--main { grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr); align-items: start; }
 @media (max-width: 1100px) { .grid--main { grid-template-columns: 1fr; } }
@@ -107,7 +113,10 @@
   font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.06em;
   text-transform: uppercase; color: var(--text-muted);
 }
-.stat__value { font-size: var(--fs-2xl); font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.stat__value {
+  font-size: var(--fs-2xl); font-weight: 700; letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums; color: var(--navy-900);
+}
 .stat__hint { font-size: var(--fs-xs); color: var(--text-muted); }
 .stat__icon { width: 30px; height: 30px; border-radius: var(--r-sm); display: grid; place-items: center; }
 

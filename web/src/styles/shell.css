@@ -188,9 +188,47 @@
 .ai-panel__foot { padding: var(--sp-3) var(--sp-4) var(--sp-4); border-top: 1px solid var(--border); }
 
 .bubble { max-width: 88%; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-lg); font-size: var(--fs-sm); line-height: var(--lh-normal); }
-.bubble--ai { background: var(--slate-100); color: var(--text); align-self: flex-start; border-bottom-left-radius: var(--r-sm); }
+.bubble--ai {
+  background: var(--surface); color: var(--text); align-self: flex-start;
+  border: 1px solid var(--border); border-bottom-left-radius: var(--r-sm);
+}
 .bubble--me { background: var(--primary); color: #fff; align-self: flex-end; border-bottom-right-radius: var(--r-sm); }
 .bubble p + p { margin-top: var(--sp-2); }
+
+/* Rendered assistant Markdown. Answers are usually a short lead-in followed by
+   a list, so the list needs to read as a list rather than as run-on text. */
+.md > * + * { margin-top: var(--sp-3); }
+
+.md__h {
+  font-size: var(--fs-sm); font-weight: 700; color: var(--navy-900);
+  letter-spacing: 0; margin-top: var(--sp-4);
+}
+.md > .md__h:first-child { margin-top: 0; }
+
+.md__ul, .md__ol { display: flex; flex-direction: column; gap: var(--sp-2); padding-left: 0; }
+.md__ul li, .md__ol li {
+  position: relative; padding-left: var(--sp-5); line-height: var(--lh-normal);
+}
+/* A small green dot instead of the browser bullet, so items line up cleanly
+   even when the first words are bold. */
+.md__ul li::before {
+  content: ''; position: absolute; left: 6px; top: 0.62em;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--pine-400);
+}
+.md__ol { counter-reset: md; }
+.md__ol li { counter-increment: md; }
+.md__ol li::before {
+  content: counter(md) '.'; position: absolute; left: 0; top: 0;
+  font-weight: 700; color: var(--pine-600); font-variant-numeric: tabular-nums;
+}
+
+.md strong { font-weight: 650; color: var(--navy-900); }
+.md em { font-style: italic; }
+.md code {
+  font-family: var(--font-mono); font-size: 0.92em;
+  background: var(--slate-100); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 1px 5px;
+}
 
 .ai-prompts { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .ai-prompt {

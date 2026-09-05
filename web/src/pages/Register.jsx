@@ -35,14 +35,14 @@ export default function Register() {
 
   const validate = () => {
     const next = {};
-    if (!form.full_name.trim()) next.full_name = 'Enter your full name.';
-    if (!form.email.trim()) next.email = 'Enter your email address.';
-    else if (!/^\S+@\S+\.\S+$/.test(form.email)) next.email = 'That does not look like a valid email.';
-    if (!form.phone.trim()) next.phone = 'Enter your phone number.';
-    if (!form.password) next.password = 'Choose a password.';
-    else if (form.password.length < 8) next.password = 'Use at least 8 characters.';
+    if (!form.full_name.trim()) next.full_name = 'Please enter your full name.';
+    if (!form.email.trim()) next.email = 'Please enter your email address.';
+    else if (!/^\S+@\S+\.\S+$/.test(form.email)) next.email = 'Please check your email address.';
+    if (!form.phone.trim()) next.phone = 'Please enter your phone number.';
+    if (!form.password) next.password = 'Please choose a password.';
+    else if (form.password.length < 8) next.password = 'Please use 8 letters or numbers or more.';
     if (role === 'doctor' && !form.specialization.trim()) {
-      next.specialization = 'Enter your specialisation.';
+      next.specialization = 'Please say what you treat.';
     }
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -69,7 +69,7 @@ export default function Register() {
       signIn(data.user, data.token);
       navigate(homeFor(data.user.role), { replace: true });
     } catch (err) {
-      setFailure(errorMessage(err, 'Could not create your account. Please try again.'));
+      setFailure(errorMessage(err, 'We could not create your account. Please try again.'));
     } finally {
       setBusy(false);
     }
@@ -84,7 +84,7 @@ export default function Register() {
           {step === 1 ? (
             <>
               <h1 className="auth__title">{t('createAccountTitle')}</h1>
-              <p className="auth__sub">First, tell us how you will use Beral Care.</p>
+              <p className="auth__sub">First, tell us who you are.</p>
 
               <div className="rolepick">
                 <button
@@ -133,11 +133,11 @@ export default function Register() {
                 style={{ background: 'none' }}
               >
                 <Icon name="arrowLeft" size={15} />
-                {role === 'patient' ? t('iAmPatient') : t('iAmDoctor')} · change
+                {role === 'patient' ? t('iAmPatient') : t('iAmDoctor')} · change this
               </button>
 
               <h1 className="auth__title">
-                {role === 'doctor' ? 'Clinician details' : 'Your details'}
+                {role === 'doctor' ? 'Your doctor details' : 'Your details'}
               </h1>
               <p className="auth__sub">{t('createAccountSub')}</p>
 
@@ -156,7 +156,7 @@ export default function Register() {
                 />
                 <Field
                   label={t('phone')} type="tel" icon="phone" required autoComplete="tel"
-                  placeholder="+250 788 000 000" hint="Used for SMS notifications and USSD access."
+                  placeholder="+250 788 000 000" hint="We use this to send you messages, and to log in from a basic phone."
                   value={form.phone} onChange={set('phone')} error={errors.phone}
                 />
 
@@ -178,7 +178,7 @@ export default function Register() {
 
                 <Field
                   label={t('password')} type="password" icon="lock" required
-                  autoComplete="new-password" placeholder="At least 8 characters"
+                  autoComplete="new-password" placeholder="At least 8 letters or numbers"
                   value={form.password} onChange={set('password')} error={errors.password}
                 />
 
@@ -188,8 +188,8 @@ export default function Register() {
               </form>
 
               <p className="muted text-xs mt-6" style={{ textAlign: 'center' }}>
-                By creating an account you agree that your records may be shared with clinicians you
-                explicitly approve. <Link to="/">Back to home</Link>
+                When you create an account, your records stay private. They are only shared with
+                doctors you say yes to. <Link to="/">Back to home page</Link>
               </p>
             </>
           )}

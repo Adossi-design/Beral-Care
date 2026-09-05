@@ -13,10 +13,10 @@ export default function NotFound() {
         </div>
         <h1 style={{ fontSize: 'var(--fs-xl)', marginBottom: 'var(--sp-2)' }}>Page not found</h1>
         <p className="muted mb-6">
-          The page you are looking for does not exist, or you may not have access to it.
+          This page does not exist, or you may not be allowed to open it.
         </p>
         <Button to={user ? homeFor(user.role) : '/'} variant="primary" icon="arrowLeft">
-          {user ? 'Back to your dashboard' : 'Back to home'}
+          {user ? 'Back to my home page' : 'Back to home page'}
         </Button>
       </div>
     </div>

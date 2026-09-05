@@ -3,9 +3,9 @@
 const localeFor = (lang) => (lang === 'fr' ? 'fr-FR' : 'en-GB');
 
 export function formatDate(value, lang = 'en', opts) {
-  if (!value) return '—';
+  if (!value) return '-';
   const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return '—';
+  if (Number.isNaN(d.getTime())) return '-';
   return d.toLocaleDateString(localeFor(lang), opts || { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
@@ -13,7 +13,7 @@ export function formatLongDate(value, lang = 'en') {
   return formatDate(value, lang, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-/** "in 3 days" / "2 weeks ago" — used on activity feeds and appointment lists. */
+/** "in 3 days" / "2 weeks ago", used on activity feeds and visit lists. */
 export function relativeDate(value, lang = 'en') {
   if (!value) return '';
   const d = new Date(value);

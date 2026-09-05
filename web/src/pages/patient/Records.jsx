@@ -43,10 +43,10 @@ export default function Records() {
     <>
       <PageHeader
         title={t('records')}
-        description="Every consultation recorded for you on Beral Care, newest first."
+        description="Everything your doctors have written about your health, newest first."
         actions={
           <Button icon="print" onClick={() => window.print()} className="no-print">
-            Print record
+            Print
           </Button>
         }
       />
@@ -69,7 +69,7 @@ export default function Records() {
             <SearchInput
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search diagnoses, medicines, or clinicians…"
+              placeholder="Search by illness, medicine, or doctor"
             />
           </div>
           {query ? <span className="muted text-sm">{filtered.length} of {consultations.length}</span> : null}
@@ -84,13 +84,13 @@ export default function Records() {
         <Card>
           <EmptyState
             icon="records"
-            title={query ? 'No matching records' : t('noRecords')}
+            title={query ? 'Nothing found' : t('noRecords')}
             description={
               query
-                ? 'Try a different search term.'
-                : 'After a clinician completes a consultation with you, it will appear here with the diagnosis and prescription.'
+                ? 'Try another word.'
+                : 'After a doctor sees you, what they found and the medicine they gave will show up here.'
             }
-            action={query ? <Button onClick={() => setQuery('')}>Clear search</Button> : null}
+            action={query ? <Button onClick={() => setQuery('')}>Clear</Button> : null}
           />
         </Card>
       ) : (
@@ -113,11 +113,11 @@ export default function Records() {
 
                 <div className="stack gap-3">
                   {c.diagnosis ? <RecordLine icon="stethoscope" label={t('diagnoses')} value={c.diagnosis} /> : null}
-                  {c.prescription ? <RecordLine icon="pill" label="Prescription" value={c.prescription} /> : null}
-                  {c.notes ? <RecordLine icon="clipboard" label="Clinical notes" value={c.notes} /> : null}
+                  {c.prescription ? <RecordLine icon="pill" label="Medicine" value={c.prescription} /> : null}
+                  {c.notes ? <RecordLine icon="clipboard" label="Doctor notes" value={c.notes} /> : null}
                   {!c.diagnosis && !c.prescription && !c.notes ? (
                     <p className="muted text-sm">
-                      This appointment has not been written up yet.
+                      Your doctor has not added notes for this visit yet.
                     </p>
                   ) : null}
                 </div>

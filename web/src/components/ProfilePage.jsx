@@ -48,9 +48,9 @@ export default function ProfilePage({ role }) {
   const save = async (e) => {
     e.preventDefault();
     const next = {};
-    if (!form.full_name.trim()) next.full_name = 'Your name cannot be empty.';
-    if (!form.phone.trim()) next.phone = 'A phone number is required for notifications.';
-    if (isDoctor && !form.specialization.trim()) next.specialization = 'Enter your specialisation.';
+    if (!form.full_name.trim()) next.full_name = 'Please enter your name.';
+    if (!form.phone.trim()) next.phone = 'Please enter your phone number.';
+    if (isDoctor && !form.specialization.trim()) next.specialization = 'Please say what you treat.';
     setErrors(next);
     if (Object.keys(next).length) return;
 
@@ -65,7 +65,7 @@ export default function ProfilePage({ role }) {
       };
       const data = await profileApi.update(payload);
       patchUser(data.user || payload);
-      toast.success('Profile updated.');
+      toast.success('Your profile was saved.');
     } catch (err) {
       toast.error(errorMessage(err));
     } finally {
@@ -79,11 +79,11 @@ export default function ProfilePage({ role }) {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      toast.error('Choose an image file.');
+      toast.error('Please choose a picture file.');
       return;
     }
     if (file.size > MAX_IMAGE_BYTES) {
-      toast.error('That image is larger than 5 MB. Choose a smaller one.');
+      toast.error('That picture is too big. Please choose one under 5 MB.');
       return;
     }
 
@@ -91,7 +91,7 @@ export default function ProfilePage({ role }) {
     try {
       const data = await profileApi.uploadImage(file);
       patchUser({ profile_image_url: data.profile_image_url || data.imageUrl });
-      toast.success('Photo updated.');
+      toast.success('Your photo was saved.');
     } catch (err) {
       toast.error(errorMessage(err));
     } finally {
@@ -114,13 +114,13 @@ export default function ProfilePage({ role }) {
     <>
       <PageHeader
         title={t('profile')}
-        description="Your details, identifier, and account information."
+        description="Your details, your ID, and your account."
       />
 
       <div className="grid grid--main">
         <div className="stack gap-6">
           <Card>
-            <CardHeader title="Photo" subtitle="Shown to clinicians and patients you work with." icon="user" />
+            <CardHeader title="Photo" subtitle="People you work with will see this photo." icon="user" />
             <div className="row gap-4 wrap">
               <Avatar name={form.full_name || user?.full_name} src={avatar} size={72} />
               <div className="stack gap-2">
@@ -134,7 +134,7 @@ export default function ProfilePage({ role }) {
                     </Button>
                   ) : null}
                 </div>
-                <span className="muted text-xs">JPG or PNG, up to 5 MB.</span>
+                <span className="muted text-xs">A JPG or PNG picture, under 5 MB.</span>
               </div>
               <input
                 ref={fileRef}
@@ -149,7 +149,7 @@ export default function ProfilePage({ role }) {
           </Card>
 
           <Card>
-            <CardHeader title="Personal details" icon="idCard" />
+            <CardHeader title="Your details" icon="idCard" />
             <form className="stack gap-4" onSubmit={save}>
               <Field
                 label={t('fullName')} icon="user" required
@@ -157,7 +157,7 @@ export default function ProfilePage({ role }) {
               />
               <Field
                 label={t('phone')} icon="phone" type="tel" required
-                hint="Used for SMS notifications and USSD sign-in."
+                hint="We use this to send you messages, and to log in from a basic phone."
                 value={form.phone} onChange={set('phone')} error={errors.phone}
               />
 
@@ -182,16 +182,16 @@ export default function ProfilePage({ role }) {
           </Card>
 
           <Card>
-            <CardHeader title="Account" icon="lock" />
+            <CardHeader title="Your account" icon="lock" />
             <DetailRow label={t('email')} value={user?.email} icon="mail" />
             <DetailRow
               label="Role"
-              value={{ patient: 'Patient', doctor: 'Clinician', admin: 'Administrator' }[user?.role]}
+              value={{ patient: 'Patient', doctor: 'Doctor', admin: 'Admin' }[user?.role]}
               icon="shield"
             />
-            <DetailRow label="Member since" value={formatDate(user?.created_at, lang)} icon="clock" />
+            <DetailRow label="Joined" value={formatDate(user?.created_at, lang)} icon="clock" />
             <p className="muted text-xs mt-4">
-              Your email address is the identifier you sign in with and cannot be changed here.
+              You log in with your email address, so it cannot be changed here.
             </p>
           </Card>
         </div>
@@ -199,11 +199,11 @@ export default function ProfilePage({ role }) {
         <div className="stack gap-4">
           <div className="idcard">
             <div className="idcard__label">{isDoctor ? t('clinicianId') : t('healthId')}</div>
-            <div className="idcard__value">{identifier || '—'}</div>
+            <div className="idcard__value">{identifier || '-'}</div>
             <p className="text-xs mt-2" style={{ color: 'var(--pine-200)', position: 'relative' }}>
               {isDoctor
-                ? 'Patients scan this to book with you directly.'
-                : 'Show this to any clinician to identify yourself.'}
+                ? 'Patients can scan this to book a visit with you.'
+                : 'Show this to your doctor so they can find your file.'}
             </p>
             <div className="idcard__actions">
               <button
@@ -214,7 +214,7 @@ export default function ProfilePage({ role }) {
                     await navigator.clipboard.writeText(identifier || '');
                     toast.success(t('copied'));
                   } catch {
-                    toast.error('Could not copy automatically.');
+                    toast.error('Copy did not work. Please select the ID and copy it yourself.');
                   }
                 }}
               >
@@ -226,10 +226,10 @@ export default function ProfilePage({ role }) {
             </div>
           </div>
 
-          <Notice tone="info" title="Who can see your data">
+          <Notice tone="info" title="Who can see your information">
             {isDoctor
-              ? 'You can only read the records of patients who have explicitly approved your access request.'
-              : 'No clinician can read your records until you approve their request. You can revoke access at any time from your care team.'}
+              ? 'You can only open records for patients who have said yes to you.'
+              : 'No doctor can see your records until you say yes. You can stop sharing at any time from the My doctors page.'}
           </Notice>
         </div>
       </div>
@@ -248,7 +248,7 @@ export default function ProfilePage({ role }) {
         onConfirm={removeImage}
         tone="danger"
         title="Remove your photo?"
-        message="Your initials will be shown instead. You can upload a new photo at any time."
+        message="We will show your initials instead. You can add a new photo at any time."
         confirmLabel="Remove photo"
       />
     </>

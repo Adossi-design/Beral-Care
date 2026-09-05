@@ -37,13 +37,17 @@
 
 /* -------------------------------------------------------------------- hero */
 
+/* The welcome section is the one place that reads green rather than white.
+   A full wash across the band, deepest at the top right, so the panel and the
+   headline sit on colour instead of on the page background. */
 .hero {
+  position: relative;
   padding: var(--sp-12) var(--sp-6) var(--sp-10);
   background:
-    radial-gradient(900px 420px at 82% -8%, var(--pine-100), transparent 62%),
-    radial-gradient(700px 360px at 6% 4%, var(--azure-50), transparent 58%),
-    var(--surface);
-  border-bottom: 1px solid var(--border);
+    radial-gradient(1000px 560px at 88% -6%, #dcebe3, transparent 66%),
+    radial-gradient(720px 420px at 2% 8%, #e4f0ea, transparent 64%),
+    linear-gradient(168deg, #e9f4ee 0%, #eef7f2 52%, #f4faf7 100%);
+  border-bottom: 1px solid var(--pine-100);
 }
 .hero__inner {
   max-width: var(--content-max); margin: 0 auto;
@@ -56,10 +60,11 @@
 
 .eyebrow {
   display: inline-flex; align-items: center; gap: var(--sp-2);
-  padding: 5px var(--sp-3); border-radius: var(--r-pill);
-  background: var(--pine-50); border: 1px solid var(--pine-100);
-  color: var(--pine-700); font-size: var(--fs-xs); font-weight: 650;
+  padding: 6px var(--sp-4); border-radius: var(--r-pill);
+  background: var(--pine-600); border: 1px solid var(--pine-600);
+  color: #fff; font-size: var(--fs-xs); font-weight: 650;
   letter-spacing: 0.02em; margin-bottom: var(--sp-5);
+  box-shadow: var(--sh-sm);
 }
 
 .hero__title {
@@ -67,8 +72,9 @@
   font-size: clamp(2.25rem, 5.2vw, var(--fs-4xl));
   font-weight: 600; line-height: 1.06; letter-spacing: -0.03em;
   margin-bottom: var(--sp-5);
+  color: var(--pine-900);
 }
-.hero__title em { font-style: normal; color: var(--primary); }
+.hero__title em { font-style: normal; color: var(--pine-600); }
 
 .hero__lede {
   font-size: var(--fs-md); line-height: var(--lh-loose);
@@ -76,9 +82,21 @@
 }
 .hero__cta { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-bottom: var(--sp-7); }
 
-.hero__proof { display: flex; flex-wrap: wrap; gap: var(--sp-7); }
-.proof__value { font-size: var(--fs-xl); font-weight: 700; letter-spacing: -0.02em; }
-.proof__label { font-size: var(--fs-xs); color: var(--text-muted); font-weight: 500; }
+/* Each figure sits in its own card so the row holds together against the
+   green wash, which a plain text row does not. */
+.hero__proof { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
+.hero__proof > div {
+  flex: 1 1 auto; min-width: 132px;
+  padding: var(--sp-3) var(--sp-4);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--pine-100);
+  border-radius: var(--r-lg);
+}
+.proof__value {
+  font-size: var(--fs-xl); font-weight: 700; letter-spacing: -0.02em;
+  color: var(--pine-600); line-height: 1.15;
+}
+.proof__label { font-size: var(--fs-xs); color: var(--text-secondary); font-weight: 500; }
 
 /* Device preview built from real markup rather than a screenshot, so it stays
    sharp at any resolution and never goes stale as the product changes. */
@@ -94,42 +112,72 @@
 .preview__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--slate-300); }
 .preview__body { padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); }
 .preview__row { display: flex; align-items: center; gap: var(--sp-3); }
-.preview__bar-line { height: 8px; border-radius: var(--r-pill); background: var(--slate-200); }
+.preview__bar-line { height: 8px; border-radius: var(--r-pill); background: var(--pine-100); }
+
+/* The panel is an illustration, not the real product, so its pieces are tinted
+   green to sit with the hero. Scoped to .preview so the dashboards that use
+   these same classes keep their neutral treatment. */
+.preview .stat {
+  background: var(--pine-50);
+  border-color: var(--pine-100);
+  box-shadow: none;
+}
+.preview .stat__label { color: var(--pine-600); }
+.preview .stat__value { color: var(--pine-900); }
+.preview .card { border-color: var(--pine-100); background: #fbfdfc; }
+.preview .avatar { background: var(--pine-100); color: var(--pine-700); }
+.preview .badge--completed {
+  background: var(--pine-600); color: #fff; border-color: var(--pine-600);
+}
 
 /* ---------------------------------------------------------------- sections */
 
 .section-pad { padding: var(--sp-10) var(--sp-6); }
-.section-pad--tint { background: var(--surface); border-block: 1px solid var(--border); }
+/* A pale green band separates sections without breaking the white page */
+.section-pad--tint {
+  background: linear-gradient(180deg, #f4faf7, #ffffff);
+  border-block: 1px solid var(--pine-100);
+}
 .section-inner { max-width: var(--content-max); margin: 0 auto; }
 
+/* Public-page headings follow the hero into dark green. The application keeps
+   navy, where the colour is chrome rather than voice. */
 .section-title {
   font-family: var(--font-display); font-size: clamp(1.6rem, 3vw, var(--fs-2xl));
   font-weight: 600; letter-spacing: -0.025em; margin-bottom: var(--sp-3);
+  color: var(--pine-900);
 }
+.feature__title, .channel .feature__title { color: var(--pine-900); }
+.section-title--center { text-align: center; }
 .section-lede { color: var(--text-secondary); max-width: 62ch; margin-bottom: var(--sp-8); }
 
+/* Cards stay white with a plain hairline border. The green lives in the icon
+   tile, which is where it carries meaning rather than acting as decoration. */
 .feature {
   padding: var(--sp-6); background: var(--surface);
   border: 1px solid var(--border); border-radius: var(--r-lg);
   transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease);
 }
-.feature:hover { border-color: var(--border-strong); box-shadow: var(--sh-md); transform: translateY(-2px); }
+.feature:hover {
+  border-color: var(--border-strong); box-shadow: var(--sh-md); transform: translateY(-2px);
+}
 .feature__icon {
   width: 42px; height: 42px; border-radius: var(--r-md);
   display: grid; place-items: center; margin-bottom: var(--sp-4);
-  background: var(--primary-subtle); color: var(--primary);
+  background: var(--pine-50); color: var(--pine-600);
 }
 .feature__title { font-size: var(--fs-md); font-weight: 650; margin-bottom: var(--sp-2); }
 .feature__body { font-size: var(--fs-sm); color: var(--text-secondary); line-height: var(--lh-loose); }
 
-/* Channel strip — phone / web / USSD */
+/* Channel strip: phone, web, USSD */
 .channel {
   display: flex; gap: var(--sp-4); padding: var(--sp-5);
-  border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--r-lg);
+  background: var(--surface);
 }
 .channel__num {
   font-family: var(--font-display); font-size: var(--fs-xl); font-weight: 600;
-  color: var(--pine-300); line-height: 1;
+  color: var(--pine-500); line-height: 1;
 }
 
 .footer {

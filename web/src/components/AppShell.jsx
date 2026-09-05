@@ -17,15 +17,19 @@ import { assetUrl } from '../lib/api';
  * Doing this in CSS rather than JavaScript means there is no layout flash on
  * load and no resize listener re-rendering the tree.
  */
-export default function AppShell({ nav, notifyTo, notifyCount = 0, title, children }) {
+export default function AppShell({ nav, profileTo, notifyTo, notifyCount = 0, title, children }) {
   const { user, signOut } = useAuth();
   const { t, lang, toggle } = useI18n();
   const navigate = useNavigate();
 
   const name = user?.full_name || user?.name || 'User';
-  const roleLabel = { patient: 'Patient', doctor: 'Clinician', admin: 'Administrator' }[user?.role] || '';
+  const roleLabel = { patient: 'Patient', doctor: 'Doctor', admin: 'Admin' }[user?.role] || '';
   const avatar = assetUrl(user?.profile_image_url);
-  const profileHref = nav.find((n) => n.profile)?.to;
+
+  // Profile is reached through the account button rather than the main menu:
+  // the user chip in the sidebar on wider screens, the avatar in the top bar on
+  // phones, where the sidebar is hidden.
+  const profileHref = profileTo || nav.find((n) => n.profile)?.to;
 
   const handleSignOut = () => {
     signOut();
@@ -113,6 +117,11 @@ export default function AppShell({ nav, notifyTo, notifyCount = 0, title, childr
             <NavLink to={notifyTo} className="iconbtn" aria-label={t('notifications')}>
               <Icon name="bell" size={19} />
               {notifyCount ? <span className="iconbtn__count"><Count value={notifyCount} /></span> : null}
+            </NavLink>
+          ) : null}
+          {profileHref ? (
+            <NavLink to={profileHref} className="iconbtn" aria-label={t('profile')} title={t('profile')}>
+              <Avatar name={name} src={avatar} size={28} />
             </NavLink>
           ) : null}
           <IconButton icon="logout" label={t('signOut')} onClick={handleSignOut} />

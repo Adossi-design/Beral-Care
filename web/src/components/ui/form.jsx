@@ -105,7 +105,7 @@ export function SelectField({ label, hint, error, required, options, id: idProp,
   );
 }
 
-/** Short option lists as chips — faster to scan and click than a dropdown. */
+/** Short option lists as chips: faster to scan and click than a dropdown. */
 export function ChipGroup({ label, options, value, onChange, hint }) {
   return (
     <fieldset className="field" style={{ border: 'none', padding: 0, margin: 0 }}>

@@ -6,40 +6,40 @@ import { useI18n } from '../lib/i18n';
 const FEATURES = [
   {
     icon: 'idCard',
-    title: 'Records that belong to the patient',
-    body: 'Every patient carries a permanent Health ID. Their full consultation history travels with them between clinics instead of being trapped in one building’s filing cabinet.',
+    title: 'Your own health ID',
+    body: 'You get one health ID that is yours for life. Your visits, diagnoses, and medicines stay with you, even when you change clinic or move to a new town.',
   },
   {
     icon: 'lock',
-    title: 'Access granted, never assumed',
-    body: 'A clinician requests access; the patient approves or declines it. Records stay sealed until that decision is made, and it is enforced on the server, not in the interface.',
+    title: 'You choose who can see your records',
+    body: 'A doctor must ask before they can open your file. You say yes or no. Until you say yes, nobody can read it.',
   },
   {
     icon: 'stethoscope',
-    title: 'Clinical support at the point of care',
-    body: 'MedAssist offers differential diagnoses, drug interaction checks, and treatment protocols calibrated to WHO Africa guidance and locally available medicines.',
+    title: 'Help for doctors during a visit',
+    body: 'MedAssist helps doctors check possible causes, spot drug reactions, and follow WHO Africa treatment steps, using medicines that are available nearby.',
   },
   {
     icon: 'heart',
-    title: 'Answers in plain language',
-    body: 'HealthGuide explains a diagnosis, a prescription, and what to watch for, in words a patient can act on — and always points serious questions back to their clinician.',
+    title: 'Health answers in simple words',
+    body: 'HealthGuide explains your diagnosis and your medicine in words that are easy to follow. For anything serious, it tells you to speak with your doctor.',
   },
   {
     icon: 'qr',
-    title: 'Identification without paperwork',
-    body: 'A scannable code replaces spelling out names and dates of birth at every desk. Faster intake, fewer transcription errors, no duplicate files.',
+    title: 'Scan instead of writing',
+    body: 'Show your code and the doctor opens your file at once. No spelling your name, no long forms, no repeated files for the same person.',
   },
   {
     icon: 'signal',
-    title: 'Built for real connectivity',
-    body: 'The full platform runs in any browser, and the essentials run over USSD on a basic handset with no internet connection at all.',
+    title: 'Works with or without internet',
+    body: 'Use the full website on any phone or computer. If you have no internet, you can still use the main services by dialling a short code.',
   },
 ];
 
 const CHANNELS = [
-  { n: '01', title: 'Any browser', body: 'The complete platform on a laptop, tablet, or smartphone. Nothing to install.' },
-  { n: '02', title: 'Any smartphone', body: 'The same interface, laid out for a small screen and installable to the home screen.' },
-  { n: '03', title: 'Any phone at all', body: 'Register, log in, request a consultation, and read recent history by dialling a short code.' },
+  { n: '01', title: 'On a computer', body: 'The full website on a laptop or tablet. Nothing to download or install.' },
+  { n: '02', title: 'On a smartphone', body: 'The same website, made to fit a small screen. You can add it to your home screen.' },
+  { n: '03', title: 'On a basic phone', body: 'No internet needed. Dial a short code to sign up, log in, ask for a visit, and check your last visits.' },
 ];
 
 export default function Landing() {
@@ -53,8 +53,8 @@ export default function Landing() {
           <span className="pubnav__name">Beral Care</span>
         </Link>
         <nav className="pubnav__links">
-          <a className="pubnav__link" href="#how">How it works</a>
-          <a className="pubnav__link" href="#channels">Access</a>
+          <a className="pubnav__link" href="#how">What you get</a>
+          <a className="pubnav__link" href="#channels">Ways to use it</a>
           <Button to="/login" size="sm">{t('signIn')}</Button>
           <Button to="/register" variant="primary" size="sm">{t('signUp')}</Button>
         </nav>
@@ -67,22 +67,22 @@ export default function Landing() {
             <div>
               <span className="eyebrow">
                 <Icon name="shield" size={14} />
-                Patient-controlled medical records
+                Your records. Your choice.
               </span>
 
               <h1 className="hero__title">
-                Healthcare that follows the patient, <em>not the building</em>.
+                Your health records go <em>wherever you go</em>.
               </h1>
 
               <p className="hero__lede">
-                Beral Care connects patients and clinicians across the continent — on a
-                laptop, on a smartphone, or on a basic handset over USSD. Patients hold their own
-                records and decide who may read them.
+                Beral Care brings patients and doctors together, on a computer, a
+                smartphone, or a basic phone. You keep your own health records, and you decide
+                which doctor can see them.
               </p>
 
               <div className="hero__cta">
                 <Button to="/register" variant="primary" size="lg" iconRight="arrowRight">
-                  Create your account
+                  Create a free account
                 </Button>
                 <Button to="/login" size="lg">{t('signIn')}</Button>
               </div>
@@ -94,11 +94,11 @@ export default function Landing() {
                 </div>
                 <div>
                   <div className="proof__value">2</div>
-                  <div className="proof__label">Clinical AI assistants</div>
+                  <div className="proof__label">Health assistants</div>
                 </div>
                 <div>
                   <div className="proof__value">100%</div>
-                  <div className="proof__label">Patient-approved access</div>
+                  <div className="proof__label">You control access</div>
                 </div>
               </div>
             </div>
@@ -148,13 +148,12 @@ export default function Landing() {
         {/* -------------------------------------------------------- features */}
         <section className="section-pad" id="how">
           <div className="section-inner">
-            <h2 className="section-title">What the platform does</h2>
+            <h2 className="section-title">What you can do here</h2>
             <p className="section-lede">
-              Six capabilities, each aimed at a specific failure in how care is currently
-              coordinated — not a feature list assembled for its own sake.
+              Six things Beral Care helps with, for patients and for doctors.
             </p>
 
-            <div className="grid grid--cards">
+            <div className="grid grid--three">
               {FEATURES.map((f) => (
                 <article className="feature" key={f.title}>
                   <div className="feature__icon"><Icon name={f.icon} size={20} /></div>
@@ -169,10 +168,10 @@ export default function Landing() {
         {/* -------------------------------------------------------- channels */}
         <section className="section-pad section-pad--tint" id="channels">
           <div className="section-inner">
-            <h2 className="section-title">Three ways in, one medical record</h2>
+            <h2 className="section-title">Three ways to use it, one health record</h2>
             <p className="section-lede">
-              A patient with a smartphone and a patient with a ten-year-old handset reach the same
-              record. Connectivity determines the interface, never the standard of care.
+              It does not matter what phone you have. New or old, you reach the same health record
+              and get the same care.
             </p>
 
             <div className="grid grid--2">
@@ -192,13 +191,13 @@ export default function Landing() {
         {/* ------------------------------------------------------------- cta */}
         <section className="section-pad">
           <div className="section-inner" style={{ textAlign: 'center', maxWidth: 640 }}>
-            <h2 className="section-title">Start with a Health ID</h2>
+            <h2 className="section-title section-title--center">Ready to start?</h2>
             <p className="section-lede" style={{ margin: '0 auto var(--sp-7)' }}>
-              Creating an account takes under a minute and gives you a permanent identifier you can
-              carry to any clinic on the platform.
+              Signing up takes about one minute and costs nothing. You get your health ID straight
+              away, and you can use it at any clinic on Beral Care.
             </p>
             <Button to="/register" variant="primary" size="lg" iconRight="arrowRight">
-              Create your account
+              Create a free account
             </Button>
           </div>
         </section>
@@ -210,7 +209,7 @@ export default function Landing() {
             <span className="brand-mark"><Icon name="heart" size={16} /></span>
             <div>
               <div style={{ color: '#fff', fontWeight: 650 }}>Beral Care</div>
-              <div className="text-xs">Telemedicine and health records for the continent</div>
+              <div className="text-xs">Health care and health records for everyone</div>
             </div>
           </div>
           <div className="text-xs">Built by Adossi Fred William</div>

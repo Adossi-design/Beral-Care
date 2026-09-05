@@ -34,8 +34,8 @@ export default function Requests({ onChange }) {
       await clinicApi.decideRequest(id, status);
       toast.success(
         status === 'accepted'
-          ? `Accepted. ${name}'s record is now open to you.`
-          : `Declined ${name}'s request.`,
+          ? `You said yes. ${name} has been added to your patients.`
+          : `You said no to ${name}.`,
       );
       refetch();
       onChange?.();
@@ -50,7 +50,7 @@ export default function Requests({ onChange }) {
     <>
       <PageHeader
         title={t('requests')}
-        description="Patients asking you to take on their care."
+        description="Patients who would like you to be their doctor."
       />
 
       <Tabs
@@ -58,7 +58,7 @@ export default function Requests({ onChange }) {
         onChange={setTab}
         tabs={[
           { value: 'pending', label: t('pending'), count: pending.length },
-          { value: 'resolved', label: 'Resolved', count: resolved.length },
+          { value: 'resolved', label: 'Answered', count: resolved.length },
         ]}
       />
 
@@ -71,11 +71,11 @@ export default function Requests({ onChange }) {
           <Card>
             <EmptyState
               icon="inbox"
-              title={tab === 'pending' ? 'No requests waiting' : 'Nothing resolved yet'}
+              title={tab === 'pending' ? 'No requests waiting' : 'Nothing answered yet'}
               description={
                 tab === 'pending'
-                  ? 'When a patient asks you for a consultation, it will appear here for you to accept or decline.'
-                  : 'Requests you have accepted or declined will be listed here.'
+                  ? 'When a patient asks for your help, it will show up here so you can say yes or no.'
+                  : 'Requests you have already answered will show up here.'
               }
             />
           </Card>
@@ -104,7 +104,7 @@ export default function Requests({ onChange }) {
                         loading={acting === r.id}
                         onClick={() => decide(r.id, 'accepted', r.patient_name)}
                       >
-                        Accept
+                        Say yes
                       </Button>
                       <Button
                         variant="danger-quiet" icon="x"
@@ -121,8 +121,8 @@ export default function Requests({ onChange }) {
 
                 {r.status === 'pending' ? (
                   <p className="muted text-xs mt-4">
-                    Accepting adds this patient to your list. You will still only see their records
-                    once they approve your access from their side.
+                    If you say yes, this patient joins your list. You can only open their records
+                    after they also say yes on their side.
                   </p>
                 ) : null}
               </Card>

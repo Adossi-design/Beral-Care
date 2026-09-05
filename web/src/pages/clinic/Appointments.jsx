@@ -46,8 +46,8 @@ export default function Appointments() {
     <>
       <PageHeader
         title={t('appointments')}
-        description="Your schedule with patients on Beral Care."
-        actions={<Button variant="primary" icon="plus" onClick={() => setBooking(true)}>Schedule appointment</Button>}
+        description="Your visits with patients."
+        actions={<Button variant="primary" icon="plus" onClick={() => setBooking(true)}>Book a visit</Button>}
       />
 
       <Tabs
@@ -55,7 +55,7 @@ export default function Appointments() {
         onChange={setTab}
         tabs={[
           { value: 'upcoming', label: t('upcoming'), count: upcoming.length },
-          { value: 'past', label: 'Past', count: past.length },
+          { value: 'past', label: 'Past visits', count: past.length },
         ]}
       />
 
@@ -68,14 +68,14 @@ export default function Appointments() {
           <Card>
             <EmptyState
               icon="calendar"
-              title={tab === 'upcoming' ? 'Nothing scheduled' : 'No past appointments'}
+              title={tab === 'upcoming' ? 'Nothing booked yet' : 'No past visits'}
               description={
                 tab === 'upcoming'
-                  ? 'Appointments booked by patients, and ones you schedule yourself, appear here.'
-                  : 'Completed consultations will be listed here.'
+                  ? 'Visits booked by patients, and visits you book yourself, show up here.'
+                  : 'Visits that are finished will show up here.'
               }
               action={tab === 'upcoming'
-                ? <Button variant="primary" icon="plus" onClick={() => setBooking(true)}>Schedule appointment</Button>
+                ? <Button variant="primary" icon="plus" onClick={() => setBooking(true)}>Book a visit</Button>
                 : null}
             />
           </Card>
@@ -137,8 +137,8 @@ function ScheduleDialog({ open, onClose, onSaved }) {
   const submit = async (e) => {
     e.preventDefault();
     const next = {};
-    if (!form.patient_id.trim()) next.patient_id = 'Enter the patient’s Health ID.';
-    if (!form.appointment_date) next.appointment_date = 'Choose a date.';
+    if (!form.patient_id.trim()) next.patient_id = 'Please enter the patient health ID.';
+    if (!form.appointment_date) next.appointment_date = 'Please choose a day.';
     setErrors(next);
     if (Object.keys(next).length) return;
 
@@ -149,7 +149,7 @@ function ScheduleDialog({ open, onClose, onSaved }) {
         appointment_date: form.appointment_date,
         notes: form.notes.trim() || null,
       });
-      toast.success('Appointment scheduled.');
+      toast.success('The visit was booked.');
       setForm({ patient_id: '', appointment_date: '', notes: '' });
       onSaved();
     } catch (err) {
@@ -163,28 +163,28 @@ function ScheduleDialog({ open, onClose, onSaved }) {
     <Dialog
       open={open}
       onClose={onClose}
-      title="Schedule an appointment"
-      subtitle="Book a follow-up for a patient already in your care."
+      title="Book a visit"
+      subtitle="Book a follow up visit for one of your patients."
       footer={
         <>
           <Button onClick={onClose} block>Cancel</Button>
-          <Button variant="primary" onClick={submit} loading={busy} block>Schedule</Button>
+          <Button variant="primary" onClick={submit} loading={busy} block>Book it</Button>
         </>
       }
     >
       <form className="stack gap-4" onSubmit={submit}>
         <Field
-          label="Patient Health ID"
+          label="Patient health ID"
           icon="idCard"
           required
           placeholder="BC-2026-00001"
           value={form.patient_id}
           onChange={(e) => setForm((f) => ({ ...f, patient_id: e.target.value.toUpperCase() }))}
           error={errors.patient_id}
-          hint="The patient must already have approved your access."
+          hint="This patient must already have allowed you to see their records."
         />
         <Field
-          label="Date"
+          label="Which day?"
           type="date"
           required
           min={today}
@@ -193,10 +193,10 @@ function ScheduleDialog({ open, onClose, onSaved }) {
           error={errors.appointment_date}
         />
         <Field
-          label="Notes for the patient"
+          label="Note for the patient"
           textarea
           rows={3}
-          placeholder="e.g. Follow-up to review blood pressure readings."
+          placeholder="For example: come back so we can check your blood pressure."
           value={form.notes}
           onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
         />

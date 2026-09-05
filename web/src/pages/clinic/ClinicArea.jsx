@@ -19,12 +19,12 @@ import Profile from './Profile';
  * still show a meaningful heading instead of falling back to the product name.
  */
 const TITLES = [
-  ['/clinic/patients/', 'Patient record'],
+  ['/clinic/patients/', 'Patient file'],
   ['/clinic/patients', 'Patients'],
-  ['/clinic/appointments', 'Appointments'],
-  ['/clinic/requests', 'Access requests'],
-  ['/clinic/profile', 'Profile'],
-  ['/clinic', 'Overview'],
+  ['/clinic/appointments', 'Visits'],
+  ['/clinic/requests', 'Requests'],
+  ['/clinic/profile', 'My profile'],
+  ['/clinic', 'Home'],
 ];
 
 const titleFor = (path) => TITLES.find(([prefix]) => path.startsWith(prefix))?.[1] || 'Beral Care';
@@ -42,13 +42,13 @@ export default function ClinicArea() {
     { to: '/clinic/patients', label: t('patients'), icon: 'users' },
     { to: '/clinic/appointments', label: t('appointments'), icon: 'calendar' },
     { to: '/clinic/requests', label: t('requests'), icon: 'inbox', badge: pendingCount },
-    { to: '/clinic/profile', label: t('profile'), icon: 'user', profile: true },
   ];
 
   return (
     <>
       <AppShell
         nav={nav}
+        profileTo="/clinic/profile"
         title={titleFor(location.pathname)}
         notifyTo="/clinic/requests"
         notifyCount={pendingCount}
@@ -67,9 +67,9 @@ export default function ClinicArea() {
       <Assistant
         audience="doctor"
         name={user?.full_name}
-        greeting={`Good day, ${user?.full_name || 'Doctor'}. I can help with differential diagnosis, drug interactions, dosing, and WHO Africa treatment protocols. Guidance is evidence-linked, and clinical judgement remains yours.`}
+        greeting={`Good day, ${user?.full_name || 'Doctor'}. I can help with possible diagnoses, drug reactions, doses, and WHO Africa treatment steps. Each answer says where it comes from, and the final decision is always yours.`}
         prompts={DOCTOR_PROMPTS}
-        disclaimer="Decision support only. The treating clinician remains responsible for all clinical decisions."
+        disclaimer="This is support only. The final decision is always yours."
       />
     </>
   );

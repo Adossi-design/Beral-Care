@@ -40,7 +40,7 @@ export default function Notifications({ onChange }) {
     setData((list) => list.map((n) => ({ ...n, is_read: 1 })));
     try {
       await Promise.all(ids.map((id) => patientApi.markRead(id)));
-      toast.success('All notifications marked as read.');
+      toast.success('All messages marked as read.');
       onChange?.();
     } catch {
       refetch();
@@ -51,7 +51,7 @@ export default function Notifications({ onChange }) {
     <>
       <PageHeader
         title={t('notifications')}
-        description={unread.length ? `${unread.length} unread` : 'You are up to date.'}
+        description={unread.length ? `${unread.length} new` : 'You have read everything.'}
         actions={unread.length ? <Button icon="check" onClick={markAll}>Mark all as read</Button> : null}
       />
 
@@ -64,7 +64,7 @@ export default function Notifications({ onChange }) {
           <EmptyState
             icon="bell"
             title={t('noNotifications')}
-            description="Access requests, appointment updates, and new consultation notes will appear here."
+            description="News about your visits, your records, and doctor requests will show up here."
           />
         </Card>
       ) : (

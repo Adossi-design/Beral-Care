@@ -16,12 +16,12 @@ import Profile from './Profile';
 
 /** Longest-prefix match so nested routes keep a meaningful heading. */
 const TITLES = [
-  ['/app/appointments', 'Appointments'],
-  ['/app/records', 'Medical records'],
-  ['/app/care-team', 'Care team'],
-  ['/app/notifications', 'Notifications'],
-  ['/app/profile', 'Profile'],
-  ['/app', 'Overview'],
+  ['/app/appointments', 'My visits'],
+  ['/app/records', 'My records'],
+  ['/app/care-team', 'My doctors'],
+  ['/app/notifications', 'Messages'],
+  ['/app/profile', 'My profile'],
+  ['/app', 'Home'],
 ];
 
 const titleFor = (path) => TITLES.find(([prefix]) => path.startsWith(prefix))?.[1] || 'Beral Care';
@@ -39,13 +39,13 @@ export default function PatientArea() {
     { to: '/app/appointments', label: t('appointments'), icon: 'calendar' },
     { to: '/app/records', label: t('records'), icon: 'records' },
     { to: '/app/care-team', label: t('careTeam'), icon: 'stethoscope' },
-    { to: '/app/profile', label: t('profile'), icon: 'user', profile: true },
   ];
 
   return (
     <>
       <AppShell
         nav={nav}
+        profileTo="/app/profile"
         title={titleFor(location.pathname)}
         notifyTo="/app/notifications"
         notifyCount={summary?.unread_notifications || 0}
@@ -64,9 +64,9 @@ export default function PatientArea() {
       <Assistant
         audience="patient"
         name={user?.full_name?.split(' ')[0]}
-        greeting={`Hello ${user?.full_name?.split(' ')[0] || 'there'}. I can explain your diagnoses and medication in plain language, or help you prepare for your next appointment. What would you like to know?`}
+        greeting={`Hello ${user?.full_name?.split(' ')[0] || 'there'}. I can explain your illness and your medicine in simple words, or help you get ready for your next visit. What would you like to know?`}
         prompts={PATIENT_PROMPTS}
-        disclaimer="Information only. Always speak to your clinician before making a medical decision."
+        disclaimer="This is general information only. Always speak to your doctor before you change anything about your health."
       />
     </>
   );

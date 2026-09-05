@@ -40,7 +40,7 @@ export default function Patients() {
     <>
       <PageHeader
         title={t('patients')}
-        description="Patients who have approved your access to their records."
+        description="Patients who have allowed you to see their records."
         actions={<Button variant="primary" icon="scan" onClick={() => setScanning(true)}>Scan patient</Button>}
       />
 
@@ -50,7 +50,7 @@ export default function Patients() {
             <SearchInput
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by name or Health ID…"
+              placeholder="Search by name or health ID"
             />
           </div>
           <span className="muted text-sm">
@@ -67,15 +67,15 @@ export default function Patients() {
         <Card>
           <EmptyState
             icon="users"
-            title={query ? 'No matching patients' : 'No patients yet'}
+            title={query ? 'No patients found' : 'No patients yet'}
             description={
               query
-                ? 'Try a different name or Health ID.'
-                : 'When a patient approves your access request, they will be listed here. You can also look one up directly by scanning their code.'
+                ? 'Try another name or health ID.'
+                : 'Patients show up here after they allow you to see their records. You can also scan a patient code to open a file.'
             }
             action={
               query
-                ? <Button onClick={() => setQuery('')}>Clear search</Button>
+                ? <Button onClick={() => setQuery('')}>Clear</Button>
                 : <Button variant="primary" icon="scan" onClick={() => setScanning(true)}>Scan a patient code</Button>
             }
           />
@@ -88,7 +88,7 @@ export default function Patients() {
                 <tr>
                   <th>Patient</th>
                   <th>Health ID</th>
-                  <th>Last consultation</th>
+                  <th>Last visit</th>
                   <th aria-label="Actions" />
                 </tr>
               </thead>
@@ -102,14 +102,14 @@ export default function Patients() {
                       </span>
                     </td>
                     <td data-label="Health ID"><span className="mono">{p.patient_id}</span></td>
-                    <td data-label="Last consultation">
+                    <td data-label="Last visit">
                       {p.last_consultation ? (
                         <span>
                           {formatDate(p.last_consultation, lang)}
                           <span className="muted"> · {relativeDate(p.last_consultation, lang)}</span>
                         </span>
                       ) : (
-                        <span className="muted">None recorded</span>
+                        <span className="muted">No visit yet</span>
                       )}
                     </td>
                     <td data-label="">

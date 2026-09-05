@@ -41,10 +41,12 @@ export default function Overview({ summary, onChange }) {
   const diagnoses = consultations.filter((c) => c.diagnosis).length;
   const prescriptions = consultations.filter((c) => c.prescription).length;
 
-  // Booking an appointment creates a consultation row, so the raw list mixes
-  // future bookings in with real history. "Recent activity" means visits that
-  // have actually been written up — anything else is already under Upcoming.
-  const activity = consultations.filter((c) => c.diagnosis || c.prescription || c.notes);
+  // Booking a visit creates a consultation row carrying the patient's own
+  // reason as notes, so "notes exist" is not enough to call it a past visit.
+  // A visit belongs here only once a doctor has written it up or it is done.
+  const activity = consultations.filter(
+    (c) => c.diagnosis || c.prescription || c.status === 'completed',
+  );
 
   const firstName = (user?.full_name || user?.name || '').split(' ')[0];
 
@@ -52,7 +54,7 @@ export default function Overview({ summary, onChange }) {
     setDeciding(id);
     try {
       await patientApi.decideAccess(id, decision);
-      toast.success(decision === 'approved' ? 'Access granted.' : 'Request declined.');
+      toast.success(decision === 'approved' ? 'Done. This doctor can now see your records.' : 'Done. This doctor cannot see your records.');
       refetch();
       onChange?.();
     } catch (err) {
@@ -67,7 +69,7 @@ export default function Overview({ summary, onChange }) {
       await navigator.clipboard.writeText(user?.patient_id || '');
       toast.success(`${t('copied')}: ${user?.patient_id}`);
     } catch {
-      toast.error('Could not copy. Select the ID and copy manually.');
+      toast.error('Copy did not work. Please select the ID and copy it yourself.');
     }
   };
 
@@ -75,7 +77,7 @@ export default function Overview({ summary, onChange }) {
     <>
       <PageHeader
         title={`${t(greetingKey())}, ${firstName || 'there'}`}
-        description="Here is what needs your attention today."
+        description="Here is what needs you today."
         actions={<Button to="/app/care-team" variant="primary" icon="plus">{t('book')}</Button>}
       />
 
@@ -91,7 +93,7 @@ export default function Overview({ summary, onChange }) {
                     <div className="grow">
                       <div className="strong">{r.doctor_name}</div>
                       <div className="muted text-sm">
-                        {r.specialization || 'Clinician'} · requested {relativeDate(r.created_at, lang)}
+                        {r.specialization || 'Doctor'} · asked {relativeDate(r.created_at, lang)}
                       </div>
                     </div>
                   </div>
@@ -113,8 +115,8 @@ export default function Overview({ summary, onChange }) {
                   </div>
                 </div>
                 <p className="muted text-xs mt-4">
-                  Approving lets this clinician read your consultation history. You can decline
-                  without giving a reason.
+                  If you say yes, this doctor can read your past visits. You can say no without
+                  giving a reason, and you can change your mind later.
                 </p>
               </Card>
             ))}
@@ -133,7 +135,7 @@ export default function Overview({ summary, onChange }) {
                   compact
                   icon="calendar"
                   title={t('noAppointments')}
-                  description="When you book a consultation it will appear here."
+                  description="Your next visits with a doctor will show up here."
                   action={<Button to="/app/care-team" variant="primary" icon="plus">{t('book')}</Button>}
                 />
               </Card>
@@ -159,7 +161,7 @@ export default function Overview({ summary, onChange }) {
                         <div className="grow">
                           <div className="strong">{a.doctor_name}</div>
                           <div className="muted text-sm">
-                            {a.specialization || 'Consultation'} · {relativeDate(a.consultation_date, lang)}
+                            {a.specialization || 'Visit'} · {relativeDate(a.consultation_date, lang)}
                           </div>
                         </div>
                       </div>
@@ -177,7 +179,7 @@ export default function Overview({ summary, onChange }) {
             ) : activity.length === 0 ? (
               <Card>
                 <EmptyState compact icon="records" title={t('noRecords')}
-                  description="Your consultations, diagnoses, and prescriptions will be collected here." />
+                  description="After a doctor sees you, their notes and medicines will show up here." />
               </Card>
             ) : (
               <Card flush>
@@ -186,7 +188,7 @@ export default function Overview({ summary, onChange }) {
                     <div className="row-item" key={c.id}>
                       <span className="card__icon"><Icon name="clipboard" size={17} /></span>
                       <div className="grow">
-                        <div className="row-item__title">{c.diagnosis || 'Consultation'}</div>
+                        <div className="row-item__title">{c.diagnosis || 'Visit'}</div>
                         <div className="row-item__meta">
                           {c.doctor_name} · {formatDate(c.consultation_date, lang)}
                         </div>
@@ -204,9 +206,9 @@ export default function Overview({ summary, onChange }) {
         <div className="stack gap-4">
           <div className="idcard">
             <div className="idcard__label">{t('healthId')}</div>
-            <div className="idcard__value">{user?.patient_id || '—'}</div>
+            <div className="idcard__value">{user?.patient_id || '-'}</div>
             <p className="text-xs mt-2" style={{ color: 'var(--pine-200)', position: 'relative' }}>
-              Show this to any clinician on Beral Care to identify yourself.
+              Show this to your doctor so they can find your file quickly.
             </p>
             <div className="idcard__actions">
               <button type="button" className="idcard__btn" onClick={copyId}>
@@ -226,15 +228,15 @@ export default function Overview({ summary, onChange }) {
           <Card>
             <CardHeader title={t('quickActions')} />
             <div className="stack gap-2">
-              <Button to="/app/care-team" icon="search" block>Find a clinician</Button>
-              <Button to="/app/records" icon="records" block>View my records</Button>
-              <Button to="/app/profile" icon="user" block>Update my profile</Button>
+              <Button to="/app/care-team" icon="search" block>Find a doctor</Button>
+              <Button to="/app/records" icon="records" block>See my records</Button>
+              <Button to="/app/profile" icon="user" block>Edit my profile</Button>
             </div>
           </Card>
 
           {summary?.unread_notifications ? (
             <Notice tone="info" action={<Button to="/app/notifications" size="sm">Open</Button>}>
-              You have {summary.unread_notifications} unread notification
+              You have {summary.unread_notifications} new message
               {summary.unread_notifications === 1 ? '' : 's'}.
             </Notice>
           ) : null}
@@ -247,7 +249,7 @@ export default function Overview({ summary, onChange }) {
         value={user?.patient_id}
         name={user?.full_name || user?.name}
         label={t('healthId')}
-        caption="A clinician can scan this to pull up your file without typing anything."
+        caption="Your doctor can scan this code to open your file. No typing needed."
       />
     </>
   );

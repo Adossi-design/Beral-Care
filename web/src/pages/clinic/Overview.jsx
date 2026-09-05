@@ -57,7 +57,7 @@ export default function Overview({ pendingCount }) {
     <>
       <PageHeader
         title={`${t(greetingKey())}, ${user?.full_name?.startsWith('Dr') ? user.full_name : `Dr ${firstName || ''}`.trim()}`}
-        description="Look up a patient, or work through what is waiting for you."
+        description="Find a patient, or answer the requests waiting for you."
         actions={
           <>
             <Button icon="qr" onClick={() => setQrOpen(true)}>My code</Button>
@@ -69,8 +69,8 @@ export default function Overview({ pendingCount }) {
       {/* Patient lookup — the first thing a clinician needs */}
       <Card className="mb-6">
         <CardHeader
-          title="Open a patient record"
-          subtitle="Enter a Health ID or scan the patient's code."
+          title="Open a patient file"
+          subtitle="Type their health ID, or scan their code."
           icon="search"
         />
         <form
@@ -88,12 +88,12 @@ export default function Overview({ pendingCount }) {
             />
           </div>
           <Button type="submit" variant="primary" icon="arrowRight" disabled={!lookup.trim()}>
-            Open record
+            Open file
           </Button>
           <Button type="button" icon="scan" onClick={() => setScanning(true)}>Scan</Button>
         </form>
         <p className="muted text-xs mt-4">
-          You will only see records for patients who have approved your access.
+          You can only open files for patients who have said yes to you.
         </p>
       </Card>
 
@@ -111,15 +111,15 @@ export default function Overview({ pendingCount }) {
 
       <div className="grid grid--main">
         <Section
-          title="Upcoming appointments"
+          title="Coming up"
           action={<Link className="text-sm" to="/clinic/appointments">{t('viewAll')}</Link>}
         >
           {loading ? (
             <SkeletonRows rows={3} />
           ) : upcoming.length === 0 ? (
             <Card>
-              <EmptyState compact icon="calendar" title="No upcoming appointments"
-                description="Appointments booked by patients will appear here." />
+              <EmptyState compact icon="calendar" title="No visits booked"
+                description="When a patient books a visit with you, it will show up here." />
             </Card>
           ) : (
             <Card flush>
@@ -153,13 +153,13 @@ export default function Overview({ pendingCount }) {
           <Card>
             <CardHeader
               title={t('pendingRequests')}
-              subtitle={pending.length ? 'Patients waiting on your response' : 'Nothing waiting'}
+              subtitle={pending.length ? 'Patients waiting for your answer' : 'Nothing waiting'}
               icon="inbox"
             />
             {loading ? (
               <SkeletonRows rows={2} height={48} />
             ) : pending.length === 0 ? (
-              <p className="muted text-sm">You have cleared every access request.</p>
+              <p className="muted text-sm">You have answered every request.</p>
             ) : (
               <div className="stack gap-3">
                 {pending.slice(0, 3).map((r) => (
@@ -172,7 +172,7 @@ export default function Overview({ pendingCount }) {
                   </div>
                 ))}
                 <Button to="/clinic/requests" variant="primary" size="sm" block>
-                  Review {pending.length} request{pending.length === 1 ? '' : 's'}
+                  Answer {pending.length} request{pending.length === 1 ? '' : 's'}
                 </Button>
               </div>
             )}
@@ -184,7 +184,7 @@ export default function Overview({ pendingCount }) {
               <SkeletonRows rows={2} height={44} />
             ) : patients.length === 0 ? (
               <p className="muted text-sm">
-                Patients appear here once they approve your access and you record a consultation.
+                Patients show up here after they say yes to you and you write your first note.
               </p>
             ) : (
               <div className="stack gap-3">
@@ -228,7 +228,7 @@ export default function Overview({ pendingCount }) {
         value={user?.doctor_id}
         name={user?.full_name}
         label={t('clinicianId')}
-        caption="Patients can scan this to book an appointment with you directly."
+        caption="Patients can scan this code to book a visit with you."
       />
     </>
   );

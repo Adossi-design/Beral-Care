@@ -223,7 +223,7 @@ export function DetailRow({ label, value, icon }) {
         {icon ? <Icon name={icon} size={16} /> : null}
         {label}
       </span>
-      <span className="strong" style={{ textAlign: 'right' }}>{value || '—'}</span>
+      <span className="strong" style={{ textAlign: 'right' }}>{value || '-'}</span>
     </div>
   );
 }

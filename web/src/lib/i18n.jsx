@@ -10,84 +10,84 @@ import React, { createContext, useContext, useState, useCallback, useMemo, useEf
 
 const en = {
   // Navigation
-  overview: 'Overview', appointments: 'Appointments', records: 'Records',
-  careTeam: 'Care Team', profile: 'Profile', patients: 'Patients',
+  overview: 'Home', appointments: 'Visits', records: 'My records',
+  careTeam: 'My doctors', profile: 'My profile', patients: 'Patients',
   requests: 'Requests', users: 'Users', settings: 'Settings',
-  notifications: 'Notifications', consultations: 'Consultations',
+  notifications: 'Messages', consultations: 'Visits',
 
   // Actions
-  signIn: 'Sign in', signOut: 'Sign out', signUp: 'Create account',
+  signIn: 'Log in', signOut: 'Log out', signUp: 'Create account',
   save: 'Save changes', cancel: 'Cancel', edit: 'Edit', delete: 'Delete',
-  approve: 'Approve', decline: 'Decline', confirm: 'Confirm', close: 'Close',
+  approve: 'Allow', decline: 'Say no', confirm: 'Yes, continue', close: 'Close',
   search: 'Search', filter: 'Filter', retry: 'Try again', back: 'Back',
-  viewAll: 'View all', book: 'Book appointment', copy: 'Copy', copied: 'Copied',
+  viewAll: 'See all', book: 'Book a visit', copy: 'Copy', copied: 'Copied',
 
   // Auth
-  welcomeBack: 'Welcome back', signInSub: 'Sign in to your Beral Care account.',
-  createAccountTitle: 'Create your account', createAccountSub: 'Join Beral Care in under a minute.',
+  welcomeBack: 'Welcome back', signInSub: 'Log in to see your health records.',
+  createAccountTitle: 'Create your account', createAccountSub: 'It only takes about a minute.',
   email: 'Email address', password: 'Password', fullName: 'Full name',
-  phone: 'Phone number', specialization: 'Specialisation', hospital: 'Hospital or clinic',
-  noAccount: 'New to Beral Care?', haveAccount: 'Already have an account?',
-  iAmPatient: 'I am a patient', iAmDoctor: 'I am a clinician',
-  patientRoleDesc: 'Book care and hold your records',
-  doctorRoleDesc: 'Treat patients and write consultations',
+  phone: 'Phone number', specialization: 'What you treat', hospital: 'Hospital or clinic',
+  noAccount: 'First time here?', haveAccount: 'Already have an account?',
+  iAmPatient: 'I am a patient', iAmDoctor: 'I am a doctor',
+  patientRoleDesc: 'Book visits and keep my records',
+  doctorRoleDesc: 'See patients and write notes',
 
   // Dashboard
   goodMorning: 'Good morning', goodAfternoon: 'Good afternoon', goodEvening: 'Good evening',
-  healthId: 'Health ID', clinicianId: 'Clinician ID',
-  upcoming: 'Upcoming', recentActivity: 'Recent activity',
-  quickActions: 'Quick actions', pendingRequests: 'Pending requests',
-  diagnoses: 'Diagnoses', prescriptions: 'Prescriptions', completed: 'Completed',
+  healthId: 'My health ID', clinicianId: 'My doctor ID',
+  upcoming: 'Coming up', recentActivity: 'Your last visits',
+  quickActions: 'Quick links', pendingRequests: 'Waiting for you',
+  diagnoses: 'Diagnoses', prescriptions: 'Medicines', completed: 'Finished',
   totalPatients: 'Patients', thisWeek: 'This week',
 
   // Empty states
   nothingHere: 'Nothing here yet',
-  noAppointments: 'No appointments scheduled',
-  noRecords: 'No medical records yet',
-  noNotifications: 'You are all caught up',
+  noAppointments: 'No visits booked yet',
+  noRecords: 'No health records yet',
+  noNotifications: 'No new messages',
 
   // Status
-  pending: 'Pending', accepted: 'Accepted', rejected: 'Declined',
-  cancelled: 'Cancelled', active: 'Active', suspended: 'Suspended',
+  pending: 'Waiting', accepted: 'Allowed', rejected: 'Not allowed',
+  cancelled: 'Cancelled', active: 'Active', suspended: 'Blocked',
 
   language: 'Language',
 };
 
 const fr = {
-  overview: 'Aperçu', appointments: 'Rendez-vous', records: 'Dossiers',
-  careTeam: 'Équipe médicale', profile: 'Profil', patients: 'Patients',
+  overview: 'Accueil', appointments: 'Visites', records: 'Mes dossiers',
+  careTeam: 'Mes médecins', profile: 'Mon profil', patients: 'Patients',
   requests: 'Demandes', users: 'Utilisateurs', settings: 'Paramètres',
-  notifications: 'Notifications', consultations: 'Consultations',
+  notifications: 'Messages', consultations: 'Visites',
 
   signIn: 'Se connecter', signOut: 'Se déconnecter', signUp: 'Créer un compte',
   save: 'Enregistrer', cancel: 'Annuler', edit: 'Modifier', delete: 'Supprimer',
-  approve: 'Approuver', decline: 'Refuser', confirm: 'Confirmer', close: 'Fermer',
+  approve: 'Autoriser', decline: 'Refuser', confirm: 'Oui, continuer', close: 'Fermer',
   search: 'Rechercher', filter: 'Filtrer', retry: 'Réessayer', back: 'Retour',
-  viewAll: 'Voir tout', book: 'Prendre rendez-vous', copy: 'Copier', copied: 'Copié',
+  viewAll: 'Voir tout', book: 'Prendre une visite', copy: 'Copier', copied: 'Copié',
 
-  welcomeBack: 'Bon retour', signInSub: 'Connectez-vous à votre compte Beral Care.',
-  createAccountTitle: 'Créez votre compte', createAccountSub: 'Rejoignez Beral Care en moins d’une minute.',
+  welcomeBack: 'Bon retour', signInSub: 'Connectez-vous pour voir vos dossiers.',
+  createAccountTitle: 'Créez votre compte', createAccountSub: 'Cela prend environ une minute.',
   email: 'Adresse e-mail', password: 'Mot de passe', fullName: 'Nom complet',
-  phone: 'Numéro de téléphone', specialization: 'Spécialisation', hospital: 'Hôpital ou clinique',
-  noAccount: 'Nouveau sur Beral Care ?', haveAccount: 'Vous avez déjà un compte ?',
-  iAmPatient: 'Je suis un patient', iAmDoctor: 'Je suis un clinicien',
-  patientRoleDesc: 'Consultez et gardez vos dossiers',
-  doctorRoleDesc: 'Soignez et rédigez des consultations',
+  phone: 'Numéro de téléphone', specialization: 'Ce que vous soignez', hospital: 'Hôpital ou clinique',
+  noAccount: 'Première fois ici ?', haveAccount: 'Vous avez déjà un compte ?',
+  iAmPatient: 'Je suis un patient', iAmDoctor: 'Je suis un médecin',
+  patientRoleDesc: 'Prendre des visites et garder mes dossiers',
+  doctorRoleDesc: 'Voir des patients et écrire des notes',
 
   goodMorning: 'Bonjour', goodAfternoon: 'Bon après-midi', goodEvening: 'Bonsoir',
-  healthId: 'Identifiant santé', clinicianId: 'Identifiant clinicien',
-  upcoming: 'À venir', recentActivity: 'Activité récente',
-  quickActions: 'Actions rapides', pendingRequests: 'Demandes en attente',
-  diagnoses: 'Diagnostics', prescriptions: 'Ordonnances', completed: 'Terminées',
+  healthId: 'Mon identifiant santé', clinicianId: 'Mon identifiant médecin',
+  upcoming: 'À venir', recentActivity: 'Vos dernières visites',
+  quickActions: 'Liens rapides', pendingRequests: 'En attente de vous',
+  diagnoses: 'Diagnostics', prescriptions: 'Médicaments', completed: 'Terminées',
   totalPatients: 'Patients', thisWeek: 'Cette semaine',
 
   nothingHere: 'Rien pour le moment',
-  noAppointments: 'Aucun rendez-vous prévu',
-  noRecords: 'Aucun dossier médical',
-  noNotifications: 'Vous êtes à jour',
+  noAppointments: 'Aucune visite prévue',
+  noRecords: 'Aucun dossier de santé',
+  noNotifications: 'Aucun nouveau message',
 
-  pending: 'En attente', accepted: 'Acceptée', rejected: 'Refusée',
-  cancelled: 'Annulée', active: 'Actif', suspended: 'Suspendu',
+  pending: 'En attente', accepted: 'Autorisé', rejected: 'Refusé',
+  cancelled: 'Annulée', active: 'Actif', suspended: 'Bloqué',
 
   language: 'Langue',
 };

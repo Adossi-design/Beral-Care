@@ -31,6 +31,16 @@
   --azure-600: #255a94;
   --azure-700: #1e4877;
 
+  /* Navy — pairs with the pine green for headings and figures. Green carries
+     growth and care, navy carries trust, and white keeps both readable. */
+  --navy-50:  #f1f5f9;
+  --navy-100: #dde7f0;
+  --navy-200: #b9cbdd;
+  --navy-500: #24537f;
+  --navy-700: #143a5c;
+  --navy-800: #102c46;
+  --navy-900: #0b2035;
+
   /* Neutrals */
   --slate-0:   #ffffff;
   --slate-50:  #f8fafc;
@@ -60,6 +70,10 @@
 
   --accent:         var(--azure-600);
   --accent-subtle:  var(--azure-50);
+
+  /* Headings and large figures sit in navy rather than near-black, so the
+     green accents read as a deliberate pairing instead of a lone highlight. */
+  --heading:        var(--navy-900);
 
   --canvas:         var(--slate-50);
   --surface:        #ffffff;

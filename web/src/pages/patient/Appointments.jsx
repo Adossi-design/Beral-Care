@@ -40,7 +40,7 @@ export default function Appointments() {
     <>
       <PageHeader
         title={t('appointments')}
-        description="Consultations you have booked with clinicians on Beral Care."
+        description="Visits you have booked with a doctor."
         actions={<Button variant="primary" icon="plus" onClick={() => setBooking(true)}>{t('book')}</Button>}
       />
 
@@ -49,7 +49,7 @@ export default function Appointments() {
         onChange={setTab}
         tabs={[
           { value: 'upcoming', label: t('upcoming'), count: upcoming.length },
-          { value: 'past', label: 'Past', count: past.length },
+          { value: 'past', label: 'Past visits', count: past.length },
         ]}
       />
 
@@ -60,11 +60,11 @@ export default function Appointments() {
           <Card>
             <EmptyState
               icon="calendar"
-              title={tab === 'upcoming' ? t('noAppointments') : 'No past appointments'}
+              title={tab === 'upcoming' ? t('noAppointments') : 'No past visits'}
               description={
                 tab === 'upcoming'
-                  ? 'Book a consultation with any clinician on the platform.'
-                  : 'Completed and cancelled consultations will be listed here.'
+                  ? 'Pick a doctor and choose a day that suits you.'
+                  : 'Visits that are finished or cancelled will show up here.'
               }
               action={tab === 'upcoming'
                 ? <Button variant="primary" icon="plus" onClick={() => setBooking(true)}>{t('book')}</Button>
@@ -80,7 +80,7 @@ export default function Appointments() {
                     <Avatar name={a.doctor_name} size={44} />
                     <div className="grow">
                       <div className="strong">{a.doctor_name}</div>
-                      <div className="muted text-sm">{a.specialization || 'General consultation'}</div>
+                      <div className="muted text-sm">{a.specialization || 'General visit'}</div>
                       <div className="row gap-2 muted text-sm mt-2">
                         <Icon name="calendar" size={15} />
                         {formatLongDate(a.consultation_date, lang)}
@@ -101,7 +101,7 @@ export default function Appointments() {
         open={booking}
         onClose={() => setBooking(false)}
         doctors={doctors}
-        onBooked={() => { setBooking(false); refetch(); toast.success('Appointment requested.'); }}
+        onBooked={() => { setBooking(false); refetch(); toast.success('Your request was sent. The doctor will confirm it.'); }}
       />
     </>
   );
@@ -118,8 +118,8 @@ function BookDialog({ open, onClose, doctors, onBooked }) {
   const submit = async (e) => {
     e.preventDefault();
     const next = {};
-    if (!form.doctor_id) next.doctor_id = 'Choose a clinician.';
-    if (!form.consultation_date) next.consultation_date = 'Choose a date.';
+    if (!form.doctor_id) next.doctor_id = 'Please choose a doctor.';
+    if (!form.consultation_date) next.consultation_date = 'Please choose a day.';
     setErrors(next);
     if (Object.keys(next).length) return;
 
@@ -144,33 +144,33 @@ function BookDialog({ open, onClose, doctors, onBooked }) {
     <Dialog
       open={open}
       onClose={onClose}
-      title="Book an appointment"
-      subtitle="Choose a clinician and a preferred date. They will confirm the time."
+      title="Book a visit"
+      subtitle="Pick a doctor and the day you would like. They will confirm the time with you."
       footer={
         <>
           <Button onClick={onClose} block>Cancel</Button>
-          <Button variant="primary" onClick={submit} loading={busy} block>Request appointment</Button>
+          <Button variant="primary" onClick={submit} loading={busy} block>Send request</Button>
         </>
       }
     >
       <form className="stack gap-4" onSubmit={submit}>
         <SelectField
-          label="Clinician"
+          label="Which doctor?"
           required
           value={form.doctor_id}
           onChange={(e) => setForm((f) => ({ ...f, doctor_id: e.target.value }))}
           error={errors.doctor_id}
           options={[
-            { value: '', label: 'Select a clinician…' },
+            { value: '', label: 'Choose a doctor' },
             ...doctors.map((d) => ({
               value: String(d.id),
-              label: `${d.full_name}${d.specialization ? ` — ${d.specialization}` : ''}`,
+              label: `${d.full_name}${d.specialization ? ` (${d.specialization})` : ''}`,
             })),
           ]}
         />
 
         <Field
-          label="Preferred date"
+          label="Which day works for you?"
           type="date"
           required
           min={today}
@@ -180,11 +180,11 @@ function BookDialog({ open, onClose, doctors, onBooked }) {
         />
 
         <Field
-          label="Reason for visit"
+          label="Why do you want to see the doctor?"
           textarea
           rows={3}
-          placeholder="Briefly describe your symptoms or the reason for the consultation."
-          hint="Optional, but it helps the clinician prepare."
+          placeholder="For example: headache and fever for three days."
+          hint="You can leave this empty, but it helps the doctor get ready."
           value={form.notes}
           onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
         />

@@ -57,6 +57,26 @@ function describe() {
 }
 
 /**
+ * Removes the em dash from a reply.
+ *
+ * The system prompts ask for this, but models reach for the em dash constantly
+ * and instructions alone do not hold, so the text is corrected on the way out.
+ * Only the em dash is touched: the en dash is left alone because it carries
+ * meaning in numeric ranges such as "7-8 hours".
+ */
+function stripEmDashes(text) {
+  return text
+    // A spaced em dash joins two clauses, so a comma reads naturally.
+    .replace(/\s*—\s*/g, ', ')
+    // Tidy anything the substitution made awkward.
+    .replace(/,\s*,/g, ',')
+    .replace(/\s+,/g, ',')
+    .replace(/,\s*([.!?;:])/g, '$1')
+    .replace(/([([])\s*,\s*/g, '$1')
+    .replace(/,\s*$/gm, '');
+}
+
+/**
  * Sends a conversation to the active provider.
  * @param {{ system: string, messages: Array<{role: string, content: string}>, maxTokens?: number }} options
  * @returns {Promise<string>} the assistant's reply text
@@ -71,7 +91,8 @@ async function ask({ system, messages, maxTokens }) {
     err.code = 'AI_NOT_CONFIGURED';
     throw err;
   }
-  return provider.complete({ system, messages, maxTokens });
+  const reply = await provider.complete({ system, messages, maxTokens });
+  return stripEmDashes(reply);
 }
 
 /** Trims and normalises client-supplied history before it reaches a provider. */
@@ -86,4 +107,4 @@ function sanitizeMessages(messages, { maxTurns = 20, maxChars = 4000 } = {}) {
     }));
 }
 
-module.exports = { ask, isAvailable, describe, sanitizeMessages, resolveProvider };
+module.exports = { ask, isAvailable, describe, sanitizeMessages, resolveProvider, stripEmDashes };

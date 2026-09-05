@@ -25,9 +25,9 @@ export default function Login() {
 
   const validate = () => {
     const next = {};
-    if (!form.email.trim()) next.email = 'Enter your email address.';
-    else if (!/^\S+@\S+\.\S+$/.test(form.email)) next.email = 'That does not look like a valid email.';
-    if (!form.password) next.password = 'Enter your password.';
+    if (!form.email.trim()) next.email = 'Please enter your email address.';
+    else if (!/^\S+@\S+\.\S+$/.test(form.email)) next.email = 'Please check your email address.';
+    if (!form.password) next.password = 'Please enter your password.';
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -44,7 +44,7 @@ export default function Login() {
       const from = location.state?.from?.pathname;
       navigate(from || homeFor(data.user.role), { replace: true });
     } catch (err) {
-      setFailure(errorMessage(err, 'Could not sign you in. Check your details and try again.'));
+      setFailure(errorMessage(err, 'We could not log you in. Please check your email and password.'));
     } finally {
       setBusy(false);
     }
@@ -96,7 +96,7 @@ export default function Login() {
           <Button to="/register" block>{t('signUp')}</Button>
 
           <p className="muted text-xs mt-6" style={{ textAlign: 'center' }}>
-            <Link to="/">Back to home</Link>
+            <Link to="/">Back to home page</Link>
           </p>
         </div>
       </main>

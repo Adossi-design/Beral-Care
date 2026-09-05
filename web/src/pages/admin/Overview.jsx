@@ -54,7 +54,7 @@ export default function Overview() {
     <>
       <PageHeader
         title="Platform overview"
-        description="Accounts, activity, and platform health."
+        description="Accounts and activity on Beral Care."
         actions={<Button icon="refresh" onClick={refetch}>Refresh</Button>}
       />
 
@@ -64,14 +64,14 @@ export default function Overview() {
 
       <div className="grid grid--stats mb-6">
         <Stat label="Patients" value={loading ? '–' : stats?.total_patients ?? 0} icon="users" />
-        <Stat label="Clinicians" value={loading ? '–' : stats?.total_doctors ?? 0} icon="stethoscope" tone="accent" />
-        <Stat label="Consultations" value={loading ? '–' : stats?.total_consultations ?? 0} icon="clipboard" tone="success" />
+        <Stat label="Doctors" value={loading ? '–' : stats?.total_doctors ?? 0} icon="stethoscope" tone="accent" />
+        <Stat label="Visits" value={loading ? '–' : stats?.total_consultations ?? 0} icon="clipboard" tone="success" />
         <Stat
-          label="Suspended"
+          label="Blocked"
           value={loading ? '–' : suspended}
           icon="lock"
           tone={suspended ? 'danger' : 'primary'}
-          hint={suspended ? 'Requires review' : 'No suspended accounts'}
+          hint={suspended ? 'Please check these' : 'None blocked'}
         />
       </div>
 
@@ -79,7 +79,7 @@ export default function Overview() {
         <Card>
           <CardHeader
             title="Registrations"
-            subtitle="New accounts per week, last 12 weeks"
+            subtitle="New accounts each week, last 12 weeks"
             icon="chart"
           />
           {loading ? (
@@ -142,9 +142,9 @@ export default function Overview() {
         </Card>
       </div>
 
-      <Notice tone="info" title="Administrators cannot read medical records">
-        This role can manage accounts and see platform totals. Diagnoses, prescriptions, and
-        consultation notes are not exposed to it by the API at all.
+      <Notice tone="info" title="Admins cannot read health records">
+        Admins can manage accounts and see totals only. They can never see anyone's illness,
+        medicine, or doctor notes.
       </Notice>
     </>
   );

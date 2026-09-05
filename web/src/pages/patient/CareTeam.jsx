@@ -61,7 +61,7 @@ export default function CareTeam({ onChange }) {
     setBusy(true);
     try {
       await patientApi.requestAccess(target.id, reason.trim() || null);
-      toast.success(`Request sent to ${target.full_name}.`);
+      toast.success(`Your request was sent to ${target.full_name}.`);
       setTarget(null);
       setReason('');
       refetch();
@@ -77,7 +77,7 @@ export default function CareTeam({ onChange }) {
     setRevoking(requestId);
     try {
       await patientApi.decideAccess(requestId, 'denied');
-      toast.success(`${name} can no longer read your records.`);
+      toast.success(`Done. ${name} can no longer see your records.`);
       refetch();
       onChange?.();
     } catch (err) {
@@ -91,15 +91,15 @@ export default function CareTeam({ onChange }) {
     <>
       <PageHeader
         title={t('careTeam')}
-        description="Clinicians who can read your records, and the full directory to find more."
+        description="Doctors who can see your records, and where to find new ones."
       />
 
       <Tabs
         value={tab}
         onChange={setTab}
         tabs={[
-          { value: 'team', label: 'My care team', count: myTeam.length },
-          { value: 'directory', label: 'Find a clinician', count: doctors.length },
+          { value: 'team', label: 'My doctors', count: myTeam.length },
+          { value: 'directory', label: 'Find a doctor', count: doctors.length },
         ]}
       />
 
@@ -107,9 +107,9 @@ export default function CareTeam({ onChange }) {
         {loading ? <SkeletonRows rows={3} /> : tab === 'team' ? (
           <>
             {pending.length > 0 ? (
-              <Notice tone="warning" title="Awaiting your decision">
-                {pending.length} clinician{pending.length === 1 ? '' : 's'} asked to read your
-                records. Approve or decline from your overview.
+              <Notice tone="warning" title="Waiting for your answer">
+                {pending.length} doctor{pending.length === 1 ? '' : 's'} asked to see your
+                records. You can answer on the home page.
               </Notice>
             ) : null}
 
@@ -117,9 +117,9 @@ export default function CareTeam({ onChange }) {
               <Card>
                 <EmptyState
                   icon="stethoscope"
-                  title="No clinician has access yet"
-                  description="Nobody can read your medical records until you approve them. Find a clinician in the directory to get started."
-                  action={<Button variant="primary" onClick={() => setTab('directory')}>Browse the directory</Button>}
+                  title="No doctor can see your records yet"
+                  description="Your records stay private until you allow someone. Find a doctor to get started."
+                  action={<Button variant="primary" onClick={() => setTab('directory')}>Find a doctor</Button>}
                 />
               </Card>
             ) : (
@@ -132,9 +132,9 @@ export default function CareTeam({ onChange }) {
                         <Avatar name={d.full_name} src={assetUrl(d.profile_image_url)} size={44} />
                         <div className="grow">
                           <div className="strong">{d.full_name}</div>
-                          <div className="muted text-sm">{d.specialization || 'Clinician'}</div>
+                          <div className="muted text-sm">{d.specialization || 'Doctor'}</div>
                         </div>
-                        <Badge tone="accepted">Access granted</Badge>
+                        <Badge tone="accepted">Can see records</Badge>
                       </div>
 
                       {d.hospital ? (
@@ -151,7 +151,7 @@ export default function CareTeam({ onChange }) {
                           loading={revoking === req?.id}
                           onClick={() => revoke(req.id, d.full_name)}
                         >
-                          Revoke access
+                          Stop sharing
                         </Button>
                       </div>
                     </Card>
@@ -167,7 +167,7 @@ export default function CareTeam({ onChange }) {
                 <SearchInput
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search by name, specialisation, or hospital…"
+                  placeholder="Search by name, illness treated, or hospital"
                 />
               </div>
             </div>
@@ -176,9 +176,9 @@ export default function CareTeam({ onChange }) {
               <Card>
                 <EmptyState
                   icon="search"
-                  title="No clinicians found"
-                  description="Try a different search term."
-                  action={<Button onClick={() => setQuery('')}>Clear search</Button>}
+                  title="No doctors found"
+                  description="Try another word."
+                  action={<Button onClick={() => setQuery('')}>Clear</Button>}
                 />
               </Card>
             ) : (
@@ -192,7 +192,7 @@ export default function CareTeam({ onChange }) {
                         <Avatar name={d.full_name} src={assetUrl(d.profile_image_url)} size={44} />
                         <div className="grow">
                           <div className="strong">{d.full_name}</div>
-                          <div className="muted text-sm">{d.specialization || 'Clinician'}</div>
+                          <div className="muted text-sm">{d.specialization || 'Doctor'}</div>
                         </div>
                       </div>
 
@@ -203,10 +203,10 @@ export default function CareTeam({ onChange }) {
                       ) : null}
 
                       {state === 'accepted' ? (
-                        <Badge tone="accepted">In your care team</Badge>
+                        <Badge tone="accepted">Already your doctor</Badge>
                       ) : state === 'pending' ? (
                         <div className="stack gap-2">
-                          <Badge tone="pending">Request pending</Badge>
+                          <Badge tone="pending">Waiting for reply</Badge>
                           <span className="muted text-xs">
                             Sent {relativeDate(req.created_at, lang)}
                           </span>
@@ -218,7 +218,7 @@ export default function CareTeam({ onChange }) {
                           icon="plus"
                           onClick={() => setTarget(d)}
                         >
-                          Request consultation
+                          Ask to be my doctor
                         </Button>
                       )}
                     </Card>
@@ -233,7 +233,7 @@ export default function CareTeam({ onChange }) {
       <Dialog
         open={!!target}
         onClose={() => setTarget(null)}
-        title={`Request a consultation`}
+        title="Ask this doctor to see you"
         subtitle={target ? `${target.full_name}${target.specialization ? ` · ${target.specialization}` : ''}` : ''}
         footer={
           <>
@@ -244,15 +244,15 @@ export default function CareTeam({ onChange }) {
       >
         <div className="stack gap-4">
           <Notice tone="info">
-            Sending this request also asks the clinician to review your records. They cannot read
-            anything until you approve their access.
+            This tells the doctor you would like their help. They still cannot open your records
+            until you say yes.
           </Notice>
           <Field
-            label="What would you like to discuss?"
+            label="What would you like help with?"
             textarea
             rows={4}
-            placeholder="Describe your symptoms or the reason for the consultation."
-            hint="Optional."
+            placeholder="For example: pain in my chest when I walk."
+            hint="You can leave this empty."
             value={reason}
             onChange={(e) => setReason(e.target.value)}
           />

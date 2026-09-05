@@ -47,7 +47,7 @@ export function QrDialog({ open, onClose, value, name, label = 'Health ID', capt
 
         {caption ? <p className="muted text-sm" style={{ maxWidth: '34ch' }}>{caption}</p> : null}
 
-        <Button icon="print" onClick={() => window.print()} block>Print</Button>
+        <Button icon="print" onClick={() => window.print()} block>Print this code</Button>
       </div>
     </Dialog>
   );
@@ -119,8 +119,8 @@ export function QrScannerDialog({ open, onClose, onResult, title = 'Scan code', 
         if (!cancelled) {
           setError(
             window.isSecureContext
-              ? 'Camera access was refused. Allow it in your browser, or type the ID below.'
-              : 'The camera needs a secure (HTTPS) connection. Type the ID below instead.',
+              ? 'We cannot use your camera. Allow it in your browser, or type the ID below.'
+              : 'The camera only works on a secure connection. Please type the ID below instead.',
           );
         }
       });
@@ -143,7 +143,7 @@ export function QrScannerDialog({ open, onClose, onResult, title = 'Scan code', 
             disabled={!manual.trim()}
             onClick={() => onResult(manual.trim().toUpperCase())}
           >
-            Use this ID
+            Open this ID
           </Button>
         </>
       }
@@ -180,7 +180,7 @@ export function QrScannerDialog({ open, onClose, onResult, title = 'Scan code', 
 
         <div className="row gap-2 muted text-sm">
           <Icon name="info" size={15} />
-          Point the camera at the code, or enter the ID manually.
+          Point the camera at the code, or type the ID below.
         </div>
 
         <div className="input-wrap">
@@ -190,7 +190,7 @@ export function QrScannerDialog({ open, onClose, onResult, title = 'Scan code', 
             placeholder="BC-2026-00001"
             value={manual}
             onChange={(e) => setManual(e.target.value)}
-            aria-label="Enter ID manually"
+            aria-label="Type the ID"
           />
         </div>
       </div>

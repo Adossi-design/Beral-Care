@@ -61,8 +61,8 @@ api.interceptors.response.use(
 export function errorMessage(error, fallback = 'Something went wrong. Please try again.') {
   if (error?.response?.data?.error) return error.response.data.error;
   if (error?.response?.data?.message) return error.response.data.message;
-  if (error?.code === 'ECONNABORTED') return 'The server took too long to respond.';
-  if (error?.message === 'Network Error') return 'Cannot reach the server. Check your connection.';
+  if (error?.code === 'ECONNABORTED') return 'This is taking too long. Please try again.';
+  if (error?.message === 'Network Error') return 'We cannot reach the server. Please check your internet and try again.';
   return fallback;
 }
 
