@@ -1,12 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
 
-/**
- * Localisation.
- *
- * English and French, since French is an official language across much of West
- * and Central Africa. Missing French keys fall back to English rather than
- * rendering a raw key, so a partial translation degrades gracefully.
- */
+// English and French, since French is an official language across much of West
+// and Central Africa. Missing keys fall back to English rather than a raw key.
 
 const en = {
   // Navigation

@@ -22,7 +22,7 @@ async function backfillDoctorIds() {
     );
 
     if (doctors.length === 0) {
-      console.log('✅ All doctors already have doctor IDs');
+      console.log('All doctors already have doctor IDs');
       return;
     }
 
@@ -52,12 +52,12 @@ async function backfillDoctorIds() {
         [doctorId, doctor.id]
       );
 
-      console.log(`✅ ${doctor.full_name} (ID: ${doctor.id}) → ${doctorId}`);
+      console.log(`${doctor.full_name} (ID: ${doctor.id}) → ${doctorId}`);
     }
 
-    console.log(`\n✅ Successfully assigned doctor IDs to ${doctors.length} doctors`);
+    console.log(`\nSuccessfully assigned doctor IDs to ${doctors.length} doctors`);
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error('Error:', error.message);
   } finally {
     conn.release();
     await pool.end();

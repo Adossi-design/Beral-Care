@@ -12,12 +12,7 @@ import { formatDate } from '../lib/format';
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
-/**
- * Profile and account settings, shared by patients and clinicians.
- *
- * The identifier card and its QR live here rather than on the dashboard, so the
- * overview can stay focused on what needs action today.
- */
+// Profile and account settings, shared by patients and doctors
 export default function ProfilePage({ role }) {
   const { user, patchUser } = useAuth();
   const { t, lang } = useI18n();

@@ -4,16 +4,8 @@ import Markdown from '../lib/markdown';
 import { assistant } from '../lib/services';
 import { errorMessage } from '../lib/api';
 
-/**
- * AI assistant panel.
- *
- * Docked to the corner on desktop, full sheet on mobile. The prototype rendered
- * this as a floating bubble that covered page content; docking keeps the record
- * the clinician is reading visible while they consult the assistant.
- *
- * The component knows nothing about which model answers — it posts to
- * /api/ai/{audience} and the server decides the provider.
- */
+// Docked panel on desktop, full sheet on phones. Posts to /api/ai/{audience};
+// the server decides which model answers.
 export default function Assistant({ audience, name, patientId, greeting, prompts, disclaimer }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);

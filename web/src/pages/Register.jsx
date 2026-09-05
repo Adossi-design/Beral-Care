@@ -7,13 +7,8 @@ import { useAuth, homeFor } from '../lib/auth';
 import { useI18n } from '../lib/i18n';
 import { errorMessage } from '../lib/api';
 
-/**
- * Registration.
- *
- * Two steps rather than one long form: choosing a role first means a patient
- * never sees clinician fields, and the second step stays short enough to finish
- * on a phone. The prototype asked for everything at once on a single screen.
- */
+// Two steps so a patient never sees the doctor fields, and the second step
+// stays short enough to finish on a phone.
 export default function Register() {
   const { t } = useI18n();
   const { signIn } = useAuth();

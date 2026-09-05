@@ -1,11 +1,7 @@
 import api from './api';
 
-/**
- * API surface, grouped by domain.
- *
- * Screens call these rather than reaching for axios directly, so endpoint paths
- * live in exactly one place and a backend change is a one-line edit here.
- */
+// Every endpoint the app calls, grouped by area. Screens use these instead of
+// axios directly, so a backend change is a one-line edit here.
 
 export const auth = {
   login: (email, password) => api.post('/api/auth/login', { email, password }).then((r) => r.data),
@@ -70,7 +66,7 @@ export const directory = {
 };
 
 export const assistant = {
-  /** `messages` is [{ role: 'user' | 'assistant', content }]. */
+  // messages is [{ role: 'user' | 'assistant', content }]
   ask: (audience, messages, patientId) =>
     api.post(`/api/ai/${audience}`, { messages, patient_id: patientId }).then((r) => r.data),
 };

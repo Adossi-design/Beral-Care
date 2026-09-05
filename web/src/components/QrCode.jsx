@@ -3,15 +3,10 @@ import QRCode from 'qrcode';
 import jsQR from 'jsqr';
 import { Dialog, Button, Notice, Icon, Avatar } from './ui';
 
-/**
- * QR generation and scanning.
- *
- * Identification by scan removes the step where a receptionist types a name and
- * date of birth by hand — the point where duplicate records and transcription
- * errors are created.
- */
+// Scanning a code replaces typing a name and date of birth by hand, which is
+// where duplicate records and spelling errors usually come from.
 
-/** Renders a value as a QR code on a canvas. */
+// Draws a value as a QR code
 export function QrImage({ value, size = 200 }) {
   const canvasRef = useRef(null);
   const [failed, setFailed] = useState(false);
@@ -30,7 +25,7 @@ export function QrImage({ value, size = 200 }) {
   return <canvas ref={canvasRef} width={size} height={size} style={{ borderRadius: 'var(--r-md)' }} />;
 }
 
-/** Dialog showing a person's identifier as a scannable code. */
+// Shows an ID as a scannable code
 export function QrDialog({ open, onClose, value, name, label = 'Health ID', caption }) {
   return (
     <Dialog open={open} onClose={onClose} title={label} width={380}>
@@ -53,13 +48,8 @@ export function QrDialog({ open, onClose, value, name, label = 'Health ID', capt
   );
 }
 
-/**
- * Camera scanner. Decodes frames on a canvas with jsQR.
- *
- * Camera access requires a secure context, so this only works over HTTPS or on
- * localhost — the failure is reported explicitly rather than leaving a black
- * rectangle on screen. Manual entry is always offered as a fallback.
- */
+// Reads frames from the camera with jsQR. Cameras need HTTPS, so the failure
+// is explained on screen and typing the ID by hand is always offered.
 export function QrScannerDialog({ open, onClose, onResult, title = 'Scan code', pattern }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);

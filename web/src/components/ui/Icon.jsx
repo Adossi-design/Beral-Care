@@ -1,14 +1,5 @@
-/**
- * Stroke icon set.
- *
- * Hand-drawn on a 24x24 grid with a consistent 1.75 stroke, round caps and
- * joins. Inline SVG rather than an icon font: no extra network request, no
- * flash of missing glyphs, and each icon can take its colour from context.
- *
- * These replace the emoji the prototype used for navigation and actions. Emoji
- * render differently on every operating system and are the single loudest
- * signal that an interface was assembled rather than designed.
- */
+// Icons drawn on a 24x24 grid with a 1.75 stroke. Inline SVG rather than an
+// icon font, so there is no extra request and each icon inherits its colour.
 
 const P = {
   // Navigation

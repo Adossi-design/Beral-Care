@@ -9,12 +9,7 @@ import { clinic as clinicApi } from '../../lib/services';
 import { relativeDate } from '../../lib/format';
 import { errorMessage } from '../../lib/api';
 
-/**
- * Access requests raised by patients.
- *
- * Accepting a request is what unlocks a patient's record for this clinician, so
- * the consequence is stated on the card rather than left implicit.
- */
+// Accepting a request is what opens a patient's record, so each card says so
 export default function Requests({ onChange }) {
   const { t, lang } = useI18n();
   const toast = useToast();

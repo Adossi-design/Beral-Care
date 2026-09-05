@@ -55,6 +55,7 @@ export default function Landing() {
         <nav className="pubnav__links">
           <a className="pubnav__link" href="#how">What you get</a>
           <a className="pubnav__link" href="#channels">Ways to use it</a>
+          <Link className="pubnav__link" to="/about">Why we built this</Link>
           <Button to="/login" size="sm">{t('signIn')}</Button>
           <Button to="/register" variant="primary" size="sm">{t('signUp')}</Button>
         </nav>
@@ -150,7 +151,11 @@ export default function Landing() {
           <div className="section-inner">
             <h2 className="section-title">What you can do here</h2>
             <p className="section-lede">
-              Six things Beral Care helps with, for patients and for doctors.
+              This started with a simple problem. When you are sick and need to
+              know what happened during your last treatment, that information is
+              often held by one hospital or one doctor, and if you cannot reach
+              them, you cannot reach it either. Everything below grew out of
+              trying to fix that. <Link to="/about">Read the full story</Link>.
             </p>
 
             <div className="grid grid--three">

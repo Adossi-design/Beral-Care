@@ -10,13 +10,8 @@ import { useAsync } from '../../lib/useAsync';
 import { clinic as clinicApi } from '../../lib/services';
 import { formatDate, relativeDate } from '../../lib/format';
 
-/**
- * Patient list.
- *
- * A real table on desktop — clinicians scan lists, and a table is denser and
- * faster to scan than a grid of cards. Below 720px the same markup reflows into
- * labelled stacked rows rather than forcing a horizontal scrollbar.
- */
+// A table on wider screens because it is faster to scan than cards. The same
+// markup reflows into stacked rows on phones instead of scrolling sideways.
 export default function Patients() {
   const { t, lang } = useI18n();
   const navigate = useNavigate();

@@ -1,12 +1,7 @@
 import axios from 'axios';
 
-/**
- * API client.
- *
- * In development, requests go to a relative path and Vite proxies them to the
- * API server, which avoids CORS entirely. In production VITE_API_URL points at
- * the deployed backend.
- */
+// In development Vite proxies /api to the local server, which avoids CORS.
+// In production VITE_API_URL points at the deployed backend.
 export const API_URL = import.meta.env.VITE_API_URL || '';
 
 const api = axios.create({
@@ -42,7 +37,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-/** Callback installed by AuthProvider so a 401 can drop the session globally. */
+// Set by AuthProvider so a 401 anywhere drops the session
 let onUnauthorized = null;
 export const setUnauthorizedHandler = (fn) => { onUnauthorized = fn; };
 
@@ -57,7 +52,7 @@ api.interceptors.response.use(
   },
 );
 
-/** Normalises the many shapes an axios failure can take into one message. */
+// Turns the various axios failure shapes into one readable message
 export function errorMessage(error, fallback = 'Something went wrong. Please try again.') {
   if (error?.response?.data?.error) return error.response.data.error;
   if (error?.response?.data?.message) return error.response.data.message;
@@ -66,7 +61,7 @@ export function errorMessage(error, fallback = 'Something went wrong. Please try
   return fallback;
 }
 
-/** Resolves a stored relative upload path to an absolute URL. */
+// Turns a stored upload path into a full URL
 export const assetUrl = (path) => {
   if (!path) return null;
   return path.startsWith('http') ? path : `${API_URL}${path}`;

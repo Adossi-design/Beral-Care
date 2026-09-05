@@ -1,18 +1,9 @@
 import React from 'react';
 
-/**
- * Minimal Markdown renderer for assistant replies.
- *
- * Language models format answers with Markdown whether or not you ask them to,
- * so the choice is to render it or to show readers raw "* **Stress:**" text.
- *
- * This builds React elements directly rather than setting innerHTML, so model
- * output can never inject markup into the page. It covers only what the
- * assistants actually produce: headings, bullet and numbered lists, bold,
- * italic, and inline code.
- */
+// Renders the Markdown that models put in their answers. Builds React elements
+// rather than setting innerHTML, so model output cannot inject markup.
 
-/** Bold, italic, and inline code inside a single line of text. */
+// Bold, italic, and inline code within a line
 function inline(text) {
   const pattern = /(\*\*[^*]+\*\*|__[^_]+__|`[^`]+`|(?<![*\w])\*(?!\s)[^*\n]+?(?<!\s)\*(?!\w))/g;
   const nodes = [];

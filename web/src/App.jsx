@@ -5,6 +5,7 @@ import { Skeleton } from './components/ui';
 
 // Public surfaces load eagerly — they are the first paint for a new visitor.
 import Landing from './pages/Landing';
+import About from './pages/About';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import NotFound from './pages/NotFound';
@@ -52,6 +53,7 @@ export default function App() {
     <Suspense fallback={<FullPageLoader />}>
       <Routes>
         <Route path="/" element={<Landing />} />
+        <Route path="/about" element={<About />} />
         <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
         <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
 

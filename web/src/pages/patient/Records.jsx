@@ -9,14 +9,8 @@ import { patient as patientApi } from '../../lib/services';
 import { formatLongDate, relativeDate } from '../../lib/format';
 import { useAuth } from '../../lib/auth';
 
-/**
- * Medical record.
- *
- * Presented as a reverse-chronological timeline rather than a flat card list:
- * a medical history is a sequence, and the shape of the page should say so.
- * The page is print-friendly, because patients are still routinely asked for
- * paper copies at facilities that are not on the platform.
- */
+// A timeline rather than a list, because a medical history is a sequence.
+// Printable, since facilities off the platform still ask for paper copies.
 export default function Records() {
   const { t, lang } = useI18n();
   const { user } = useAuth();

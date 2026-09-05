@@ -9,13 +9,8 @@ import { useAsyncAll } from '../../lib/useAsync';
 import { admin as adminApi } from '../../lib/services';
 import { formatDate, relativeDate } from '../../lib/format';
 
-/**
- * Platform overview.
- *
- * Administrators see counts and account activity only. There is deliberately no
- * route from here into any patient's medical record — that boundary is enforced
- * on the server, and the interface reflects it rather than hiding it.
- */
+// Counts and account activity only. There is no route from here into a
+// patient's records, and the server enforces that too.
 export default function Overview() {
   const { t, lang } = useI18n();
 
@@ -37,8 +32,7 @@ export default function Overview() {
     };
   }, [users]);
 
-  // Simple 12-week registration histogram, drawn inline rather than pulling in
-  // a charting library for one visual.
+  // Drawn inline rather than adding a charting library for one graph
   const weeks = useMemo(() => {
     const buckets = Array.from({ length: 12 }, () => 0);
     const now = Date.now();

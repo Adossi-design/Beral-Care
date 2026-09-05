@@ -10,12 +10,7 @@ import { clinic as clinicApi } from '../../lib/services';
 import { formatLongDate, relativeDate, isUpcoming, groupBy } from '../../lib/format';
 import { errorMessage } from '../../lib/api';
 
-/**
- * Clinician schedule.
- *
- * Grouped by day rather than presented as one flat list — a clinician reads
- * their schedule a day at a time, not as an undifferentiated stream of rows.
- */
+// Grouped by day, because that is how a doctor reads a schedule
 export default function Appointments() {
   const { t, lang } = useI18n();
   const navigate = useNavigate();

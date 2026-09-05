@@ -12,13 +12,8 @@ import { patient as patientApi } from '../../lib/services';
 import { formatDate, relativeDate, greetingKey, isUpcoming } from '../../lib/format';
 import { errorMessage } from '../../lib/api';
 
-/**
- * Patient overview.
- *
- * Ordered by what needs a decision first: pending access requests sit above
- * everything, because a doctor is blocked until the patient answers. The
- * prototype buried these below the ID card and a statistics row.
- */
+// Ordered by what needs an answer first, so pending access requests sit above
+// everything else: a doctor cannot work until the patient replies.
 export default function Overview({ summary, onChange }) {
   const { user } = useAuth();
   const { t, lang } = useI18n();
@@ -41,9 +36,8 @@ export default function Overview({ summary, onChange }) {
   const diagnoses = consultations.filter((c) => c.diagnosis).length;
   const prescriptions = consultations.filter((c) => c.prescription).length;
 
-  // Booking a visit creates a consultation row carrying the patient's own
-  // reason as notes, so "notes exist" is not enough to call it a past visit.
-  // A visit belongs here only once a doctor has written it up or it is done.
+  // Booking stores the patient's reason as notes, so notes alone do not make
+  // it a past visit. It counts once a doctor has written it up.
   const activity = consultations.filter(
     (c) => c.diagnosis || c.prescription || c.status === 'completed',
   );
@@ -81,7 +75,7 @@ export default function Overview({ summary, onChange }) {
         actions={<Button to="/app/care-team" variant="primary" icon="plus">{t('book')}</Button>}
       />
 
-      {/* Decisions first — a clinician is waiting on each of these. */}
+      {/* A doctor is waiting on each of these */}
       {pending.length > 0 ? (
         <Section title={`${t('pendingRequests')} (${pending.length})`}>
           <div className="stack gap-3">

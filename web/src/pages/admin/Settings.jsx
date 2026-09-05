@@ -7,13 +7,8 @@ import { useI18n } from '../../lib/i18n';
 import { API_URL } from '../../lib/api';
 import { formatDate } from '../../lib/format';
 
-/**
- * Administrator settings.
- *
- * Deliberately informational. Configuration that affects security — CORS
- * origins, rate limits, provider keys — lives in the deployment environment,
- * not behind a web form where a mistake takes the platform down.
- */
+// Informational only. Anything affecting security stays in the server
+// environment rather than behind a web form.
 export default function Settings() {
   const { user, signOut } = useAuth();
   const { t, lang, setLang } = useI18n();

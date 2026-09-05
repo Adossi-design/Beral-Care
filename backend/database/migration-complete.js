@@ -24,12 +24,12 @@ async function runMigration() {
         
         if (columns[0].count === 0) {
           await pool.execute(`ALTER TABLE users ADD COLUMN ${col.name} ${col.type}`);
-          console.log(`✓ Added column: ${col.name}`);
+          console.log(`Added column: ${col.name}`);
         } else {
-          console.log(`✓ Column already exists: ${col.name}`);
+          console.log(`Column already exists: ${col.name}`);
         }
       } catch (e) {
-        console.log(`✓ Column already exists or skipped: ${col.name}`);
+        console.log(`Column already exists or skipped: ${col.name}`);
       }
     }
 
@@ -53,9 +53,9 @@ async function runMigration() {
           INDEX idx_status (status)
         )
       `);
-      console.log('✓ consultation_requests table created');
+      console.log('consultation_requests table created');
     } catch (e) {
-      console.log('✓ consultation_requests table already exists');
+      console.log('consultation_requests table already exists');
     }
 
     // 3. Create notifications table
@@ -78,9 +78,9 @@ async function runMigration() {
           INDEX idx_is_read (is_read)
         )
       `);
-      console.log('✓ notifications table created');
+      console.log('notifications table created');
     } catch (e) {
-      console.log('✓ notifications table already exists');
+      console.log('notifications table already exists');
     }
 
     // 4. Update consultations table to include request_id
@@ -96,34 +96,34 @@ async function runMigration() {
           ADD COLUMN request_id INT,
           ADD FOREIGN KEY (request_id) REFERENCES consultation_requests(id) ON DELETE SET NULL
         `);
-        console.log('✓ Added request_id to consultations');
+        console.log('Added request_id to consultations');
       } else {
-        console.log('✓ request_id already exists in consultations');
+        console.log('request_id already exists in consultations');
       }
     } catch (e) {
-      console.log('✓ request_id already exists or skipped');
+      console.log('request_id already exists or skipped');
     }
 
     // 5. Add indexes to consultations
     console.log('Adding indexes to consultations...');
     try {
       await pool.execute('ALTER TABLE consultations ADD INDEX idx_patient_id (patient_id)');
-      console.log('✓ Added index on patient_id');
+      console.log('Added index on patient_id');
     } catch (e) {
-      console.log('✓ Index already exists');
+      console.log('Index already exists');
     }
 
     try {
       await pool.execute('ALTER TABLE consultations ADD INDEX idx_doctor_id (doctor_id)');
-      console.log('✓ Added index on doctor_id');
+      console.log('Added index on doctor_id');
     } catch (e) {
-      console.log('✓ Index already exists');
+      console.log('Index already exists');
     }
 
-    console.log('\n✅ Database migration completed successfully!');
+    console.log('\nDatabase migration completed successfully!');
     process.exit(0);
   } catch (error) {
-    console.error('❌ Migration failed:', error.message);
+    console.error('Migration failed:', error.message);
     process.exit(1);
   }
 }

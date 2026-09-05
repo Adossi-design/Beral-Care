@@ -6,17 +6,8 @@ import { useAuth } from '../lib/auth';
 import { useI18n } from '../lib/i18n';
 import { assetUrl } from '../lib/api';
 
-/**
- * Authenticated application shell.
- *
- * One component, three chromes, switched entirely in CSS by width:
- *   >=1101px  full sidebar with labelled navigation
- *   768–1100  collapsed icon rail
- *   <768      top bar plus a bottom tab bar
- *
- * Doing this in CSS rather than JavaScript means there is no layout flash on
- * load and no resize listener re-rendering the tree.
- */
+// Sidebar, icon rail, or bottom tab bar depending on screen width. The
+// switch happens in CSS so there is no layout flash while loading.
 export default function AppShell({ nav, profileTo, notifyTo, notifyCount = 0, title, children }) {
   const { user, signOut } = useAuth();
   const { t, lang, toggle } = useI18n();
@@ -26,9 +17,7 @@ export default function AppShell({ nav, profileTo, notifyTo, notifyCount = 0, ti
   const roleLabel = { patient: 'Patient', doctor: 'Doctor', admin: 'Admin' }[user?.role] || '';
   const avatar = assetUrl(user?.profile_image_url);
 
-  // Profile is reached through the account button rather than the main menu:
-  // the user chip in the sidebar on wider screens, the avatar in the top bar on
-  // phones, where the sidebar is hidden.
+  // Reached from the account button, not the main menu
   const profileHref = profileTo || nav.find((n) => n.profile)?.to;
 
   const handleSignOut = () => {
@@ -106,7 +95,7 @@ export default function AppShell({ nav, profileTo, notifyTo, notifyCount = 0, ti
           ) : null}
         </header>
 
-        {/* Mobile header — the sidebar is hidden at this width */}
+        {/* Mobile header, shown when the sidebar is hidden */}
         <header className="mobile-top">
           <span className="brand-mark" style={{ width: 30, height: 30 }}><Icon name="heart" size={15} /></span>
           <span className="grow strong truncate">{title}</span>

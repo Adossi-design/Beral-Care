@@ -5,10 +5,7 @@ import { Button, IconButton } from './primitives';
 
 /* ------------------------------------------------------------------ dialog */
 
-/**
- * Modal dialog. Traps focus, restores it on close, closes on Escape and on a
- * backdrop click, and locks background scroll while open.
- */
+// Traps focus, restores it on close, and closes on Escape or a backdrop click
 export function Dialog({ open, onClose, title, subtitle, children, footer, width = 520, dismissable = true }) {
   const panelRef = useRef(null);
   const restoreRef = useRef(null);

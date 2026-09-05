@@ -1,13 +1,8 @@
 import React, { useId, useState } from 'react';
 import Icon from './Icon';
 
-/**
- * Form controls.
- *
- * Real <label for> / <input id> pairs, real <fieldset>/<legend> for groups, and
- * errors wired with aria-describedby + aria-invalid. That is what makes the
- * forms usable with a screen reader and with the keyboard alone.
- */
+// Form controls with proper label/input pairing and errors wired through
+// aria-describedby, so the forms work with a screen reader and the keyboard.
 
 export function Field({
   label, hint, error, required, icon, type = 'text', textarea, rows = 4,
@@ -105,7 +100,7 @@ export function SelectField({ label, hint, error, required, options, id: idProp,
   );
 }
 
-/** Short option lists as chips: faster to scan and click than a dropdown. */
+// Chips for short option lists, quicker to use than a dropdown
 export function ChipGroup({ label, options, value, onChange, hint }) {
   return (
     <fieldset className="field" style={{ border: 'none', padding: 0, margin: 0 }}>

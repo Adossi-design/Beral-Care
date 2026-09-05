@@ -1,13 +1,6 @@
-/**
- * Google Gemini provider (Google AI Studio).
- *
- * Chosen as the default because the AI Studio free tier covers the volume this
- * platform needs without a billing account, which matters for a service being
- * run on trial credit.
- *
- * Uses the REST API through global fetch rather than the SDK — one fewer
- * dependency, and the request shape stays visible and easy to debug.
- */
+// Google Gemini through AI Studio, the default provider because its free tier
+// covers what this project needs. Uses the REST API directly rather than the
+// SDK to keep the dependency list short.
 
 const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
 
@@ -17,23 +10,13 @@ const apiKey = () => process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY
 
 const model = () => process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 
-/**
- * Current Gemini flash models reason before answering, and those reasoning
- * tokens are billed against maxOutputTokens. A 1024 ceiling can be consumed
- * entirely by reasoning, returning a successful response with empty content —
- * so the default leaves clear headroom for the reply itself.
- *
- * Capping reasoning is not an option: thinkingBudget: 0 is rejected outright,
- * and a small budget is treated as advisory rather than a hard limit.
- */
+// Flash models reason before answering and those tokens count against this
+// limit, so a low ceiling returns an empty reply. Reasoning cannot be capped.
 const DEFAULT_MAX_TOKENS = 2048;
 
 const isConfigured = () => Boolean(apiKey());
 
-/**
- * Gemini names the assistant turn "model" rather than "assistant", and carries
- * the system prompt in a dedicated field instead of a message.
- */
+// Gemini calls the assistant turn "model" and takes the system prompt separately
 function toContents(messages) {
   return messages.map((m) => ({
     role: m.role === 'assistant' ? 'model' : 'user',
@@ -54,10 +37,8 @@ async function complete({ system, messages, maxTokens = DEFAULT_MAX_TOKENS, temp
       maxOutputTokens: maxTokens,
       temperature,
     },
-    // Health questions routinely trip conservative defaults ("what are the side
-    // effects of this drug", "explain my diagnosis"). These are the least
-    // restrictive settings the API allows, and the clinical guard rails live in
-    // the system prompt where they can be reviewed.
+    // Ordinary health questions trip the stricter defaults, so these are set as
+    // low as the API allows. The clinical limits live in the system prompt.
     safetySettings: [
       'HARM_CATEGORY_HARASSMENT',
       'HARM_CATEGORY_HATE_SPEECH',

@@ -1,12 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { errorMessage } from './api';
 
-/**
- * Data fetching with loading, error, and refetch.
- *
- * Every list screen needs the same four things; without this each one grows its
- * own slightly different copy, and half of them forget to handle the error case.
- */
+// Data fetching with loading, error, and refetch, so every list screen
+// handles those states the same way.
 export function useAsync(fn, deps = [], { immediate = true } = {}) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(immediate);
@@ -43,7 +39,7 @@ export function useAsync(fn, deps = [], { immediate = true } = {}) {
   return { data, loading, error, refetch: run, setData };
 }
 
-/** Runs several requests together, returning them as a keyed object. */
+// Runs several requests together and returns them keyed by name
 export function useAsyncAll(map, deps = []) {
   const keys = Object.keys(map);
   const fnsRef = useRef(map);

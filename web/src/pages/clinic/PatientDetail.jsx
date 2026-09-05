@@ -10,12 +10,8 @@ import { clinic as clinicApi } from '../../lib/services';
 import { formatLongDate, relativeDate } from '../../lib/format';
 import { errorMessage } from '../../lib/api';
 
-/**
- * Patient record, as seen by a clinician with approved access.
- *
- * A 403 here is not an error to apologise for — it is the access control model
- * working as designed, so it is explained rather than shown as a failure.
- */
+// A refused record is the access rules working, not a failure, so it is
+// explained rather than shown as an error.
 export default function PatientDetail() {
   const { patientId } = useParams();
   const { t, lang } = useI18n();

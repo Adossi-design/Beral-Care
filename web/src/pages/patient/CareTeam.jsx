@@ -9,14 +9,8 @@ import { patient as patientApi } from '../../lib/services';
 import { assetUrl, errorMessage } from '../../lib/api';
 import { relativeDate } from '../../lib/format';
 
-/**
- * Care team.
- *
- * Merges what the prototype split across two disconnected screens — a doctor
- * directory and a separate consultation-requests list. Access status belongs on
- * the clinician's own card, not on another page: the question a patient has is
- * "who can see my records", and this answers it in one place.
- */
+// Doctors and access status in one place, since the patient's real question is
+// "who can see my records".
 export default function CareTeam({ onChange }) {
   const { t, lang } = useI18n();
   const toast = useToast();
@@ -36,7 +30,7 @@ export default function CareTeam({ onChange }) {
   const doctors = data?.doctors || [];
   const requests = data?.requests || [];
 
-  /** Access state for a clinician, keyed by their user id. */
+  // Access state for each doctor, keyed by user id
   const statusFor = useMemo(() => {
     const map = new Map();
     for (const r of requests) map.set(r.doctor_id, r);

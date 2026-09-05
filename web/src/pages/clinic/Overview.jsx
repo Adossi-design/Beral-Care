@@ -11,13 +11,8 @@ import { useAsyncAll } from '../../lib/useAsync';
 import { clinic as clinicApi } from '../../lib/services';
 import { formatDate, relativeDate, greetingKey, isUpcoming } from '../../lib/format';
 
-/**
- * Clinician overview.
- *
- * Built around the two things a clinician does at the start of a session: pull
- * up the patient in front of them, and clear the requests blocking their work.
- * Patient lookup is therefore the primary action, not a link buried in a menu.
- */
+// Built around what a doctor does first: open the file of the patient in front
+// of them, then clear the requests waiting on a reply.
 export default function Overview({ pendingCount }) {
   const { user } = useAuth();
   const { t, lang } = useI18n();
@@ -66,7 +61,7 @@ export default function Overview({ pendingCount }) {
         }
       />
 
-      {/* Patient lookup — the first thing a clinician needs */}
+      {/* The first thing a doctor needs */}
       <Card className="mb-6">
         <CardHeader
           title="Open a patient file"
