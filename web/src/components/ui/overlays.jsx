@@ -15,6 +15,14 @@ export function Dialog({ open, onClose, title, subtitle, children, footer, width
   const restoreRef = useRef(null);
   const tokenRef = useRef(null);
 
+  // Held in refs so the effect below depends on `open` alone. Callers pass a
+  // fresh onClose on every render, and re-running the effect would move focus
+  // back to the top of the dialog after every keystroke in a text field.
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  const dismissRef = useRef(dismissable);
+  dismissRef.current = dismissable;
+
   useEffect(() => {
     if (!open) return undefined;
 
@@ -29,7 +37,7 @@ export function Dialog({ open, onClose, title, subtitle, children, footer, width
 
     const onKey = (e) => {
       if (!onTop()) return;
-      if (e.key === 'Escape' && dismissable) { onClose?.(); return; }
+      if (e.key === 'Escape' && dismissRef.current) { closeRef.current?.(); return; }
       if (e.key !== 'Tab' || !panelRef.current) return;
 
       // Keep Tab inside the dialog
@@ -44,9 +52,12 @@ export function Dialog({ open, onClose, title, subtitle, children, footer, width
     };
 
     document.addEventListener('keydown', onKey);
-    // Move focus into the dialog on open
+    // Move focus into the dialog on open. A field marked data-autofocus wins,
+    // otherwise the first thing that can take focus.
     requestAnimationFrame(() => {
-      const target = panelRef.current?.querySelector('[data-autofocus], button, input, textarea, select');
+      const panel = panelRef.current;
+      const target = panel?.querySelector('[data-autofocus]')
+        || panel?.querySelector('button, input, textarea, select, a[href]');
       target?.focus();
     });
 
@@ -57,7 +68,8 @@ export function Dialog({ open, onClose, title, subtitle, children, footer, width
       if (!openDialogs.length) document.body.style.overflow = prevOverflow;
       restoreRef.current?.focus?.();
     };
-  }, [open, onClose, dismissable]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   if (!open) return null;
 
