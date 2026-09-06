@@ -335,6 +335,9 @@ reports which AI provider is currently active.
 
 Point your USSD aggregator at `POST /ussd` on the deployed gateway.
 
+The USSD gateway is deployed with the Vercel CLI from the `ussd-gateway`
+folder, so pushing to the repository does not rebuild it.
+
 ## Language
 
 The interface is available in English and French, since French is an official
