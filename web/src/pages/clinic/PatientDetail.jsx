@@ -44,12 +44,26 @@ export default function PatientDetail() {
   const notFound = error && /not found/i.test(error);
   const consultations = data?.consultations || [];
 
-  // A doctor who typed an ID and was refused can ask that patient right here
-  const askForAccess = async () => {
+  // A doctor who typed an ID and was refused can ask to connect right here
+  const askToConnect = async () => {
     setAsking(true);
     try {
-      await clinicApi.askAccess(patientId, null);
-      toast.success('Your request was sent. The file opens once they say yes.');
+      await clinicApi.askConnect(patientId, null);
+      toast.success('Your request was sent. You are connected once they say yes.');
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setAsking(false);
+    }
+  };
+
+  // The second permission, asked for after the two are connected
+  const askForRecords = async () => {
+    setAsking(true);
+    try {
+      await clinicApi.askRecords(patientId, null);
+      toast.success('Your request was sent. Their records open once they agree.');
+      refetch();
     } catch (err) {
       toast.error(errorMessage(err));
     } finally {
@@ -74,17 +88,17 @@ export default function PatientDetail() {
     return (
       <>
         <PageHeader
-          title={notFound ? 'Patient not found' : 'You cannot open this file yet'}
+          title={notFound ? 'Patient not found' : 'You are not connected with this person'}
           actions={<Button icon="arrowLeft" onClick={() => navigate('/clinic/patients')}>Back to patients</Button>}
         />
         <Card>
           <EmptyState
             icon={notFound ? 'search' : 'lock'}
-            title={notFound ? `No patient found with ID ${patientId}` : 'This file is private'}
+            title={notFound ? `No patient found with ID ${patientId}` : 'This page is private'}
             description={
               notFound
                 ? 'Please check the health ID and try again. An ID looks like BC-2026-00001.'
-                : 'This patient has not said yes yet. Send them a request, and the file opens as soon as they agree.'
+                : 'Ask this person to connect with you. Once they agree, you can see their profile and ask to see their health records.'
             }
             action={
               notFound
@@ -95,9 +109,9 @@ export default function PatientDetail() {
                       variant="primary"
                       icon="send"
                       loading={asking}
-                      onClick={askForAccess}
+                      onClick={askToConnect}
                     >
-                      Ask for permission
+                      Ask to connect
                     </Button>
                     <Button to="/clinic/patients">Back to patients</Button>
                   </div>
@@ -139,12 +153,36 @@ export default function PatientDetail() {
 
       <div className="grid grid--main">
         <div>
+          {/* Being connected is not the same as being allowed to read a
+              history, so the second permission is asked for here. */}
+          {!data.can_read_records ? (
+            <Notice
+              tone="info"
+              title="You are connected, but their records are closed"
+              action={
+                data.records_status === 'pending' ? null : (
+                  <Button size="sm" variant="primary" icon="records" loading={asking} onClick={askForRecords}>
+                    Ask to see them
+                  </Button>
+                )
+              }
+            >
+              {data.records_status === 'pending'
+                ? `${data.full_name.split(' ')[0]} has your request and will answer on their home page.`
+                : 'You can see who this person is and the notes you write yourself. Their past visits, medicines and diagnoses need their permission.'}
+            </Notice>
+          ) : null}
+
           {consultations.length === 0 ? (
             <Card>
               <EmptyState
                 icon="clipboard"
                 title="No notes yet"
-                description="Add your first note for this patient to start their history with you."
+                description={
+                  data.can_read_records
+                    ? 'This person has no visits written down yet.'
+                    : 'Add your first note for this patient to start their history with you.'
+                }
                 action={<Button variant="primary" icon="plus" onClick={() => setWriting(true)}>Add a note</Button>}
               />
             </Card>
@@ -157,7 +195,10 @@ export default function PatientDetail() {
                     <div className="spread wrap gap-3 mb-4">
                       <div>
                         <div className="strong">{formatLongDate(c.consultation_date, lang)}</div>
-                        <div className="muted text-sm">{relativeDate(c.consultation_date, lang)}</div>
+                        <div className="muted text-sm">
+                          {relativeDate(c.consultation_date, lang)}
+                          {c.doctor_name ? ` · written by ${c.doctor_name}` : ''}
+                        </div>
                       </div>
                       <Badge status={c.status} />
                     </div>
@@ -185,7 +226,12 @@ export default function PatientDetail() {
                 <div className="strong">{data.full_name}</div>
                 <div className="muted text-sm mono">{data.patient_id}</div>
               </div>
-              <Badge tone="accepted">You can see this file</Badge>
+              <div className="row gap-2 wrap" style={{ justifyContent: 'center' }}>
+                <Badge tone="accepted">Connected</Badge>
+                {data.can_read_records
+                  ? <Badge tone="brand">Records open</Badge>
+                  : <Badge tone="neutral">Records closed</Badge>}
+              </div>
             </div>
 
             <DetailRow label="Age" value={age != null ? `${age} years` : null} icon="user" />
@@ -207,8 +253,9 @@ export default function PatientDetail() {
           </div>
 
           <Notice tone="info">
-            You can see this file because {data.full_name.split(' ')[0]} said yes. Any medicine you
-            write here shows up for them right away.
+            {data.can_read_records
+              ? `${data.full_name.split(' ')[0]} allowed you to see their health records. Any medicine you write here shows up for them right away.`
+              : `You are connected with ${data.full_name.split(' ')[0]}. Any note you write is theirs to read, and you can see your own notes here.`}
           </Notice>
         </div>
       </div>

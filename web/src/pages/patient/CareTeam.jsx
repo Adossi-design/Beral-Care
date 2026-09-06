@@ -78,7 +78,24 @@ export default function CareTeam({ onChange }) {
     setRevoking(requestId);
     try {
       await patientApi.decideAccess(requestId, 'denied');
-      toast.success(`Done. ${name} can no longer see your records.`);
+      toast.success(`Done. You are no longer connected with ${name}.`);
+      refetch();
+      onChange?.();
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setRevoking(null);
+    }
+  };
+
+  // The second permission: opening or closing the health records for one doctor
+  const setRecords = async (requestId, decision, name) => {
+    setRevoking(requestId);
+    try {
+      await patientApi.decideRecords(requestId, decision);
+      toast.success(decision === 'approved'
+        ? `Done. ${name} can now see your health records.`
+        : `Done. ${name} can no longer see your health records.`);
       refetch();
       onChange?.();
     } catch (err) {
@@ -92,7 +109,7 @@ export default function CareTeam({ onChange }) {
     <>
       <PageHeader
         title={t('careTeam')}
-        description="Doctors who can see your records, and where to find new ones."
+        description="The doctors you are connected with, what each of them can see, and where to find new ones."
       />
 
       <Tabs
@@ -109,8 +126,8 @@ export default function CareTeam({ onChange }) {
           <>
             {pending.length > 0 ? (
               <Notice tone="warning" title="Waiting for your answer">
-                {pending.length} doctor{pending.length === 1 ? '' : 's'} asked to see your
-                records. You can answer on the home page.
+                {pending.length} doctor{pending.length === 1 ? '' : 's'} asked to connect with
+                you. You can answer on the home page.
               </Notice>
             ) : null}
 
@@ -118,8 +135,8 @@ export default function CareTeam({ onChange }) {
               <Card>
                 <EmptyState
                   icon="stethoscope"
-                  title="No doctor can see your records yet"
-                  description="Your records stay private until you allow someone. Find a doctor to get started."
+                  title="You are not connected with any doctor yet"
+                  description="Connect with a doctor first. Your health records stay closed until you allow them separately."
                   action={<Button variant="primary" onClick={() => setTab('directory')}>Find a doctor</Button>}
                 />
               </Card>
@@ -127,6 +144,8 @@ export default function CareTeam({ onChange }) {
               <div className="grid grid--cards">
                 {myTeam.map((d) => {
                   const req = statusFor.get(d.id);
+                  const records = req?.records_status || 'none';
+                  const openRecords = records === 'granted';
                   return (
                     <Card key={d.id}>
                       <div className="row gap-3 mb-4">
@@ -135,7 +154,7 @@ export default function CareTeam({ onChange }) {
                           <div className="strong">{d.full_name}</div>
                           <div className="muted text-sm">{d.specialization || 'Doctor'}</div>
                         </div>
-                        <Badge tone="accepted">Can see records</Badge>
+                        <Badge tone="accepted">Connected</Badge>
                       </div>
 
                       {d.hospital ? (
@@ -144,15 +163,41 @@ export default function CareTeam({ onChange }) {
                         </div>
                       ) : null}
 
-                      <div className="row gap-2">
+                      <div className="row gap-2 mb-4">
+                        <Icon name={openRecords ? 'records' : 'lock'} size={15} />
+                        <span className="text-sm">
+                          {openRecords
+                            ? 'Can see your health records'
+                            : records === 'pending'
+                              ? 'Asked to see your health records'
+                              : 'Cannot see your health records'}
+                        </span>
+                      </div>
+
+                      <div className="row gap-2 wrap">
+                        {openRecords ? (
+                          <Button
+                            variant="danger-quiet" size="sm" icon="lock"
+                            loading={revoking === req?.id}
+                            onClick={() => setRecords(req.id, 'stopped', d.full_name)}
+                          >
+                            Close my records
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="primary" size="sm" icon="records"
+                            loading={revoking === req?.id}
+                            onClick={() => setRecords(req.id, 'approved', d.full_name)}
+                          >
+                            Let them see my records
+                          </Button>
+                        )}
                         <Button
-                          variant="danger-quiet"
-                          size="sm"
-                          icon="lock"
-                          loading={revoking === req?.id}
+                          variant="ghost" size="sm" icon="x"
+                          disabled={revoking === req?.id}
                           onClick={() => revoke(req.id, d.full_name)}
                         >
-                          Stop sharing
+                          Disconnect
                         </Button>
                         <Button
                           variant="ghost"
@@ -212,8 +257,8 @@ export default function CareTeam({ onChange }) {
                       ) : null}
 
                       <div className="spread wrap gap-2">
-                        {state === 'accepted' ? (
-                          <Badge tone="accepted">Already your doctor</Badge>
+                        {state === 'accepted' || state === 'completed' ? (
+                          <Badge tone="accepted">Connected</Badge>
                         ) : state === 'pending' ? (
                           <div className="stack gap-2">
                             <Badge tone="pending">Waiting for reply</Badge>
@@ -228,7 +273,7 @@ export default function CareTeam({ onChange }) {
                             icon="plus"
                             onClick={() => setTarget(d)}
                           >
-                            Ask to be my doctor
+                            Ask to connect
                           </Button>
                         )}
 
@@ -253,7 +298,7 @@ export default function CareTeam({ onChange }) {
       <Dialog
         open={!!target}
         onClose={() => setTarget(null)}
-        title="Ask this doctor to see you"
+        title="Ask this doctor to connect"
         subtitle={target ? `${target.full_name}${target.specialization ? ` · ${target.specialization}` : ''}` : ''}
         footer={
           <>
@@ -264,11 +309,11 @@ export default function CareTeam({ onChange }) {
       >
         <div className="stack gap-4">
           <Notice tone="info">
-            This tells the doctor you would like their help. They still cannot open your records
-            until you say yes.
+            Connecting lets this doctor see your profile and work with you. Your health records
+            stay closed until you allow them separately.
           </Notice>
           <Field
-            label="What would you like help with?"
+            label="Why do you want to connect?"
             textarea
             rows={4}
             placeholder="For example: pain in my chest when I walk."

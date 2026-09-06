@@ -58,12 +58,13 @@ router.post('/doctor', requireDoctor, async (req, res) => {
   const { patient_id: patientId } = req.body;
   let context = '';
 
-  // Patient context is injected only after the server confirms the patient
-  // approved this clinician. The access check lives here, not in the client.
+  // Patient context is health information, so it needs the records permission
+  // and not only a connection. The access check lives here, not in the client.
   if (patientId) {
     try {
       const [access] = await pool.execute(
-        'SELECT id FROM consultation_requests WHERE patient_id = ? AND doctor_id = ? AND status = "accepted"',
+        `SELECT id FROM consultation_requests
+         WHERE patient_id = ? AND doctor_id = ? AND records_status = 'granted'`,
         [patientId, doctorId],
       );
 

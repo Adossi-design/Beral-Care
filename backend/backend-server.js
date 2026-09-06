@@ -179,6 +179,8 @@ app.get('/setup-db', async (req, res) => {
         reason TEXT,
         requested_by ENUM('patient', 'doctor') NOT NULL DEFAULT 'patient',
         status ENUM('pending', 'accepted', 'rejected', 'completed') DEFAULT 'pending',
+        records_status ENUM('none', 'pending', 'granted', 'refused') NOT NULL DEFAULT 'none',
+        records_reason TEXT DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         UNIQUE KEY unique_request (patient_id, doctor_id),
@@ -263,7 +265,9 @@ app.get('/setup-db', async (req, res) => {
          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
         [table, column],
       );
-      if (!found) await pool.query(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+      if (found) return false;
+      await pool.query(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+      return true;
     };
 
     await addColumn('users', 'doctor_id', 'VARCHAR(20) UNIQUE DEFAULT NULL');
@@ -275,6 +279,21 @@ app.get('/setup-db', async (req, res) => {
       'consultation_requests', 'requested_by',
       "ENUM('patient', 'doctor') NOT NULL DEFAULT 'patient'",
     );
+
+    // Seeing someone's health records is a second permission, asked for after
+    // the two are connected. Anyone connected before this existed keeps the
+    // access they already had.
+    await addColumn('consultation_requests', 'records_reason', 'TEXT DEFAULT NULL');
+    const recordsAdded = await addColumn(
+      'consultation_requests', 'records_status',
+      "ENUM('none', 'pending', 'granted', 'refused') NOT NULL DEFAULT 'none'",
+    );
+    if (recordsAdded) {
+      await pool.query(
+        `UPDATE consultation_requests SET records_status = 'granted'
+         WHERE status IN ('accepted', 'completed')`,
+      );
+    }
 
     // Lifting a block was added after the table, so widen the list if needed
     const [[actionColumn]] = await pool.query(

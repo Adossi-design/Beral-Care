@@ -47,13 +47,27 @@ export default function PatientScan({ open, onClose, onConnected }) {
     }
   }, []);
 
-  const ask = async () => {
+  const askToConnect = async () => {
     setBusy(true);
     try {
-      await clinicApi.askAccess(scanned.patient.patient_id, reason.trim() || null);
+      await clinicApi.askConnect(scanned.patient.patient_id, reason.trim() || null);
       setScanned((s) => ({ ...s, state: 'waiting' }));
       setReason('');
       toast.success(`Your request was sent to ${scanned.patient.full_name}.`);
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const askForRecords = async () => {
+    setBusy(true);
+    try {
+      await clinicApi.askRecords(scanned.patient.patient_id, reason.trim() || null);
+      setScanned((s) => ({ ...s, records_status: 'pending' }));
+      setReason('');
+      toast.success('Your request was sent. You will see the records once they agree.');
     } catch (err) {
       toast.error(errorMessage(err));
     } finally {
@@ -82,6 +96,7 @@ export default function PatientScan({ open, onClose, onConnected }) {
   }
 
   const state = scanned?.state;
+  const records = scanned?.records_status;
   const person = scanned?.patient;
 
   return (
@@ -91,8 +106,8 @@ export default function PatientScan({ open, onClose, onConnected }) {
       title={loading ? 'Reading the code' : 'Patient code'}
       subtitle={
         loading ? undefined
-          : state === 'connected' ? 'This person has allowed you to see their file.'
-            : 'Check this is the right person, then ask them for permission.'
+          : state === 'connected' ? 'You are connected with this person.'
+            : 'Check this is the right person, then ask to connect with them.'
       }
       width={460}
       footer={
@@ -101,11 +116,11 @@ export default function PatientScan({ open, onClose, onConnected }) {
             <Button onClick={close} block>Close</Button>
             {state === 'connected' ? (
               <Button variant="primary" iconRight="chevronRight" onClick={openFile} block>
-                Open the file
+                Open their page
               </Button>
             ) : state === 'none' || state === 'refused' ? (
-              <Button variant="primary" icon="send" onClick={ask} loading={busy} block>
-                Ask for permission
+              <Button variant="primary" icon="send" onClick={askToConnect} loading={busy} block>
+                Ask to connect
               </Button>
             ) : null}
           </>
@@ -133,19 +148,25 @@ export default function PatientScan({ open, onClose, onConnected }) {
                 <div className="strong" style={{ fontSize: 'var(--fs-md)' }}>{person.full_name}</div>
                 <div className="mono muted text-sm mt-1">{person.patient_id}</div>
               </div>
-              {state === 'connected' ? <Badge tone="accepted">You can see this file</Badge> : null}
+              {state === 'connected' ? <Badge tone="accepted">Connected</Badge> : null}
               {state === 'waiting' ? <Badge tone="pending">Waiting for their answer</Badge> : null}
+              {state === 'connected' && records === 'granted' ? (
+                <Badge tone="brand">You can see their records</Badge>
+              ) : null}
+              {state === 'connected' && records === 'pending' ? (
+                <Badge tone="pending">Records request waiting</Badge>
+              ) : null}
             </div>
           ) : null}
 
           {state === 'none' ? (
             <>
               <Notice tone="info">
-                You can see the name and the picture so you know you have the right person.
-                Their records stay closed until they allow you.
+                Connecting lets the two of you work together and see each other's profile.
+                It does not open any health record.
               </Notice>
               <Field
-                label="Why do you need to see this file?"
+                label="Why do you want to connect?"
                 textarea
                 rows={3}
                 placeholder="For example: they came to the clinic today with chest pain."
@@ -159,16 +180,44 @@ export default function PatientScan({ open, onClose, onConnected }) {
           {state === 'waiting' ? (
             <Notice tone="info" title="Nothing more to do for now">
               {person?.full_name?.split(' ')[0] || 'This person'} sees your request on their
-              home page. As soon as they say yes, this file opens for you and they appear in
-              your patient list.
+              home page. As soon as they say yes, you are connected and they appear in your
+              patient list.
             </Notice>
           ) : null}
 
           {state === 'their_request' ? (
             <Notice tone="warning" title="They already asked you">
-              This person asked you to be their doctor
+              This person asked to connect with you
               {scanned?.request?.created_at ? ` ${relativeDate(scanned.request.created_at, lang)}` : ''}.
-              Answer them on the Requests page and their file opens for you.
+              Answer them on the Requests page.
+            </Notice>
+          ) : null}
+
+          {/* Second step: the health records, asked for once connected */}
+          {state === 'connected' && (records === 'none' || records === 'refused') ? (
+            <>
+              <Notice tone="info" title="Their health records are separate">
+                Being connected shows you who they are. To read their past visits, medicines
+                and diagnoses, ask them for that as well.
+              </Notice>
+              <Field
+                label="Why do you need their health records?"
+                textarea
+                rows={3}
+                placeholder="For example: to check what medicine they were given last time."
+                hint="You can leave this empty."
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+              />
+              <Button variant="primary" icon="records" onClick={askForRecords} loading={busy} block>
+                Ask to see their health records
+              </Button>
+            </>
+          ) : null}
+
+          {state === 'connected' && records === 'pending' ? (
+            <Notice tone="info">
+              You asked to see their health records. They will answer on their home page.
             </Notice>
           ) : null}
 
@@ -197,7 +246,7 @@ export default function PatientScan({ open, onClose, onConnected }) {
           {state && state !== 'unknown' ? (
             <p className="muted text-xs row gap-2">
               <Icon name="lock" size={14} />
-              A code alone never opens a file. Only the patient can allow you.
+              A code alone never opens a health record. Only the patient can allow you.
             </p>
           ) : null}
         </div>

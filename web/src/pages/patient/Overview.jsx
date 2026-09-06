@@ -31,10 +31,17 @@ export default function Overview({ summary, onChange }) {
 
   const appointments = data?.appointments || [];
   const consultations = data?.consultations || [];
-  // Only a doctor's request needs an answer. The patient's own requests are
-  // waiting on the doctor, and are shown on the care team page instead.
-  const pending = (data?.requests || [])
-    .filter((r) => r.status === 'pending' && r.requested_by === 'doctor');
+  // Two things can need an answer: a doctor asking to connect, and a doctor
+  // already connected asking to see the health records.
+  const requests = data?.requests || [];
+  const pending = [
+    ...requests
+      .filter((r) => r.status === 'pending' && r.requested_by === 'doctor')
+      .map((r) => ({ ...r, kind: 'connect' })),
+    ...requests
+      .filter((r) => r.records_status === 'pending')
+      .map((r) => ({ ...r, kind: 'records' })),
+  ];
 
   const upcoming = appointments.filter((a) => isUpcoming(a.consultation_date) && a.status !== 'cancelled');
   const diagnoses = consultations.filter((c) => c.diagnosis).length;
@@ -48,11 +55,20 @@ export default function Overview({ summary, onChange }) {
 
   const firstName = (user?.full_name || user?.name || '').split(' ')[0];
 
-  const decide = async (id, decision) => {
-    setDeciding(id);
+  const decide = async (item, decision) => {
+    setDeciding(`${item.kind}-${item.id}`);
     try {
-      await patientApi.decideAccess(id, decision);
-      toast.success(decision === 'approved' ? 'Done. This doctor can now see your records.' : 'Done. This doctor cannot see your records.');
+      if (item.kind === 'records') {
+        await patientApi.decideRecords(item.id, decision);
+        toast.success(decision === 'approved'
+          ? 'Done. This doctor can now see your health records.'
+          : 'Done. Your health records stay closed.');
+      } else {
+        await patientApi.decideAccess(item.id, decision);
+        toast.success(decision === 'approved'
+          ? 'Done. You are connected with this doctor.'
+          : 'Done. This doctor is not connected with you.');
+      }
       refetch();
       onChange?.();
     } catch (err) {
@@ -83,50 +99,61 @@ export default function Overview({ summary, onChange }) {
       {pending.length > 0 ? (
         <Section title={`${t('pendingRequests')} (${pending.length})`}>
           <div className="stack gap-3">
-            {pending.map((r) => (
-              <Card key={r.id}>
-                <div className="spread wrap gap-4">
-                  <div className="row gap-3 grow">
-                    <PersonAvatar
-                      id={r.doctor_id}
-                      name={r.doctor_name}
-                      src={assetUrl(r.profile_image_url)}
-                      size={40}
-                    />
-                    <div className="grow">
-                      <div className="strong">{r.doctor_name}</div>
-                      <div className="muted text-sm">
-                        {[r.specialization || 'Doctor', r.hospital].filter(Boolean).join(' · ')}
-                        {' · asked '}{relativeDate(r.created_at, lang)}
+            {pending.map((r) => {
+              const isRecords = r.kind === 'records';
+              const key = `${r.kind}-${r.id}`;
+              const note = isRecords ? r.records_reason : r.reason;
+              return (
+                <Card key={key}>
+                  <div className="spread wrap gap-4">
+                    <div className="row gap-3 grow">
+                      <PersonAvatar
+                        id={r.doctor_id}
+                        name={r.doctor_name}
+                        src={assetUrl(r.profile_image_url)}
+                        size={40}
+                      />
+                      <div className="grow">
+                        <div className="row gap-2 wrap">
+                          <span className="strong">{r.doctor_name}</span>
+                          <Badge tone={isRecords ? 'brand' : 'pending'}>
+                            {isRecords ? 'Wants to see your records' : 'Wants to connect'}
+                          </Badge>
+                        </div>
+                        <div className="muted text-sm mt-1">
+                          {[r.specialization || 'Doctor', r.hospital].filter(Boolean).join(' · ')}
+                          {' · asked '}{relativeDate(isRecords ? r.updated_at : r.created_at, lang)}
+                        </div>
+                        {note ? (
+                          <p className="text-sm mt-2" style={{ maxWidth: '60ch' }}>“{note}”</p>
+                        ) : null}
                       </div>
-                      {r.reason ? (
-                        <p className="text-sm mt-2" style={{ maxWidth: '60ch' }}>“{r.reason}”</p>
-                      ) : null}
+                    </div>
+                    <div className="row gap-2">
+                      <Button
+                        variant="primary" icon="check"
+                        loading={deciding === key}
+                        onClick={() => decide(r, 'approved')}
+                      >
+                        {t('approve')}
+                      </Button>
+                      <Button
+                        variant="danger-quiet" icon="x"
+                        disabled={deciding === key}
+                        onClick={() => decide(r, 'denied')}
+                      >
+                        {t('decline')}
+                      </Button>
                     </div>
                   </div>
-                  <div className="row gap-2">
-                    <Button
-                      variant="primary" icon="check"
-                      loading={deciding === r.id}
-                      onClick={() => decide(r.id, 'approved')}
-                    >
-                      {t('approve')}
-                    </Button>
-                    <Button
-                      variant="danger-quiet" icon="x"
-                      disabled={deciding === r.id}
-                      onClick={() => decide(r.id, 'denied')}
-                    >
-                      {t('decline')}
-                    </Button>
-                  </div>
-                </div>
-                <p className="muted text-xs mt-4">
-                  If you say yes, this doctor can read your past visits. You can say no without
-                  giving a reason, and you can change your mind later.
-                </p>
-              </Card>
-            ))}
+                  <p className="muted text-xs mt-4">
+                    {isRecords
+                      ? 'If you say yes, this doctor can read your past visits, medicines and diagnoses. You can close them again at any time.'
+                      : 'Connecting lets this doctor see your profile and work with you. It does not open your health records. They have to ask for that separately.'}
+                  </p>
+                </Card>
+              );
+            })}
           </div>
         </Section>
       ) : null}
@@ -215,7 +242,7 @@ export default function Overview({ summary, onChange }) {
             <div className="idcard__label">{t('healthId')}</div>
             <div className="idcard__value">{user?.patient_id || '-'}</div>
             <p className="text-xs mt-2" style={{ color: 'var(--pine-200)', position: 'relative' }}>
-              Show this to your doctor. They can scan it and ask to see your records.
+              Show this to your doctor. They can scan it and ask to connect with you.
             </p>
             <div className="idcard__actions">
               <button type="button" className="idcard__btn" onClick={copyId}>
@@ -256,7 +283,7 @@ export default function Overview({ summary, onChange }) {
         value={user?.patient_id}
         name={user?.full_name || user?.name}
         label={t('healthId')}
-        caption="A doctor can scan this to ask for permission. They see nothing until you say yes."
+        caption="A doctor can scan this to ask to connect. Your health records stay closed until you allow them separately."
       />
     </>
   );

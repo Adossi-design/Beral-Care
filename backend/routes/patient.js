@@ -92,11 +92,19 @@ router.patch('/consultation-requests/:id', async (req, res) => {
       [newStatus, id]
     );
 
+    // Losing the connection ends the records permission with it
+    if (decision === 'denied') {
+      await pool.execute(
+        "UPDATE consultation_requests SET records_status = 'none', records_reason = NULL WHERE id = ?",
+        [id],
+      );
+    }
+
     // Notify the doctor of the patient decision
     const [patient] = await pool.execute('SELECT full_name FROM users WHERE id = ?', [patientId]);
     const message = decision === 'approved'
-      ? `${patient[0].full_name} approved your access request`
-      : `${patient[0].full_name} denied your access request`;
+      ? `${patient[0].full_name} is now connected with you`
+      : `${patient[0].full_name} did not accept your request`;
 
     await pool.execute(
       'INSERT INTO notifications (user_id, type, related_user_id, message) VALUES (?, ?, ?, ?)',
@@ -110,6 +118,59 @@ router.patch('/consultation-requests/:id', async (req, res) => {
   }
 });
 
+/**
+ * PATCH /api/patient/records-requests/:id
+ * The second permission, answered by the patient. Allowing it lets that one
+ * doctor read their health history. Stopping it closes the history again and
+ * leaves the connection in place.
+ */
+router.patch('/records-requests/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { decision } = req.body;
+    const patientId = req.user.id;
+
+    if (!['approved', 'denied', 'stopped'].includes(decision)) {
+      return res.status(400).json({ error: 'Unknown decision.' });
+    }
+
+    const [[link]] = await pool.execute(
+      `SELECT doctor_id, status, records_status FROM consultation_requests
+       WHERE id = ? AND patient_id = ?`,
+      [id, patientId],
+    );
+    if (!link) return res.status(404).json({ error: 'Request not found.' });
+
+    if (decision === 'approved' && link.status !== 'accepted' && link.status !== 'completed') {
+      return res.status(400).json({ error: 'Connect with this doctor first.' });
+    }
+
+    const next = decision === 'approved' ? 'granted' : decision === 'denied' ? 'refused' : 'none';
+
+    await pool.execute(
+      'UPDATE consultation_requests SET records_status = ?, records_reason = NULL WHERE id = ?',
+      [next, id],
+    );
+
+    const [[patient]] = await pool.execute('SELECT full_name FROM users WHERE id = ?', [patientId]);
+    const message = decision === 'approved'
+      ? `${patient.full_name} allowed you to see their health records`
+      : decision === 'denied'
+        ? `${patient.full_name} did not allow you to see their health records`
+        : `${patient.full_name} closed their health records`;
+
+    await pool.execute(
+      'INSERT INTO notifications (user_id, type, related_user_id, message) VALUES (?, ?, ?, ?)',
+      [link.doctor_id, 'records_answer', patientId, message],
+    );
+
+    res.json({ records_status: next });
+  } catch (error) {
+    console.error('Error answering a records request:', error);
+    res.status(500).json({ error: 'Could not save your answer.' });
+  }
+});
+
 // GET /api/patient/consultation-requests - Get request status
 router.get('/consultation-requests', async (req, res) => {
   try {
@@ -117,7 +178,8 @@ router.get('/consultation-requests', async (req, res) => {
 
     const [requests] = await pool.execute(
       `SELECT cr.id, cr.doctor_id, u.full_name as doctor_name, u.specialization, u.hospital,
-              u.profile_image_url, cr.reason, cr.requested_by, cr.status, cr.created_at
+              u.profile_image_url, cr.reason, cr.requested_by, cr.status,
+              cr.records_status, cr.records_reason, cr.created_at, cr.updated_at
        FROM consultation_requests cr
        JOIN users u ON cr.doctor_id = u.id
        WHERE cr.patient_id = ?
@@ -198,10 +260,12 @@ router.get('/dashboard', async (req, res) => {
   try {
     const patientId = req.user.id;
 
-    // Only requests a doctor sent need an answer from the patient
+    // Waiting on the patient: a doctor asking to connect, or one asking to
+    // see their health records
     const [pendingRequests] = await pool.execute(
       `SELECT COUNT(*) as count FROM consultation_requests
-       WHERE patient_id = ? AND status = 'pending' AND requested_by = 'doctor'`,
+       WHERE patient_id = ?
+         AND ((status = 'pending' AND requested_by = 'doctor') OR records_status = 'pending')`,
       [patientId]
     );
 

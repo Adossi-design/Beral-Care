@@ -35,6 +35,9 @@ export const patient = {
     api.post('/api/patient/consultation-requests', { doctor_id: doctorId, reason }).then((r) => r.data),
   decideAccess:  (id, decision) =>
     api.patch(`/api/patient/consultation-requests/${id}`, { decision }).then((r) => r.data),
+  // decision is 'approved', 'denied', or 'stopped' to close the records again
+  decideRecords: (id, decision) =>
+    api.patch(`/api/patient/records-requests/${id}`, { decision }).then((r) => r.data),
   book: (payload) => api.post('/api/patient/appointments', payload).then((r) => r.data),
 };
 
@@ -51,8 +54,11 @@ export const clinic = {
   createAppointment:  (payload) => api.post('/api/doctor/create-appointment', payload).then((r) => r.data),
   assignId: () => api.post('/api/doctor/assign-id').then((r) => r.data),
   scan: (patientId) => api.get(`/api/doctor/scan/${encodeURIComponent(patientId)}`).then((r) => r.data),
-  askAccess: (patientId, reason) =>
+  // Connecting comes first, seeing the health records is asked for after
+  askConnect: (patientId, reason) =>
     api.post('/api/doctor/access-requests', { patient_id: patientId, reason }).then((r) => r.data),
+  askRecords: (patientId, reason) =>
+    api.post('/api/doctor/records-requests', { patient_id: patientId, reason }).then((r) => r.data),
 };
 
 export const people = {

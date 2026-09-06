@@ -252,7 +252,7 @@ router.get('/scan/:patient_id', async (req, res) => {
     }
 
     const [[link]] = await pool.execute(
-      `SELECT id, status, requested_by, reason, created_at
+      `SELECT id, status, requested_by, reason, records_status, created_at
        FROM consultation_requests WHERE patient_id = ? AND doctor_id = ?`,
       [patient.id, doctorId],
     );
@@ -273,6 +273,7 @@ router.get('/scan/:patient_id', async (req, res) => {
         profile_image_url: patient.profile_image_url,
       },
       state,
+      records_status: link ? link.records_status : 'none',
       request: link ? { id: link.id, reason: link.reason, created_at: link.created_at } : null,
     });
   } catch (error) {
@@ -283,8 +284,9 @@ router.get('/scan/:patient_id', async (req, res) => {
 
 /**
  * POST /api/doctor/access-requests
- * The doctor asks one patient for permission. Nothing opens here: the request
- * waits until that patient approves it in their own account.
+ * Asks one patient to connect. Being connected means the two can see each
+ * other's profile and work together. It does not open any health record:
+ * that is a second permission, asked for separately below.
  */
 router.post('/access-requests', async (req, res) => {
   try {
@@ -306,7 +308,7 @@ router.post('/access-requests', async (req, res) => {
     );
 
     if (link && (link.status === 'accepted' || link.status === 'completed')) {
-      return res.status(400).json({ error: 'This patient has already allowed you.' });
+      return res.status(400).json({ error: 'You are already connected with this patient.' });
     }
     if (link && link.status === 'pending') {
       return res.status(400).json({ error: 'A request is already waiting for their answer.' });
@@ -338,18 +340,81 @@ router.post('/access-requests', async (req, res) => {
       'INSERT INTO notifications (user_id, type, related_user_id, message) VALUES (?, ?, ?, ?)',
       [
         patient.id, 'consultation_request', doctorId,
-        `Dr ${doctor.full_name}${where} scanned your code and is asking to see your records. Open your home page to answer.`,
+        `Dr ${doctor.full_name}${where} would like to connect with you. Open your home page to answer.`,
       ],
     );
 
     res.status(201).json({ state: 'waiting', patient_name: patient.full_name });
   } catch (error) {
-    console.error('Error asking for access:', error);
+    console.error('Error asking to connect:', error);
     res.status(500).json({ error: 'Could not send your request. Please try again.' });
   }
 });
 
-// GET /api/doctor/patient/{patient_id} - Get patient details (requires access)
+/**
+ * POST /api/doctor/records-requests
+ * The second permission. Being connected is not enough to read someone's
+ * health history, so the doctor asks for it, and the patient decides.
+ */
+router.post('/records-requests', async (req, res) => {
+  try {
+    const doctorId = req.user.id;
+    const { patient_id: patientId, reason } = req.body;
+
+    if (!patientId) return res.status(400).json({ error: 'Please choose a patient first.' });
+
+    const [[patient]] = await pool.execute(
+      `SELECT id, full_name FROM users
+       WHERE patient_id = ? AND role = 'patient' AND suspended = 0`,
+      [String(patientId).trim().toUpperCase()],
+    );
+    if (!patient) return res.status(404).json({ error: 'That patient was not found.' });
+
+    const [[link]] = await pool.execute(
+      `SELECT id, status, records_status FROM consultation_requests
+       WHERE patient_id = ? AND doctor_id = ?`,
+      [patient.id, doctorId],
+    );
+
+    if (!link || (link.status !== 'accepted' && link.status !== 'completed')) {
+      return res.status(403).json({ error: 'Connect with this patient first.' });
+    }
+    if (link.records_status === 'granted') {
+      return res.status(400).json({ error: 'You can already see their health records.' });
+    }
+    if (link.records_status === 'pending') {
+      return res.status(400).json({ error: 'A request is already waiting for their answer.' });
+    }
+
+    const note = reason && reason.trim() ? reason.trim().slice(0, 500) : null;
+
+    await pool.execute(
+      `UPDATE consultation_requests
+       SET records_status = 'pending', records_reason = ? WHERE id = ?`,
+      [note, link.id],
+    );
+
+    const [[doctor]] = await pool.execute('SELECT full_name FROM users WHERE id = ?', [doctorId]);
+    await pool.execute(
+      'INSERT INTO notifications (user_id, type, related_user_id, message) VALUES (?, ?, ?, ?)',
+      [
+        patient.id, 'records_request', doctorId,
+        `Dr ${doctor.full_name} is asking to see your health records. Open your home page to answer.`,
+      ],
+    );
+
+    res.status(201).json({ records_status: 'pending' });
+  } catch (error) {
+    console.error('Error asking for records:', error);
+    res.status(500).json({ error: 'Could not send your request. Please try again.' });
+  }
+});
+
+/**
+ * GET /api/doctor/patient/{patient_id}
+ * Connected doctors see who the person is and the notes they wrote
+ * themselves. The rest of the health history needs the second permission.
+ */
 router.get('/patient/:patient_id', async (req, res) => {
   try {
     const { patient_id } = req.params;
@@ -372,28 +437,43 @@ router.get('/patient/:patient_id', async (req, res) => {
 
     const patientUserId = users[0].id;
 
-    // Check if doctor has access
-    const [access] = await pool.execute(
-      'SELECT id FROM consultation_requests WHERE patient_id = ? AND doctor_id = ? AND status = "accepted"',
-      [patientUserId, doctorId]
+    const [[link]] = await pool.execute(
+      `SELECT id, status, records_status FROM consultation_requests
+       WHERE patient_id = ? AND doctor_id = ?`,
+      [patientUserId, doctorId],
     );
 
-    if (access.length === 0) {
-      return res.status(403).json({ error: 'No access to this patient. Patient must approve your request first.' });
+    const connected = !!link && (link.status === 'accepted' || link.status === 'completed');
+    if (!connected) {
+      return res.status(403).json({ error: 'No access to this patient. Connect with them first.' });
     }
 
-    // Get patient consultations
-    const [consultations] = await pool.execute(
-      `SELECT id, consultation_date, diagnosis, prescription, notes, status
-       FROM consultations
-       WHERE patient_id = ? AND doctor_id = ?
-       ORDER BY consultation_date DESC`,
-      [patientUserId, doctorId]
-    );
+    const canReadRecords = link.records_status === 'granted';
+
+    // Without the second permission a doctor reads only their own notes
+    const [consultations] = canReadRecords
+      ? await pool.execute(
+        `SELECT c.id, c.consultation_date, c.diagnosis, c.prescription, c.notes, c.status,
+                c.doctor_id, u.full_name AS doctor_name
+         FROM consultations c
+         LEFT JOIN users u ON u.id = c.doctor_id
+         WHERE c.patient_id = ?
+         ORDER BY c.consultation_date DESC`,
+        [patientUserId],
+      )
+      : await pool.execute(
+        `SELECT id, consultation_date, diagnosis, prescription, notes, status, doctor_id
+         FROM consultations
+         WHERE patient_id = ? AND doctor_id = ?
+         ORDER BY consultation_date DESC`,
+        [patientUserId, doctorId],
+      );
 
     res.json({
       ...users[0],
-      consultations
+      records_status: link.records_status,
+      can_read_records: canReadRecords,
+      consultations,
     });
   } catch (error) {
     console.error('Error fetching patient:', error);
@@ -401,29 +481,31 @@ router.get('/patient/:patient_id', async (req, res) => {
   }
 });
 
-// GET /api/doctor/patients/{patient_id}/consultations - Get patient's consultation history
+// GET /api/doctor/patients/{patient_id}/consultations - health history
 router.get('/patients/:patient_id/consultations', async (req, res) => {
   try {
     const { patient_id } = req.params;
     const doctorId = req.user.id;
 
-    // Verify doctor has accepted request from this patient
+    // Reading someone's history needs the second permission, not just a link
     const [access] = await pool.execute(
-      'SELECT id FROM consultation_requests WHERE patient_id = ? AND doctor_id = ? AND status = "accepted"',
+      `SELECT id FROM consultation_requests
+       WHERE patient_id = ? AND doctor_id = ? AND records_status = 'granted'`,
       [patient_id, doctorId]
     );
 
     if (access.length === 0) {
-      return res.status(403).json({ error: 'No access to this patient' });
+      return res.status(403).json({ error: 'This patient has not allowed you to see their records.' });
     }
 
-    // Get consultations
     const [consultations] = await pool.execute(
-      `SELECT c.id, c.consultation_date, c.diagnosis, c.prescription, c.notes, c.status
+      `SELECT c.id, c.consultation_date, c.diagnosis, c.prescription, c.notes, c.status,
+              u.full_name AS doctor_name
        FROM consultations c
-       WHERE c.patient_id = ? AND c.doctor_id = ?
+       LEFT JOIN users u ON u.id = c.doctor_id
+       WHERE c.patient_id = ?
        ORDER BY c.consultation_date DESC`,
-      [patient_id, doctorId]
+      [patient_id]
     );
 
     res.json(consultations);
