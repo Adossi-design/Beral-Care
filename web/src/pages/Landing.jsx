@@ -39,6 +39,7 @@ export default function Landing() {
         <nav className="pubnav__links">
           <a className="pubnav__link" href="#how">{t('nav.what')}</a>
           <a className="pubnav__link" href="#channels">{t('nav.ways')}</a>
+          <Link className="pubnav__link" to="/doctors">Doctors</Link>
           <Link className="pubnav__link" to="/about">{t('nav.why')}</Link>
           <LanguageToggle />
           <Button to="/login" size="sm">{t('signIn')}</Button>
