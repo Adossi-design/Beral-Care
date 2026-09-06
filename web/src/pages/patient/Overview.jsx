@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  PageHeader, Section, Card, CardHeader, Stat, Badge, Button, Avatar,
+  PageHeader, Section, Card, CardHeader, Stat, Badge, Button,
   EmptyState, SkeletonRows, Notice, Icon, useToast,
 } from '../../components/ui';
 import { QrDialog } from '../../components/QrCode';
+import PersonAvatar from '../../components/PersonCard';
 import { useAuth } from '../../lib/auth';
 import { useI18n } from '../../lib/i18n';
 import { useAsyncAll } from '../../lib/useAsync';
 import { patient as patientApi } from '../../lib/services';
 import { formatDate, relativeDate, greetingKey, isUpcoming } from '../../lib/format';
-import { errorMessage } from '../../lib/api';
+import { assetUrl, errorMessage } from '../../lib/api';
 
 // Ordered by what needs an answer first, so pending access requests sit above
 // everything else: a doctor cannot work until the patient replies.
@@ -30,7 +31,10 @@ export default function Overview({ summary, onChange }) {
 
   const appointments = data?.appointments || [];
   const consultations = data?.consultations || [];
-  const pending = (data?.requests || []).filter((r) => r.status === 'pending');
+  // Only a doctor's request needs an answer. The patient's own requests are
+  // waiting on the doctor, and are shown on the care team page instead.
+  const pending = (data?.requests || [])
+    .filter((r) => r.status === 'pending' && r.requested_by === 'doctor');
 
   const upcoming = appointments.filter((a) => isUpcoming(a.consultation_date) && a.status !== 'cancelled');
   const diagnoses = consultations.filter((c) => c.diagnosis).length;
@@ -83,12 +87,21 @@ export default function Overview({ summary, onChange }) {
               <Card key={r.id}>
                 <div className="spread wrap gap-4">
                   <div className="row gap-3 grow">
-                    <Avatar name={r.doctor_name} size={40} />
+                    <PersonAvatar
+                      id={r.doctor_id}
+                      name={r.doctor_name}
+                      src={assetUrl(r.profile_image_url)}
+                      size={40}
+                    />
                     <div className="grow">
                       <div className="strong">{r.doctor_name}</div>
                       <div className="muted text-sm">
-                        {r.specialization || 'Doctor'} · asked {relativeDate(r.created_at, lang)}
+                        {[r.specialization || 'Doctor', r.hospital].filter(Boolean).join(' · ')}
+                        {' · asked '}{relativeDate(r.created_at, lang)}
                       </div>
+                      {r.reason ? (
+                        <p className="text-sm mt-2" style={{ maxWidth: '60ch' }}>“{r.reason}”</p>
+                      ) : null}
                     </div>
                   </div>
                   <div className="row gap-2">
@@ -202,7 +215,7 @@ export default function Overview({ summary, onChange }) {
             <div className="idcard__label">{t('healthId')}</div>
             <div className="idcard__value">{user?.patient_id || '-'}</div>
             <p className="text-xs mt-2" style={{ color: 'var(--pine-200)', position: 'relative' }}>
-              Show this to your doctor so they can find your file quickly.
+              Show this to your doctor. They can scan it and ask to see your records.
             </p>
             <div className="idcard__actions">
               <button type="button" className="idcard__btn" onClick={copyId}>
@@ -243,7 +256,7 @@ export default function Overview({ summary, onChange }) {
         value={user?.patient_id}
         name={user?.full_name || user?.name}
         label={t('healthId')}
-        caption="Your doctor can scan this code to open your file. No typing needed."
+        caption="A doctor can scan this to ask for permission. They see nothing until you say yes."
       />
     </>
   );

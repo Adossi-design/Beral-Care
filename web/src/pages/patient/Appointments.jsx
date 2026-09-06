@@ -1,13 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import {
-  PageHeader, Card, Badge, Button, Avatar, Tabs, EmptyState,
+  PageHeader, Card, Badge, Button, Tabs, EmptyState,
   SkeletonRows, Dialog, Field, SelectField, useToast, Icon,
 } from '../../components/ui';
+import PersonAvatar from '../../components/PersonCard';
 import { useI18n } from '../../lib/i18n';
 import { useAsyncAll } from '../../lib/useAsync';
 import { patient as patientApi } from '../../lib/services';
 import { formatLongDate, relativeDate, isUpcoming } from '../../lib/format';
-import { errorMessage } from '../../lib/api';
+import { assetUrl, errorMessage } from '../../lib/api';
 
 export default function Appointments() {
   const { t, lang } = useI18n();
@@ -77,7 +78,12 @@ export default function Appointments() {
               <Card key={a.id}>
                 <div className="spread wrap gap-4">
                   <div className="row gap-3 grow">
-                    <Avatar name={a.doctor_name} size={44} />
+                    <PersonAvatar
+                      id={a.doctor_id}
+                      name={a.doctor_name}
+                      src={assetUrl(a.profile_image_url)}
+                      size={44}
+                    />
                     <div className="grow">
                       <div className="strong">{a.doctor_name}</div>
                       <div className="muted text-sm">{a.specialization || 'General visit'}</div>

@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  PageHeader, Card, CardHeader, Stat, Button, Avatar, Badge,
+  PageHeader, Card, CardHeader, Stat, Button, Badge,
   SkeletonRows, Notice, EmptyState,
 } from '../../components/ui';
+import PersonAvatar from '../../components/PersonCard';
 import { useI18n } from '../../lib/i18n';
 import { useAsyncAll } from '../../lib/useAsync';
 import { admin as adminApi } from '../../lib/services';
@@ -121,7 +122,7 @@ export default function Overview() {
             <div className="stack gap-3">
               {recent.map((u) => (
                 <div className="row gap-3" key={u.id}>
-                  <Avatar name={u.full_name} size={32} />
+                  <PersonAvatar id={u.role === 'admin' ? null : u.id} name={u.full_name} size={32} />
                   <div className="grow">
                     <div className="text-sm strong truncate">{u.full_name}</div>
                     <div className="muted text-xs">

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import {
-  PageHeader, Card, Badge, Button, Avatar, Tabs, EmptyState,
+  PageHeader, Card, Badge, Button, Tabs, EmptyState,
   SkeletonRows, Notice, useToast,
 } from '../../components/ui';
 import ReportDialog from '../../components/ReportDialog';
+import PersonAvatar from '../../components/PersonCard';
 import { useI18n } from '../../lib/i18n';
 import { useAsync } from '../../lib/useAsync';
 import { clinic as clinicApi } from '../../lib/services';
@@ -82,7 +83,7 @@ export default function Requests({ onChange }) {
               <Card key={r.id}>
                 <div className="spread wrap gap-4">
                   <div className="row gap-3 grow">
-                    <Avatar name={r.patient_name} size={44} />
+                    <PersonAvatar id={r.patient_user_id} name={r.patient_name} size={44} />
                     <div className="grow">
                       <div className="strong">{r.patient_name}</div>
                       <div className="muted text-sm">

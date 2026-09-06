@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import {
-  PageHeader, Card, Badge, Button, Avatar, SearchInput, EmptyState,
+  PageHeader, Card, Badge, Button, SearchInput, EmptyState,
   SkeletonRows, Dialog, Field, Tabs, useToast, Icon, Notice,
 } from '../../components/ui';
 import ReportDialog from '../../components/ReportDialog';
+import PersonAvatar from '../../components/PersonCard';
 import { useI18n } from '../../lib/i18n';
 import { useAsyncAll } from '../../lib/useAsync';
 import { patient as patientApi } from '../../lib/services';
@@ -39,8 +40,12 @@ export default function CareTeam({ onChange }) {
     return map;
   }, [requests]);
 
-  const myTeam = doctors.filter((d) => statusFor.get(d.id)?.status === 'accepted');
-  const pending = requests.filter((r) => r.status === 'pending');
+  const myTeam = doctors.filter((d) => {
+    const state = statusFor.get(d.id)?.status;
+    return state === 'accepted' || state === 'completed';
+  });
+  // Requests a doctor sent are the ones waiting on the patient
+  const pending = requests.filter((r) => r.status === 'pending' && r.requested_by === 'doctor');
 
   const directory = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -125,7 +130,7 @@ export default function CareTeam({ onChange }) {
                   return (
                     <Card key={d.id}>
                       <div className="row gap-3 mb-4">
-                        <Avatar name={d.full_name} src={assetUrl(d.profile_image_url)} size={44} />
+                        <PersonAvatar id={d.id} name={d.full_name} src={assetUrl(d.profile_image_url)} size={44} />
                         <div className="grow">
                           <div className="strong">{d.full_name}</div>
                           <div className="muted text-sm">{d.specialization || 'Doctor'}</div>
@@ -193,7 +198,7 @@ export default function CareTeam({ onChange }) {
                   return (
                     <Card key={d.id}>
                       <div className="row gap-3 mb-4">
-                        <Avatar name={d.full_name} src={assetUrl(d.profile_image_url)} size={44} />
+                        <PersonAvatar id={d.id} name={d.full_name} src={assetUrl(d.profile_image_url)} size={44} />
                         <div className="grow">
                           <div className="strong">{d.full_name}</div>
                           <div className="muted text-sm">{d.specialization || 'Doctor'}</div>

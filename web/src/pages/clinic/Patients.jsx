@@ -1,13 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  PageHeader, Card, Button, Avatar, SearchInput, EmptyState,
+  PageHeader, Card, Button, SearchInput, EmptyState,
   SkeletonRows, Notice, Icon,
 } from '../../components/ui';
-import { QrScannerDialog } from '../../components/QrCode';
+import PatientScan from '../../components/PatientScan';
+import PersonAvatar from '../../components/PersonCard';
 import { useI18n } from '../../lib/i18n';
 import { useAsync } from '../../lib/useAsync';
 import { clinic as clinicApi } from '../../lib/services';
+import { assetUrl } from '../../lib/api';
 import { formatDate, relativeDate } from '../../lib/format';
 
 // A table on wider screens because it is faster to scan than cards. The same
@@ -66,7 +68,7 @@ export default function Patients() {
             description={
               query
                 ? 'Try another name or health ID.'
-                : 'Patients show up here after they allow you to see their records. You can also scan a patient code to open a file.'
+                : 'Scan the code of the person in front of you and ask them for permission. They show up here as soon as they say yes.'
             }
             action={
               query
@@ -92,7 +94,12 @@ export default function Patients() {
                   <tr key={p.id}>
                     <td data-label="Patient">
                       <span className="row gap-3">
-                        <Avatar name={p.full_name} size={32} />
+                        <PersonAvatar
+                          id={p.id}
+                          name={p.full_name}
+                          src={assetUrl(p.profile_image_url)}
+                          size={32}
+                        />
                         <span className="strong">{p.full_name}</span>
                       </span>
                     </td>
@@ -122,16 +129,10 @@ export default function Patients() {
         </div>
       )}
 
-      <QrScannerDialog
+      <PatientScan
         open={scanning}
         onClose={() => setScanning(false)}
-        onResult={(value) => {
-          const match = String(value).match(/BC-\d{4}-\d+/i);
-          setScanning(false);
-          open(match ? match[0] : value);
-        }}
-        title="Scan patient code"
-        pattern={/BC-\d{4}-\d+/i}
+        onConnected={refetch}
       />
     </>
   );

@@ -1,14 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  PageHeader, Card, Badge, Button, Avatar, Tabs, EmptyState,
+  PageHeader, Card, Badge, Button, Tabs, EmptyState,
   SkeletonRows, Notice, Dialog, Field, useToast, Icon,
 } from '../../components/ui';
+import PersonAvatar from '../../components/PersonCard';
 import { useI18n } from '../../lib/i18n';
 import { useAsync } from '../../lib/useAsync';
 import { clinic as clinicApi } from '../../lib/services';
 import { formatLongDate, relativeDate, isUpcoming, groupBy } from '../../lib/format';
-import { errorMessage } from '../../lib/api';
+import { assetUrl, errorMessage } from '../../lib/api';
 
 // Grouped by day, because that is how a doctor reads a schedule
 export default function Appointments() {
@@ -88,7 +89,12 @@ export default function Appointments() {
                   <div className="rows">
                     {items.map((a) => (
                       <div className="row-item" key={a.id}>
-                        <Avatar name={a.patient_name} size={38} />
+                        <PersonAvatar
+                          id={a.patient_user_id}
+                          name={a.patient_name}
+                          src={assetUrl(a.profile_image_url)}
+                          size={38}
+                        />
                         <div className="grow">
                           <div className="row-item__title">{a.patient_name}</div>
                           <div className="row-item__meta mono">{a.patient_id}</div>

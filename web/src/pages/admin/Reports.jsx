@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import {
-  PageHeader, Card, Badge, Button, Avatar, Stat, SearchInput, ChipGroup,
+  PageHeader, Card, Badge, Button, Stat, SearchInput, ChipGroup,
   SelectField, EmptyState, SkeletonRows, Notice, Icon,
 } from '../../components/ui';
+import PersonAvatar from '../../components/PersonCard';
 import ReportDetail from './ReportDetail';
 import { useI18n } from '../../lib/i18n';
 import { useAsync } from '../../lib/useAsync';
@@ -150,7 +151,7 @@ export default function Reports() {
             <Card key={r.id}>
               <div className="spread wrap gap-4">
                 <div className="row gap-3 grow">
-                  <Avatar name={r.reported_name} size={40} />
+                  <PersonAvatar id={r.reported_id} name={r.reported_name} size={40} />
                   <div className="grow">
                     <div className="row gap-2 wrap">
                       <span className="strong">{r.reported_name || 'Deleted account'}</span>

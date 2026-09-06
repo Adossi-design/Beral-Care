@@ -9,7 +9,19 @@ import { useI18n } from '../../lib/i18n';
 import { useAsync } from '../../lib/useAsync';
 import { clinic as clinicApi } from '../../lib/services';
 import { formatLongDate, relativeDate } from '../../lib/format';
-import { errorMessage } from '../../lib/api';
+import { assetUrl, errorMessage } from '../../lib/api';
+
+// Whole years, so the sidebar can say "32 years" without any working out
+const ageFrom = (dob) => {
+  if (!dob) return null;
+  const born = new Date(dob);
+  if (Number.isNaN(born.getTime())) return null;
+  const now = new Date();
+  let years = now.getFullYear() - born.getFullYear();
+  const month = now.getMonth() - born.getMonth();
+  if (month < 0 || (month === 0 && now.getDate() < born.getDate())) years -= 1;
+  return years >= 0 && years < 130 ? years : null;
+};
 
 // A refused record is the access rules working, not a failure, so it is
 // explained rather than shown as an error.
@@ -17,9 +29,11 @@ export default function PatientDetail() {
   const { patientId } = useParams();
   const { t, lang } = useI18n();
   const navigate = useNavigate();
+  const toast = useToast();
 
   const [writing, setWriting] = useState(false);
   const [reporting, setReporting] = useState(false);
+  const [asking, setAsking] = useState(false);
 
   const { data, loading, error, refetch } = useAsync(
     () => clinicApi.lookupPatient(patientId),
@@ -30,6 +44,20 @@ export default function PatientDetail() {
   const notFound = error && /not found/i.test(error);
   const consultations = data?.consultations || [];
 
+  // A doctor who typed an ID and was refused can ask that patient right here
+  const askForAccess = async () => {
+    setAsking(true);
+    try {
+      await clinicApi.askAccess(patientId, null);
+      toast.success('Your request was sent. The file opens once they say yes.');
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setAsking(false);
+    }
+  };
+
+  const age = ageFrom(data?.date_of_birth);
   const withDiagnosis = consultations.filter((c) => c.diagnosis).length;
   const withPrescription = consultations.filter((c) => c.prescription).length;
 
@@ -56,9 +84,25 @@ export default function PatientDetail() {
             description={
               notFound
                 ? 'Please check the health ID and try again. An ID looks like BC-2026-00001.'
-                : 'This patient has not said yes yet. Ask them to open Beral Care and allow you, then the file will open.'
+                : 'This patient has not said yes yet. Send them a request, and the file opens as soon as they agree.'
             }
-            action={<Button to="/clinic/patients" variant="primary">Back to patients</Button>}
+            action={
+              notFound
+                ? <Button to="/clinic/patients" variant="primary">Back to patients</Button>
+                : (
+                  <div className="row gap-2 wrap" style={{ justifyContent: 'center' }}>
+                    <Button
+                      variant="primary"
+                      icon="send"
+                      loading={asking}
+                      onClick={askForAccess}
+                    >
+                      Ask for permission
+                    </Button>
+                    <Button to="/clinic/patients">Back to patients</Button>
+                  </div>
+                )
+            }
           />
         </Card>
       </>
@@ -136,7 +180,7 @@ export default function PatientDetail() {
         <div className="stack gap-4">
           <Card>
             <div className="stack center gap-3 mb-4" style={{ textAlign: 'center' }}>
-              <Avatar name={data.full_name} size={64} />
+              <Avatar name={data.full_name} src={assetUrl(data.profile_image_url)} size={64} />
               <div>
                 <div className="strong">{data.full_name}</div>
                 <div className="muted text-sm mono">{data.patient_id}</div>
@@ -144,6 +188,9 @@ export default function PatientDetail() {
               <Badge tone="accepted">You can see this file</Badge>
             </div>
 
+            <DetailRow label="Age" value={age != null ? `${age} years` : null} icon="user" />
+            <DetailRow label="Gender" value={data.gender} icon="user" />
+            <DetailRow label="Lives in" value={data.address} icon="location" />
             <DetailRow label="Email" value={data.email} icon="mail" />
             <DetailRow label="Phone" value={data.phone} icon="phone" />
 

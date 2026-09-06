@@ -2,13 +2,16 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   PageHeader, Section, Card, CardHeader, Stat, Badge, Button, Avatar,
-  EmptyState, SkeletonRows, Icon, useToast,
+  EmptyState, SkeletonRows, Icon,
 } from '../../components/ui';
-import { QrScannerDialog, QrDialog } from '../../components/QrCode';
+import { QrDialog } from '../../components/QrCode';
+import PatientScan from '../../components/PatientScan';
+import PersonAvatar from '../../components/PersonCard';
 import { useAuth } from '../../lib/auth';
 import { useI18n } from '../../lib/i18n';
 import { useAsyncAll } from '../../lib/useAsync';
 import { clinic as clinicApi } from '../../lib/services';
+import { assetUrl } from '../../lib/api';
 import { formatDate, relativeDate, greetingKey, isUpcoming } from '../../lib/format';
 
 // Built around what a doctor does first: open the file of the patient in front
@@ -17,7 +20,6 @@ export default function Overview({ pendingCount }) {
   const { user } = useAuth();
   const { t, lang } = useI18n();
   const navigate = useNavigate();
-  const toast = useToast();
 
   const [scanning, setScanning] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
@@ -121,7 +123,12 @@ export default function Overview({ pendingCount }) {
               <div className="rows">
                 {upcoming.slice(0, 6).map((a) => (
                   <div className="row-item" key={a.id}>
-                    <Avatar name={a.patient_name} size={36} />
+                    <PersonAvatar
+                      id={a.patient_user_id}
+                      name={a.patient_name}
+                      src={assetUrl(a.profile_image_url)}
+                      size={36}
+                    />
                     <div className="grow">
                       <div className="row-item__title">{a.patient_name}</div>
                       <div className="row-item__meta">
@@ -159,7 +166,7 @@ export default function Overview({ pendingCount }) {
               <div className="stack gap-3">
                 {pending.slice(0, 3).map((r) => (
                   <div className="row gap-3" key={r.id}>
-                    <Avatar name={r.patient_name} size={32} />
+                    <PersonAvatar id={r.patient_user_id} name={r.patient_name} size={32} />
                     <div className="grow">
                       <div className="text-sm strong">{r.patient_name}</div>
                       <div className="muted text-xs">{relativeDate(r.created_at, lang)}</div>
@@ -179,25 +186,26 @@ export default function Overview({ pendingCount }) {
               <SkeletonRows rows={2} height={44} />
             ) : patients.length === 0 ? (
               <p className="muted text-sm">
-                Patients show up here after they say yes to you and you write your first note.
+                Scan a patient code and ask them for permission. They show up here as soon
+                as they say yes.
               </p>
             ) : (
               <div className="stack gap-3">
                 {patients.slice(0, 5).map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    className="row gap-3"
-                    style={{ background: 'none', textAlign: 'left', width: '100%' }}
-                    onClick={() => openPatient(p.patient_id)}
-                  >
-                    <Avatar name={p.full_name} size={32} />
+                  <div className="row gap-3" key={p.id}>
+                    <PersonAvatar id={p.id} name={p.full_name} src={assetUrl(p.profile_image_url)} size={32} />
                     <div className="grow">
                       <div className="text-sm strong">{p.full_name}</div>
                       <div className="muted text-xs mono">{p.patient_id}</div>
                     </div>
-                    <Icon name="chevronRight" size={16} />
-                  </button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      icon="chevronRight"
+                      aria-label={`Open the file of ${p.full_name}`}
+                      onClick={() => openPatient(p.patient_id)}
+                    />
+                  </div>
                 ))}
               </div>
             )}
@@ -205,17 +213,7 @@ export default function Overview({ pendingCount }) {
         </div>
       </div>
 
-      <QrScannerDialog
-        open={scanning}
-        onClose={() => setScanning(false)}
-        onResult={(value) => {
-          const match = String(value).match(/BC-\d{4}-\d+/i);
-          openPatient(match ? match[0] : value);
-          toast.info(`Opening ${match ? match[0] : value}`);
-        }}
-        title="Scan patient code"
-        pattern={/BC-\d{4}-\d+/i}
-      />
+      <PatientScan open={scanning} onClose={() => setScanning(false)} />
 
       <QrDialog
         open={qrOpen}

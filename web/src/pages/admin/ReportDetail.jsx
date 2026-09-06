@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Dialog, Button, Badge, Avatar, Notice, Field, SelectField, Icon,
+  Dialog, Button, Badge, Notice, Field, SelectField, Icon,
   Skeleton, useToast,
 } from '../../components/ui';
+import PersonAvatar from '../../components/PersonCard';
 import { useI18n } from '../../lib/i18n';
 import { moderation, reports as reportsApi } from '../../lib/services';
 import { formatDate } from '../../lib/format';
@@ -248,7 +249,7 @@ export default function ReportDetail({ id, onClose, onChanged }) {
         <div className="stack gap-5">
           <div className="row gap-3 spread wrap">
             <div className="row gap-3">
-              <Avatar name={report.reported_name} size={44} />
+              <PersonAvatar id={report.reported_id} name={report.reported_name} size={44} />
               <div>
                 <div className="strong">{report.reported_name || 'Deleted account'}</div>
                 <div className="muted text-sm">

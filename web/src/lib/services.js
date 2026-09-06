@@ -50,6 +50,13 @@ export const clinic = {
   createConsultation: (payload) => api.post('/api/doctor/consultations', payload).then((r) => r.data),
   createAppointment:  (payload) => api.post('/api/doctor/create-appointment', payload).then((r) => r.data),
   assignId: () => api.post('/api/doctor/assign-id').then((r) => r.data),
+  scan: (patientId) => api.get(`/api/doctor/scan/${encodeURIComponent(patientId)}`).then((r) => r.data),
+  askAccess: (patientId, reason) =>
+    api.post('/api/doctor/access-requests', { patient_id: patientId, reason }).then((r) => r.data),
+};
+
+export const people = {
+  card: (id) => api.get(`/api/people/${id}`).then((r) => r.data),
 };
 
 export const admin = {

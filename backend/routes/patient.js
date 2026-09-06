@@ -22,9 +22,13 @@ router.post('/consultation-requests', async (req, res) => {
       return res.status(400).json({ error: 'Request already exists with this doctor' });
     }
 
-    // Create request
+    // Create request. requested_by says the patient asked, so this waits for
+    // the doctor to answer and not the other way round.
     const [result] = await pool.execute(
-      'INSERT INTO consultation_requests (patient_id, doctor_id, reason, status) VALUES (?, ?, ?, "pending")',
+      `INSERT INTO consultation_requests (patient_id, doctor_id, reason, requested_by, status)
+       VALUES (?, ?, ?, 'patient', 'pending')
+       ON DUPLICATE KEY UPDATE
+         status = 'pending', requested_by = 'patient', reason = VALUES(reason)`,
       [patientId, doctor_id, reason || null]
     );
 
@@ -65,7 +69,7 @@ router.patch('/consultation-requests/:id', async (req, res) => {
 
     // Verify this request belongs to this patient
     const [requests] = await pool.execute(
-      'SELECT doctor_id FROM consultation_requests WHERE id = ? AND patient_id = ?',
+      'SELECT doctor_id, requested_by, status FROM consultation_requests WHERE id = ? AND patient_id = ?',
       [id, patientId]
     );
 
@@ -74,6 +78,14 @@ router.patch('/consultation-requests/:id', async (req, res) => {
     }
 
     const doctorId = requests[0].doctor_id;
+
+    // A patient answers a doctor's request. Their own request is for the
+    // doctor to answer, so approving it here would let anyone in.
+    if (requests[0].requested_by === 'patient' && decision === 'approved') {
+      return res.status(400).json({
+        error: 'This is your own request. The doctor has to answer it.',
+      });
+    }
 
     await pool.execute(
       'UPDATE consultation_requests SET status = ? WHERE id = ?',
@@ -104,7 +116,8 @@ router.get('/consultation-requests', async (req, res) => {
     const patientId = req.user.id;
 
     const [requests] = await pool.execute(
-      `SELECT cr.id, cr.doctor_id, u.full_name as doctor_name, u.specialization, cr.status, cr.created_at
+      `SELECT cr.id, cr.doctor_id, u.full_name as doctor_name, u.specialization, u.hospital,
+              u.profile_image_url, cr.reason, cr.requested_by, cr.status, cr.created_at
        FROM consultation_requests cr
        JOIN users u ON cr.doctor_id = u.id
        WHERE cr.patient_id = ?
@@ -185,10 +198,10 @@ router.get('/dashboard', async (req, res) => {
   try {
     const patientId = req.user.id;
 
-    // Get pending requests
+    // Only requests a doctor sent need an answer from the patient
     const [pendingRequests] = await pool.execute(
-      `SELECT COUNT(*) as count FROM consultation_requests 
-       WHERE patient_id = ? AND status = 'pending'`,
+      `SELECT COUNT(*) as count FROM consultation_requests
+       WHERE patient_id = ? AND status = 'pending' AND requested_by = 'doctor'`,
       [patientId]
     );
 
@@ -238,7 +251,8 @@ router.get('/appointments', async (req, res) => {
     const patientId = req.user.id;
 
     const [appointments] = await pool.execute(
-      `SELECT c.id, c.doctor_id, u.full_name as doctor_name, u.specialization, c.consultation_date, c.notes, c.status
+      `SELECT c.id, c.doctor_id, u.full_name as doctor_name, u.specialization, u.hospital,
+              u.profile_image_url, c.consultation_date, c.notes, c.status
        FROM consultations c
        JOIN users u ON c.doctor_id = u.id
        WHERE c.patient_id = ?

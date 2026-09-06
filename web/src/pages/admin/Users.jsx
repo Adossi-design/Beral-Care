@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import {
-  PageHeader, Card, Badge, Button, Avatar, SearchInput, ChipGroup,
+  PageHeader, Card, Badge, Button, SearchInput, ChipGroup,
   EmptyState, SkeletonRows, Notice, ConfirmDialog, useToast, Icon,
 } from '../../components/ui';
+import PersonAvatar from '../../components/PersonCard';
 import { useI18n } from '../../lib/i18n';
 import { useAsync } from '../../lib/useAsync';
 import { admin as adminApi } from '../../lib/services';
@@ -117,7 +118,7 @@ export default function Users() {
                   <tr key={u.id}>
                     <td data-label="Name">
                       <span className="row gap-3">
-                        <Avatar name={u.full_name} size={32} />
+                        <PersonAvatar id={u.role === 'admin' ? null : u.id} name={u.full_name} size={32} />
                         <span className="strong">{u.full_name}</span>
                       </span>
                     </td>

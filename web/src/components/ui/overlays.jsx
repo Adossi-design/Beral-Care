@@ -5,19 +5,30 @@ import { Button, IconButton } from './primitives';
 
 /* ------------------------------------------------------------------ dialog */
 
+// Open dialogs, newest last. A profile can be opened from inside another
+// dialog, and only the one on top should answer Escape or a backdrop click.
+const openDialogs = [];
+
 // Traps focus, restores it on close, and closes on Escape or a backdrop click
 export function Dialog({ open, onClose, title, subtitle, children, footer, width = 520, dismissable = true }) {
   const panelRef = useRef(null);
   const restoreRef = useRef(null);
+  const tokenRef = useRef(null);
 
   useEffect(() => {
     if (!open) return undefined;
+
+    const token = {};
+    tokenRef.current = token;
+    openDialogs.push(token);
+    const onTop = () => openDialogs[openDialogs.length - 1] === token;
 
     restoreRef.current = document.activeElement;
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
     const onKey = (e) => {
+      if (!onTop()) return;
       if (e.key === 'Escape' && dismissable) { onClose?.(); return; }
       if (e.key !== 'Tab' || !panelRef.current) return;
 
@@ -40,8 +51,10 @@ export function Dialog({ open, onClose, title, subtitle, children, footer, width
     });
 
     return () => {
+      const at = openDialogs.indexOf(token);
+      if (at >= 0) openDialogs.splice(at, 1);
       document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = prevOverflow;
+      if (!openDialogs.length) document.body.style.overflow = prevOverflow;
       restoreRef.current?.focus?.();
     };
   }, [open, onClose, dismissable]);
@@ -51,7 +64,10 @@ export function Dialog({ open, onClose, title, subtitle, children, footer, width
   return createPortal(
     <div
       className="overlay"
-      onMouseDown={(e) => { if (dismissable && e.target === e.currentTarget) onClose?.(); }}
+      onMouseDown={(e) => {
+        const onTop = openDialogs[openDialogs.length - 1] === tokenRef.current;
+        if (onTop && dismissable && e.target === e.currentTarget) onClose?.();
+      }}
     >
       <div
         className="dialog"

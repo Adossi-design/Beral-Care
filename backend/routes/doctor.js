@@ -40,7 +40,7 @@ router.get('/requests', async (req, res) => {
       `SELECT cr.id, cr.patient_id AS patient_user_id, u.full_name as patient_name, u.patient_id, cr.reason, cr.status, cr.created_at
        FROM consultation_requests cr
        JOIN users u ON cr.patient_id = u.id
-       WHERE cr.doctor_id = ? AND cr.status = 'pending'
+       WHERE cr.doctor_id = ? AND cr.status = 'pending' AND cr.requested_by = 'patient'
        ORDER BY cr.created_at DESC`,
       [doctorId]
     );
@@ -158,18 +158,21 @@ router.post('/consultations', async (req, res) => {
   }
 });
 
-// GET /api/doctor/patients - Get list of patients doctor has consulted
+// GET /api/doctor/patients - Patients who have allowed this doctor
 router.get('/patients', async (req, res) => {
   try {
     const doctorId = req.user.id;
 
+    // Anyone who said yes belongs here, even before their first visit
     const [patients] = await pool.execute(
-      `SELECT DISTINCT u.id, u.full_name, u.patient_id, MAX(c.consultation_date) as last_consultation
-       FROM users u
-       JOIN consultations c ON u.id = c.patient_id
-       WHERE c.doctor_id = ? AND u.role = 'patient'
-       GROUP BY u.id
-       ORDER BY last_consultation DESC`,
+      `SELECT u.id, u.full_name, u.patient_id, u.profile_image_url,
+              MAX(c.consultation_date) AS last_consultation
+       FROM consultation_requests cr
+       JOIN users u ON u.id = cr.patient_id
+       LEFT JOIN consultations c ON c.patient_id = u.id AND c.doctor_id = cr.doctor_id
+       WHERE cr.doctor_id = ? AND cr.status = 'accepted' AND u.role = 'patient'
+       GROUP BY u.id, u.full_name, u.patient_id, u.profile_image_url
+       ORDER BY (last_consultation IS NULL), last_consultation DESC`,
       [doctorId]
     );
 
@@ -186,7 +189,8 @@ router.get('/appointments', async (req, res) => {
     const doctorId = req.user.id;
 
     const [appointments] = await pool.execute(
-      `SELECT c.id, c.patient_id, u.full_name as patient_name, u.patient_id, c.consultation_date, c.notes, c.status
+      `SELECT c.id, c.patient_id AS patient_user_id, u.full_name as patient_name, u.patient_id,
+              u.profile_image_url, c.consultation_date, c.notes, c.status
        FROM consultations c
        JOIN users u ON c.patient_id = u.id
        WHERE c.doctor_id = ?
@@ -224,15 +228,141 @@ router.get('/recent-patients', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/doctor/scan/{patient_id}
+ * What a doctor sees straight after scanning a code: enough to be sure they
+ * have the right person in front of them, and where the connection stands.
+ * No records, no contact details, nothing until the patient says yes.
+ */
+router.get('/scan/:patient_id', async (req, res) => {
+  try {
+    const doctorId = req.user.id;
+    const patientId = String(req.params.patient_id || '').trim().toUpperCase();
+
+    const [[patient]] = await pool.execute(
+      `SELECT id, full_name, patient_id, profile_image_url, suspended
+       FROM users WHERE patient_id = ? AND role = 'patient'`,
+      [patientId],
+    );
+
+    if (!patient || patient.suspended) {
+      return res.status(404).json({
+        error: 'No patient was found with that code. Please check the health ID and try again.',
+      });
+    }
+
+    const [[link]] = await pool.execute(
+      `SELECT id, status, requested_by, reason, created_at
+       FROM consultation_requests WHERE patient_id = ? AND doctor_id = ?`,
+      [patient.id, doctorId],
+    );
+
+    // 'none' means nobody has asked yet, so the doctor can send a request
+    let state = 'none';
+    if (link) {
+      if (link.status === 'accepted' || link.status === 'completed') state = 'connected';
+      else if (link.status === 'pending') state = link.requested_by === 'doctor' ? 'waiting' : 'their_request';
+      else if (link.status === 'rejected') state = 'refused';
+    }
+
+    res.json({
+      patient: {
+        id: patient.id,
+        full_name: patient.full_name,
+        patient_id: patient.patient_id,
+        profile_image_url: patient.profile_image_url,
+      },
+      state,
+      request: link ? { id: link.id, reason: link.reason, created_at: link.created_at } : null,
+    });
+  } catch (error) {
+    console.error('Error reading scanned code:', error);
+    res.status(500).json({ error: 'Could not read that code. Please try again.' });
+  }
+});
+
+/**
+ * POST /api/doctor/access-requests
+ * The doctor asks one patient for permission. Nothing opens here: the request
+ * waits until that patient approves it in their own account.
+ */
+router.post('/access-requests', async (req, res) => {
+  try {
+    const doctorId = req.user.id;
+    const { patient_id: patientId, reason } = req.body;
+
+    if (!patientId) return res.status(400).json({ error: 'Please scan a patient code first.' });
+
+    const [[patient]] = await pool.execute(
+      `SELECT id, full_name FROM users
+       WHERE patient_id = ? AND role = 'patient' AND suspended = 0`,
+      [String(patientId).trim().toUpperCase()],
+    );
+    if (!patient) return res.status(404).json({ error: 'That patient was not found.' });
+
+    const [[link]] = await pool.execute(
+      'SELECT id, status FROM consultation_requests WHERE patient_id = ? AND doctor_id = ?',
+      [patient.id, doctorId],
+    );
+
+    if (link && (link.status === 'accepted' || link.status === 'completed')) {
+      return res.status(400).json({ error: 'This patient has already allowed you.' });
+    }
+    if (link && link.status === 'pending') {
+      return res.status(400).json({ error: 'A request is already waiting for their answer.' });
+    }
+
+    const note = reason && reason.trim() ? reason.trim().slice(0, 500) : null;
+
+    // One row holds the connection between a doctor and a patient, so a
+    // refused request is reused rather than piling up a second row.
+    if (link) {
+      await pool.execute(
+        `UPDATE consultation_requests
+         SET status = 'pending', requested_by = 'doctor', reason = ? WHERE id = ?`,
+        [note, link.id],
+      );
+    } else {
+      await pool.execute(
+        `INSERT INTO consultation_requests (patient_id, doctor_id, reason, requested_by, status)
+         VALUES (?, ?, ?, 'doctor', 'pending')`,
+        [patient.id, doctorId, note],
+      );
+    }
+
+    const [[doctor]] = await pool.execute(
+      'SELECT full_name, hospital FROM users WHERE id = ?', [doctorId],
+    );
+    const where = doctor.hospital ? ` at ${doctor.hospital}` : '';
+    await pool.execute(
+      'INSERT INTO notifications (user_id, type, related_user_id, message) VALUES (?, ?, ?, ?)',
+      [
+        patient.id, 'consultation_request', doctorId,
+        `Dr ${doctor.full_name}${where} scanned your code and is asking to see your records. Open your home page to answer.`,
+      ],
+    );
+
+    res.status(201).json({ state: 'waiting', patient_name: patient.full_name });
+  } catch (error) {
+    console.error('Error asking for access:', error);
+    res.status(500).json({ error: 'Could not send your request. Please try again.' });
+  }
+});
+
 // GET /api/doctor/patient/{patient_id} - Get patient details (requires access)
 router.get('/patient/:patient_id', async (req, res) => {
   try {
     const { patient_id } = req.params;
     const doctorId = req.user.id;
 
-    // Find user by patient_id
+    // Find user by patient_id. The profile details come from the patients
+    // table, and are only sent once the access check below has passed.
     const [users] = await pool.execute(
-      'SELECT id, full_name, patient_id, email, phone FROM users WHERE patient_id = ? AND role = "patient"',
+      `SELECT u.id, u.full_name, u.patient_id, u.email, u.phone, u.profile_image_url,
+              p.date_of_birth, p.gender, p.address
+       FROM users u
+       LEFT JOIN patients p ON p.id = u.id
+       WHERE u.patient_id = ? AND u.role = "patient"`,
       [patient_id]
     );
 

@@ -160,6 +160,16 @@
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
 .avatar--square { border-radius: var(--r-md); }
 
+/* A picture that opens a profile. The ring on hover is the only hint needed
+   that it can be clicked, so lists stay quiet. */
+.avatar-btn {
+  padding: 0; border: none; background: none; line-height: 0;
+  border-radius: 50%; cursor: pointer;
+  transition: box-shadow var(--dur-fast) var(--ease);
+}
+.avatar-btn:hover { box-shadow: 0 0 0 3px var(--primary-subtle); }
+.avatar-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
 /* ------------------------------------------------------------------- forms */
 
 .field { display: flex; flex-direction: column; gap: 6px; }

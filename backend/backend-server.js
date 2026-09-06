@@ -29,6 +29,7 @@ const aiRoutes      = require('./routes/ai');
 const reportRoutes  = require('./routes/reports');
 const moderationRoutes = require('./routes/moderation');
 const notificationRoutes = require('./routes/notifications');
+const peopleRoutes  = require('./routes/people');
 
 const pool = require('./utils/db');
 
@@ -92,6 +93,7 @@ app.get('/api/doctors', doctorRoutesPublic.getPublicDoctors);
 // Protected — token + role required
 // All role checks are enforced server-side here, never rely on frontend alone
 app.use('/api/profile', verifyToken,                    profileRoutes);
+app.use('/api/people', verifyToken,                     peopleRoutes);
 app.use('/api/notifications', verifyToken,              notificationRoutes);
 app.use('/api/reports', verifyToken,                    reportRoutes);
 app.use('/api/admin/reports', verifyToken, requireAdmin, moderationRoutes);
@@ -175,6 +177,7 @@ app.get('/setup-db', async (req, res) => {
         patient_id INT NOT NULL,
         doctor_id INT NOT NULL,
         reason TEXT,
+        requested_by ENUM('patient', 'doctor') NOT NULL DEFAULT 'patient',
         status ENUM('pending', 'accepted', 'rejected', 'completed') DEFAULT 'pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -266,6 +269,12 @@ app.get('/setup-db', async (req, res) => {
     await addColumn('users', 'doctor_id', 'VARCHAR(20) UNIQUE DEFAULT NULL');
     // Set when a block should lift on its own; null means the block is permanent
     await addColumn('users', 'suspended_until', 'DATETIME DEFAULT NULL');
+
+    // Says who asked to connect, so each side only answers the other's request
+    await addColumn(
+      'consultation_requests', 'requested_by',
+      "ENUM('patient', 'doctor') NOT NULL DEFAULT 'patient'",
+    );
 
     // Lifting a block was added after the table, so widen the list if needed
     const [[actionColumn]] = await pool.query(
