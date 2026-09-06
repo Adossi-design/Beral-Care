@@ -3,12 +3,11 @@
 // functions: id, isConfigured, complete.
 
 const gemini = require('./providers/gemini');
-const anthropic = require('./providers/anthropic');
 
-const PROVIDERS = { gemini, anthropic };
+const PROVIDERS = { gemini };
 
-// Free tier first when AI_PROVIDER is not set
-const FALLBACK_ORDER = ['gemini', 'anthropic'];
+// Tried in this order when AI_PROVIDER is not set
+const FALLBACK_ORDER = ['gemini'];
 
 function resolveProvider() {
   const requested = (process.env.AI_PROVIDER || '').trim().toLowerCase();
@@ -61,8 +60,8 @@ async function ask({ system, messages, maxTokens }) {
   const provider = resolveProvider();
   if (!provider) {
     const err = new Error(
-      'No AI provider is configured. Set GEMINI_API_KEY (free tier at aistudio.google.com) '
-      + 'or ANTHROPIC_API_KEY on the server.',
+      'No AI provider is configured. Set GEMINI_API_KEY on the server. '
+      + 'A free key is available at aistudio.google.com.',
     );
     err.code = 'AI_NOT_CONFIGURED';
     throw err;

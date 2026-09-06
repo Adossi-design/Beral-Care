@@ -169,6 +169,39 @@ gateway its own small database. Doing that would have created two versions of
 the truth and made the people on basic phones second class users of their own
 records, which is the opposite of the point.
 
+## How it was built, month by month
+
+The commit history follows this, and each stage below is a real step the
+project went through rather than a plan written afterwards.
+
+**April 2026.** Project setup. The Expo application shell and navigation, the
+Express API, the MySQL schema, registration and login with JWT sessions,
+role based access control, the first patient, doctor, and administrator
+screens, and the USSD gateway for basic phones.
+
+**May 2026.** Consultations and access. Doctors recording diagnoses and
+prescriptions, patients approving or refusing access to their records,
+appointment booking, the administrator tools for accounts and statistics,
+profile management, and French alongside English.
+
+**June 2026.** Identification. QR codes for patients and doctors so a file
+opens by scanning instead of typing, doctor IDs issued automatically, profile
+photo uploads, and the first automated tests. Prototype files left over from
+the early web attempt were removed.
+
+**July 2026.** The two assistants, HealthGuide for patients and MedAssist for
+doctors, and a full pass over the documentation so someone new could
+understand the project and run it.
+
+**August 2026.** Away from the project. Exams and other coursework.
+
+**September 2026.** Deployment and rebuild. The platform went live on Render,
+Vercel, and Railway. The interface was rebuilt as a web application, the AI
+layer was made swappable and moved to the free Gemini tier, the wording was
+rewritten in plainer English, reporting and moderation were added, connecting
+was separated from access to health records, and the project was renamed to
+Beral Care.
+
 ## Current state
 
 This is a student project, and I want to be accurate about where it stands.

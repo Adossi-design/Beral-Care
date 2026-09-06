@@ -29,8 +29,6 @@ services:
         value: "false"
       - key: JWT_TOKEN
         generateValue: true
-      - key: ANTHROPIC_API_KEY
-        sync: false
       - key: TWILIO_ACCOUNT_SID
         sync: false
       - key: TWILIO_AUTH_TOKEN
