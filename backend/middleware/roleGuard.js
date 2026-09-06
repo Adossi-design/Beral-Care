@@ -62,4 +62,21 @@ const requirePatient = (req, res, next) => {
   next();
 };
 
-module.exports = { verifyToken, requireAdmin, requireDoctor, requirePatient };
+/**
+ * readToken — for routes that are open to everyone but show a little more to
+ * someone signed in. A missing or invalid token is not an error here, it just
+ * means the request is treated as a visitor.
+ */
+const readToken = (req, res, next) => {
+  const token = req.header('Authorization')?.replace('Bearer ', '');
+  if (token) {
+    try {
+      req.user = jwt.verify(token, JWT_TOKEN);
+    } catch {
+      req.user = undefined;
+    }
+  }
+  next();
+};
+
+module.exports = { verifyToken, readToken, requireAdmin, requireDoctor, requirePatient };

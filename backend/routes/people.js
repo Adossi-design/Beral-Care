@@ -73,6 +73,15 @@ router.get('/:id', async (req, res) => {
       card.specialization = person.specialization;
       card.hospital = person.hospital;
       card.member_since = person.created_at;
+
+      // What patients said about them, shown to whoever opens the card
+      const [[rating]] = await pool.execute(
+        `SELECT COUNT(*) AS count, ROUND(AVG(rating), 2) AS average
+         FROM doctor_reviews WHERE doctor_id = ?`,
+        [person.id],
+      );
+      card.rating_count = Number(rating.count) || 0;
+      card.rating_average = rating.average === null ? null : Number(rating.average);
       // A doctor's own email and phone stay between them and their patients
       if (isSelf || isAdmin || connected) {
         card.email = person.email;

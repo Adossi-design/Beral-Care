@@ -19,7 +19,7 @@ if (fs.existsSync(envPath)) {
   });
 }
 
-const { verifyToken, requireAdmin, requireDoctor, requirePatient } = require('./middleware/roleGuard');
+const { verifyToken, readToken, requireAdmin, requireDoctor, requirePatient } = require('./middleware/roleGuard');
 const authRoutes    = require('./routes/auth');
 const adminRoutes   = require('./routes/admin');
 const doctorRoutes  = require('./routes/doctor');
@@ -30,6 +30,7 @@ const reportRoutes  = require('./routes/reports');
 const moderationRoutes = require('./routes/moderation');
 const notificationRoutes = require('./routes/notifications');
 const peopleRoutes  = require('./routes/people');
+const reviewRoutes  = require('./routes/reviews');
 
 const pool = require('./utils/db');
 
@@ -89,6 +90,9 @@ app.get('/', (req, res) => res.json({ message: 'Beral Care API is running' }));
 app.use('/api/auth', authLimiter, authRoutes);
 const doctorRoutesPublic = require('./routes/doctor');
 app.get('/api/doctors', doctorRoutesPublic.getPublicDoctors);
+// Ratings and the reasons behind them are open, so anyone can read what
+// patients said about a doctor before choosing one.
+app.get('/api/doctors/:doctorId/reviews', readToken, reviewRoutes.getDoctorReviews);
 
 // Protected — token + role required
 // All role checks are enforced server-side here, never rely on frontend alone
@@ -96,6 +100,7 @@ app.use('/api/profile', verifyToken,                    profileRoutes);
 app.use('/api/people', verifyToken,                     peopleRoutes);
 app.use('/api/notifications', verifyToken,              notificationRoutes);
 app.use('/api/reports', verifyToken,                    reportRoutes);
+app.use('/api/reviews', verifyToken,                    reviewRoutes);
 app.use('/api/admin/reports', verifyToken, requireAdmin, moderationRoutes);
 app.use('/api/admin',   verifyToken, requireAdmin,       adminRoutes);
 app.use('/api/doctor',  verifyToken, requireDoctor,      doctorRoutes);
@@ -200,6 +205,23 @@ app.get('/setup-db', async (req, res) => {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (related_user_id) REFERENCES users(id) ON DELETE SET NULL,
         FOREIGN KEY (related_consultation_id) REFERENCES consultations(id) ON DELETE SET NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS doctor_reviews (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        doctor_id INT NOT NULL,
+        patient_id INT,
+        rating TINYINT NOT NULL,
+        comment TEXT NOT NULL,
+        evidence_file VARCHAR(255) DEFAULT NULL,
+        evidence_name VARCHAR(255) DEFAULT NULL,
+        evidence_mime VARCHAR(100) DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_review (doctor_id, patient_id),
+        FOREIGN KEY (doctor_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (patient_id) REFERENCES users(id) ON DELETE SET NULL,
+        INDEX idx_reviews_doctor (doctor_id)
       );
 
       CREATE TABLE IF NOT EXISTS reports (

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, Button, Badge, Avatar, Notice, Skeleton, DetailRow, Icon } from './ui';
+import { DoctorRatings } from './Rating';
 import { useI18n } from '../lib/i18n';
 import { people } from '../lib/services';
 import { assetUrl, errorMessage } from '../lib/api';
@@ -70,6 +71,15 @@ export function PersonDialog({ id, open, onClose }) {
               <>
                 <DetailRow label="Treats" value={card.specialization} icon="stethoscope" />
                 <DetailRow label="Works at" value={card.hospital} icon="hospital" />
+                <DetailRow
+                  label="Rating"
+                  icon="star"
+                  value={
+                    card.rating_count
+                      ? `${card.rating_average.toFixed(1)} out of 5, from ${card.rating_count} patient${card.rating_count === 1 ? '' : 's'}`
+                      : 'Not rated yet'
+                  }
+                />
               </>
             ) : card.full ? (
               <>
@@ -91,6 +101,14 @@ export function PersonDialog({ id, open, onClose }) {
               <DetailRow label="On Beral Care since" value={formatDate(card.member_since, lang)} icon="clock" />
             ) : null}
           </div>
+
+          {/* What patients said, so anyone can judge a doctor before choosing them */}
+          {isDoctor ? (
+            <div>
+              <h3 className="card__title mb-3">What patients say</h3>
+              <DoctorRatings doctorId={card.id} />
+            </div>
+          ) : null}
 
           {!card.full && !isDoctor ? (
             <Notice tone="info">

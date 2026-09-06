@@ -5,6 +5,7 @@ import {
 } from '../../components/ui';
 import ReportDialog from '../../components/ReportDialog';
 import PersonAvatar from '../../components/PersonCard';
+import { Stars, RatingDialog } from '../../components/Rating';
 import { useI18n } from '../../lib/i18n';
 import { useAsyncAll } from '../../lib/useAsync';
 import { patient as patientApi } from '../../lib/services';
@@ -24,6 +25,7 @@ export default function CareTeam({ onChange }) {
   const [busy, setBusy] = useState(false);
   const [revoking, setRevoking] = useState(null);
   const [reporting, setReporting] = useState(null);
+  const [rating, setRating] = useState(null);
 
   const { data, loading, refetch } = useAsyncAll({
     doctors: () => patientApi.doctors(),
@@ -200,6 +202,12 @@ export default function CareTeam({ onChange }) {
                           Disconnect
                         </Button>
                         <Button
+                          variant="ghost" size="sm" icon="star"
+                          onClick={() => setRating(d)}
+                        >
+                          Rate
+                        </Button>
+                        <Button
                           variant="ghost"
                           size="sm"
                           icon="alert"
@@ -248,6 +256,21 @@ export default function CareTeam({ onChange }) {
                           <div className="strong">{d.full_name}</div>
                           <div className="muted text-sm">{d.specialization || 'Doctor'}</div>
                         </div>
+                      </div>
+
+                      {/* What other patients thought, before you choose */}
+                      <div className="row gap-2 mb-4">
+                        {Number(d.rating_count) ? (
+                          <>
+                            <Stars value={Number(d.rating_average)} size={15} />
+                            <span className="text-sm strong">{Number(d.rating_average).toFixed(1)}</span>
+                            <span className="muted text-xs">
+                              from {d.rating_count} patient{Number(d.rating_count) === 1 ? '' : 's'}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="muted text-xs">Not rated yet</span>
+                        )}
                       </div>
 
                       {d.hospital ? (
@@ -328,6 +351,13 @@ export default function CareTeam({ onChange }) {
         open={!!reporting}
         person={reporting}
         onClose={() => setReporting(null)}
+      />
+
+      <RatingDialog
+        open={!!rating}
+        doctor={rating}
+        onClose={() => setRating(null)}
+        onSaved={refetch}
       />
     </>
   );

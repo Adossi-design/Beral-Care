@@ -465,6 +465,28 @@
 }
 .evidence-view img { width: 100%; height: auto; display: block; }
 
+/* ------------------------------------------------------- doctor ratings */
+
+.stars { display: inline-flex; align-items: center; gap: 2px; color: var(--amber-600); }
+.stars--input { gap: var(--sp-1); }
+.star-btn {
+  background: none; border: none; padding: 2px; line-height: 0;
+  color: var(--slate-300); cursor: pointer; border-radius: var(--r-sm);
+  transition: color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+}
+.star-btn:hover { transform: scale(1.1); }
+.star-btn--on { color: var(--amber-600); }
+.star-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+.rating-score {
+  font-size: 30px; font-weight: 700; line-height: 1;
+  color: var(--heading); font-variant-numeric: tabular-nums;
+}
+.review {
+  padding: var(--sp-3); border: 1px solid var(--border);
+  border-radius: var(--r-md); background: var(--surface);
+}
+
 .report-line {
   display: flex; gap: var(--sp-3); padding: var(--sp-3) 0;
   border-bottom: 1px solid var(--divider);

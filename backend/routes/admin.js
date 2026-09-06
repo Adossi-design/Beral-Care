@@ -88,4 +88,49 @@ router.patch('/users/:id/suspend', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/admin/reviews
+ * Every rating patients have left, so an administrator can read what is being
+ * said about a doctor, open anything attached to it, and decide whether the
+ * account needs action. Filterable to the low ratings and to the ones that
+ * came with a file, which are the ones worth reading first.
+ */
+router.get('/reviews', async (req, res) => {
+  try {
+    const { rating, withFile } = req.query;
+    const where = [];
+    const params = [];
+
+    if (rating === 'low') where.push('r.rating <= 2');
+    if (String(withFile) === 'true') where.push('r.evidence_file IS NOT NULL');
+
+    const [rows] = await pool.execute(
+      `SELECT r.id, r.rating, r.comment, r.created_at, r.updated_at,
+              r.evidence_file IS NOT NULL AS has_evidence, r.evidence_name,
+              d.id AS doctor_id, d.full_name AS doctor_name, d.specialization,
+              d.hospital, d.suspended AS doctor_blocked,
+              p.id AS patient_id, p.full_name AS patient_name
+       FROM doctor_reviews r
+       JOIN users d ON d.id = r.doctor_id
+       LEFT JOIN users p ON p.id = r.patient_id
+       ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
+       ORDER BY r.updated_at DESC
+       LIMIT 200`,
+      params,
+    );
+
+    const [[counts]] = await pool.execute(
+      `SELECT COUNT(*) AS total,
+              SUM(rating <= 2) AS low,
+              SUM(evidence_file IS NOT NULL) AS with_file
+       FROM doctor_reviews`,
+    );
+
+    res.json({ reviews: rows, counts });
+  } catch (error) {
+    console.error('Admin reviews error:', error);
+    res.status(500).json({ error: 'Could not load the ratings.' });
+  }
+});
+
 module.exports = router;

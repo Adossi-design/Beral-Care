@@ -334,11 +334,16 @@ router.get('/appointments', async (req, res) => {
 // GET /api/patient/doctors - Get all available doctors for booking
 router.get('/doctors', async (req, res) => {
   try {
+    // The rating travels with the list so a card can show it straight away
     const [doctors] = await pool.execute(
-      `SELECT id, full_name, specialization, hospital, profile_image_url
-       FROM users
-       WHERE role = 'doctor' AND suspended = 0
-       ORDER BY full_name ASC`
+      `SELECT u.id, u.full_name, u.specialization, u.hospital, u.profile_image_url,
+              ROUND(AVG(r.rating), 2) AS rating_average,
+              COUNT(r.id) AS rating_count
+       FROM users u
+       LEFT JOIN doctor_reviews r ON r.doctor_id = u.id
+       WHERE u.role = 'doctor' AND u.suspended = 0
+       GROUP BY u.id, u.full_name, u.specialization, u.hospital, u.profile_image_url
+       ORDER BY u.full_name ASC`
     );
 
     res.json(doctors);

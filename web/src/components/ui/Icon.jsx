@@ -58,8 +58,13 @@ const P = {
   checkCircle: 'M21 11.1V12a9 9 0 1 1-5.3-8.2M21 5l-9 9-2.7-2.7',
   globe: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM3.5 9h17M3.5 15h17M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18',
   lock: 'M6.5 10.5h11A1.5 1.5 0 0 1 19 12v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 19v-7a1.5 1.5 0 0 1 1.5-1.5ZM8 10.5V7.5a4 4 0 1 1 8 0v3',
+  star: 'm12 4 2.6 5.3 5.9.9-4.3 4.1 1 5.7-5.2-2.7-5.2 2.7 1-5.7L3.5 10.2l5.9-.9L12 4Z',
   signal: 'M4 20V10M9.5 20V5M15 20v-8M20.5 20V8',
 };
+
+// A filled star reads as a rating, an outlined one as an empty slot
+P.starFilled = P.star;
+const FILLED = new Set(['starFilled']);
 
 export const iconNames = Object.keys(P);
 
@@ -75,7 +80,7 @@ export default function Icon({ name, size = 20, strokeWidth = 1.75, className = 
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill="none"
+      fill={FILLED.has(name) ? 'currentColor' : 'none'}
       stroke="currentColor"
       strokeWidth={strokeWidth}
       strokeLinecap="round"

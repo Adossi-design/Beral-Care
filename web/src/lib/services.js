@@ -65,6 +65,24 @@ export const people = {
   card: (id) => api.get(`/api/people/${id}`).then((r) => r.data),
 };
 
+export const reviews = {
+  // Ratings and the reasons behind them are open to everyone, signed in or not
+  forDoctor: (doctorId) => api.get(`/api/doctors/${doctorId}/reviews`).then((r) => r.data),
+  save: ({ doctorId, rating, comment, evidence }) => {
+    const form = new FormData();
+    form.append('doctor_id', doctorId);
+    form.append('rating', rating);
+    form.append('comment', comment);
+    if (evidence) form.append('evidence', evidence);
+    return api
+      .post('/api/reviews', form, { headers: { 'Content-Type': 'multipart/form-data' } })
+      .then((r) => r.data);
+  },
+  remove: (id) => api.delete(`/api/reviews/${id}`).then((r) => r.data),
+  // The attached file is behind the token, so it is fetched as a blob
+  evidence: (id) => api.get(`/api/reviews/${id}/evidence`, { responseType: 'blob' }).then((r) => r.data),
+};
+
 export const admin = {
   stats: () => api.get('/api/admin/stats').then((r) => r.data),
   users: (role) => api.get('/api/admin/users', { params: role ? { role } : {} }).then((r) => r.data),
@@ -72,6 +90,7 @@ export const admin = {
   remove:(id) => api.delete(`/api/admin/users/${id}`).then((r) => r.data),
   setSuspended: (id, suspended) =>
     api.patch(`/api/admin/users/${id}/suspend`, { suspended }).then((r) => r.data),
+  reviews: (params) => api.get('/api/admin/reviews', { params }).then((r) => r.data),
 };
 
 export const directory = {

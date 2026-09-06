@@ -7,21 +7,29 @@ const getPublicDoctors = async (req, res) => {
   try {
     const { specialization, search } = req.query;
 
-    let query = 'SELECT id, full_name, doctor_id, specialization, hospital FROM users WHERE role = "doctor" AND suspended = 0';
+    // The rating comes along so a card can show it without a second request
+    let query = `SELECT u.id, u.full_name, u.doctor_id, u.specialization, u.hospital,
+                        u.profile_image_url,
+                        ROUND(AVG(r.rating), 2) AS rating_average,
+                        COUNT(r.id) AS rating_count
+                 FROM users u
+                 LEFT JOIN doctor_reviews r ON r.doctor_id = u.id
+                 WHERE u.role = 'doctor' AND u.suspended = 0`;
     let params = [];
 
     if (search && search.trim()) {
-      query += ' AND (full_name LIKE ? OR doctor_id LIKE ?)';
+      query += ' AND (u.full_name LIKE ? OR u.doctor_id LIKE ?)';
       const searchTerm = `%${search.trim()}%`;
       params.push(searchTerm, searchTerm);
     }
 
     if (specialization && specialization.trim()) {
-      query += ' AND specialization = ?';
+      query += ' AND u.specialization = ?';
       params.push(specialization);
     }
 
-    query += ' ORDER BY full_name ASC';
+    query += ' GROUP BY u.id, u.full_name, u.doctor_id, u.specialization, u.hospital, u.profile_image_url';
+    query += ' ORDER BY u.full_name ASC';
 
     const [doctors] = await pool.execute(query, params);
     res.json(doctors);
