@@ -37,7 +37,7 @@ router.get('/requests', async (req, res) => {
     const doctorId = req.user.id;
 
     const [requests] = await pool.execute(
-      `SELECT cr.id, cr.patient_id, u.full_name as patient_name, u.patient_id, cr.reason, cr.status, cr.created_at
+      `SELECT cr.id, cr.patient_id AS patient_user_id, u.full_name as patient_name, u.patient_id, cr.reason, cr.status, cr.created_at
        FROM consultation_requests cr
        JOIN users u ON cr.patient_id = u.id
        WHERE cr.doctor_id = ? AND cr.status = 'pending'

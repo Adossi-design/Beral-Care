@@ -5,11 +5,13 @@ import { useI18n } from '../../lib/i18n';
 
 import Overview from './Overview';
 import Users from './Users';
+import Reports from './Reports';
 import Settings from './Settings';
 
 const TITLES = {
   '/admin': 'Home',
   '/admin/users': 'Users',
+  '/admin/reports': 'Reports',
   '/admin/settings': 'Settings',
 };
 
@@ -20,6 +22,7 @@ export default function AdminArea() {
   const nav = [
     { to: '/admin', end: true, label: t('overview'), icon: 'chart' },
     { to: '/admin/users', label: t('users'), icon: 'users' },
+    { to: '/admin/reports', label: 'Reports', icon: 'shield' },
   ];
 
   return (
@@ -27,6 +30,7 @@ export default function AdminArea() {
       <Routes>
         <Route index element={<Overview />} />
         <Route path="users" element={<Users />} />
+        <Route path="reports" element={<Reports />} />
         <Route path="settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>

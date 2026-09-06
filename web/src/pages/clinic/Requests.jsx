@@ -3,6 +3,7 @@ import {
   PageHeader, Card, Badge, Button, Avatar, Tabs, EmptyState,
   SkeletonRows, Notice, useToast,
 } from '../../components/ui';
+import ReportDialog from '../../components/ReportDialog';
 import { useI18n } from '../../lib/i18n';
 import { useAsync } from '../../lib/useAsync';
 import { clinic as clinicApi } from '../../lib/services';
@@ -15,6 +16,7 @@ export default function Requests({ onChange }) {
   const toast = useToast();
   const [tab, setTab] = useState('pending');
   const [acting, setActing] = useState(null);
+  const [reporting, setReporting] = useState(null);
 
   const { data, loading, error, refetch } = useAsync(() => clinicApi.requests(), []);
   const requests = data || [];
@@ -108,6 +110,12 @@ export default function Requests({ onChange }) {
                       >
                         {t('decline')}
                       </Button>
+                      <Button
+                        variant="ghost" icon="alert"
+                        onClick={() => setReporting({ id: r.patient_user_id, name: r.patient_name })}
+                      >
+                        Report
+                      </Button>
                     </div>
                   ) : (
                     <Badge status={r.status} />
@@ -125,6 +133,12 @@ export default function Requests({ onChange }) {
           </div>
         )}
       </div>
+
+      <ReportDialog
+        open={!!reporting}
+        person={reporting}
+        onClose={() => setReporting(null)}
+      />
     </>
   );
 }

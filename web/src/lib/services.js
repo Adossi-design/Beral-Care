@@ -65,6 +65,36 @@ export const directory = {
   doctors: (params) => api.get('/api/doctors', { params }).then((r) => r.data),
 };
 
+export const reports = {
+  submit: ({ reportedId, reason, explanation, evidence }) => {
+    const form = new FormData();
+    form.append('reported_id', reportedId);
+    form.append('reason', reason);
+    form.append('explanation', explanation);
+    if (evidence) form.append('evidence', evidence);
+    return api
+      .post('/api/reports', form, { headers: { 'Content-Type': 'multipart/form-data' } })
+      .then((r) => r.data);
+  },
+  mine: () => api.get('/api/reports/mine').then((r) => r.data),
+  // Evidence is behind the token, so it is fetched as a blob rather than
+  // pointed at with a plain image URL.
+  evidence: (id) => api.get(`/api/reports/${id}/evidence`, { responseType: 'blob' }).then((r) => r.data),
+};
+
+export const moderation = {
+  list: (params) => api.get('/api/admin/reports', { params }).then((r) => r.data),
+  detail: (id) => api.get(`/api/admin/reports/${id}`).then((r) => r.data),
+  setStatus: (id, status) => api.patch(`/api/admin/reports/${id}/status`, { status }).then((r) => r.data),
+  act: (id, payload) => api.post(`/api/admin/reports/${id}/action`, payload).then((r) => r.data),
+  unblock: (id) => api.post(`/api/admin/reports/${id}/unblock`).then((r) => r.data),
+};
+
+export const notifications = {
+  list: () => api.get('/api/notifications').then((r) => r.data),
+  markRead: (id) => api.patch(`/api/notifications/${id}`).then((r) => r.data),
+};
+
 export const assistant = {
   // messages is [{ role: 'user' | 'assistant', content }]
   ask: (audience, messages, patientId) =>

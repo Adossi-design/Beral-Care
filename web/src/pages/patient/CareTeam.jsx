@@ -3,6 +3,7 @@ import {
   PageHeader, Card, Badge, Button, Avatar, SearchInput, EmptyState,
   SkeletonRows, Dialog, Field, Tabs, useToast, Icon, Notice,
 } from '../../components/ui';
+import ReportDialog from '../../components/ReportDialog';
 import { useI18n } from '../../lib/i18n';
 import { useAsyncAll } from '../../lib/useAsync';
 import { patient as patientApi } from '../../lib/services';
@@ -21,6 +22,7 @@ export default function CareTeam({ onChange }) {
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   const [revoking, setRevoking] = useState(null);
+  const [reporting, setReporting] = useState(null);
 
   const { data, loading, refetch } = useAsyncAll({
     doctors: () => patientApi.doctors(),
@@ -147,6 +149,14 @@ export default function CareTeam({ onChange }) {
                         >
                           Stop sharing
                         </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon="alert"
+                          onClick={() => setReporting({ id: d.id, name: d.full_name })}
+                        >
+                          Report
+                        </Button>
                       </div>
                     </Card>
                   );
@@ -196,25 +206,36 @@ export default function CareTeam({ onChange }) {
                         </div>
                       ) : null}
 
-                      {state === 'accepted' ? (
-                        <Badge tone="accepted">Already your doctor</Badge>
-                      ) : state === 'pending' ? (
-                        <div className="stack gap-2">
-                          <Badge tone="pending">Waiting for reply</Badge>
-                          <span className="muted text-xs">
-                            Sent {relativeDate(req.created_at, lang)}
-                          </span>
-                        </div>
-                      ) : (
+                      <div className="spread wrap gap-2">
+                        {state === 'accepted' ? (
+                          <Badge tone="accepted">Already your doctor</Badge>
+                        ) : state === 'pending' ? (
+                          <div className="stack gap-2">
+                            <Badge tone="pending">Waiting for reply</Badge>
+                            <span className="muted text-xs">
+                              Sent {relativeDate(req.created_at, lang)}
+                            </span>
+                          </div>
+                        ) : (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            icon="plus"
+                            onClick={() => setTarget(d)}
+                          >
+                            Ask to be my doctor
+                          </Button>
+                        )}
+
                         <Button
-                          variant="primary"
+                          variant="ghost"
                           size="sm"
-                          icon="plus"
-                          onClick={() => setTarget(d)}
+                          icon="alert"
+                          onClick={() => setReporting({ id: d.id, name: d.full_name })}
                         >
-                          Ask to be my doctor
+                          Report
                         </Button>
-                      )}
+                      </div>
                     </Card>
                   );
                 })}
@@ -252,6 +273,12 @@ export default function CareTeam({ onChange }) {
           />
         </div>
       </Dialog>
+
+      <ReportDialog
+        open={!!reporting}
+        person={reporting}
+        onClose={() => setReporting(null)}
+      />
     </>
   );
 }

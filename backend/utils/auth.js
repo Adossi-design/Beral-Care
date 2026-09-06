@@ -120,16 +120,36 @@ const auth = {
   loginUser: async (email, password) => {
     try {
       const [users] = await pool.execute(
-        'SELECT id, full_name, email, password_hash, role, patient_id, doctor_id, specialization, hospital, suspended FROM users WHERE email = ?',
+        'SELECT id, full_name, email, password_hash, role, patient_id, doctor_id, specialization, hospital, suspended, suspended_until FROM users WHERE email = ?',
         [email]
       );
       if (users.length === 0) throw new Error('Invalid email or password');
 
       const user = users[0];
-      
-      // Check if user is suspended
-      if (user.suspended) throw new Error('Account suspended. Please contact support.');
-      
+
+      if (user.suspended) {
+        // A temporary block lifts itself once its date has passed
+        if (user.suspended_until && new Date(user.suspended_until) <= new Date()) {
+          await pool.execute(
+            'UPDATE users SET suspended = 0, suspended_until = NULL WHERE id = ?',
+            [user.id]
+          );
+        } else {
+          let reason = 'Your account has been blocked. Please contact the administrator.';
+          if (user.suspended_until) {
+            const until = new Date(user.suspended_until).toLocaleDateString('en-GB', {
+              day: 'numeric', month: 'long', year: 'numeric',
+            });
+            reason = `Your account is blocked until ${until}. Please check your messages for the reason.`;
+          }
+          // Flagged so the login route can explain this instead of the usual
+          // "wrong email or password", which would leave the person guessing.
+          const blocked = new Error(reason);
+          blocked.blocked = true;
+          throw blocked;
+        }
+      }
+
       const valid = await auth.comparePassword(password, user.password_hash);
       if (!valid) throw new Error('Invalid email or password');
 
@@ -140,6 +160,7 @@ const auth = {
         token,
       };
     } catch (error) {
+      if (error.blocked) throw error;
       throw new Error(`Error logging in: ${error.message}`);
     }
   },

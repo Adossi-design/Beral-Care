@@ -4,6 +4,7 @@ import {
   PageHeader, Card, CardHeader, Badge, Button, Avatar, DetailRow,
   EmptyState, SkeletonRows, Notice, Dialog, Field, Icon, useToast, Stat,
 } from '../../components/ui';
+import ReportDialog from '../../components/ReportDialog';
 import { useI18n } from '../../lib/i18n';
 import { useAsync } from '../../lib/useAsync';
 import { clinic as clinicApi } from '../../lib/services';
@@ -18,6 +19,7 @@ export default function PatientDetail() {
   const navigate = useNavigate();
 
   const [writing, setWriting] = useState(false);
+  const [reporting, setReporting] = useState(false);
 
   const { data, loading, error, refetch } = useAsync(
     () => clinicApi.lookupPatient(patientId),
@@ -144,6 +146,12 @@ export default function PatientDetail() {
 
             <DetailRow label="Email" value={data.email} icon="mail" />
             <DetailRow label="Phone" value={data.phone} icon="phone" />
+
+            <div className="mt-4 no-print">
+              <Button variant="ghost" size="sm" icon="alert" onClick={() => setReporting(true)}>
+                Report this patient
+              </Button>
+            </div>
           </Card>
 
           <div className="grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
@@ -163,6 +171,12 @@ export default function PatientDetail() {
         onClose={() => setWriting(false)}
         patient={data}
         onSaved={() => { setWriting(false); refetch(); }}
+      />
+
+      <ReportDialog
+        open={reporting}
+        person={{ id: data.id, name: data.full_name }}
+        onClose={() => setReporting(false)}
       />
     </>
   );

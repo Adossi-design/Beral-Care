@@ -59,6 +59,8 @@ router.post('/login', async (req, res) => {
       token,
     });
   } catch (error) {
+    // A blocked account gets the real reason, so the person knows why
+    if (error.blocked) return res.status(403).json({ error: error.message });
     console.error('Login error:', error);
     res.status(401).json({ error: 'Invalid email or password' });
   }

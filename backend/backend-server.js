@@ -26,6 +26,9 @@ const doctorRoutes  = require('./routes/doctor');
 const patientRoutes = require('./routes/patient');
 const profileRoutes = require('./routes/profile');
 const aiRoutes      = require('./routes/ai');
+const reportRoutes  = require('./routes/reports');
+const moderationRoutes = require('./routes/moderation');
+const notificationRoutes = require('./routes/notifications');
 
 const pool = require('./utils/db');
 
@@ -75,7 +78,9 @@ app.use(express.json());
 app.use(fileUpload());
 
 // Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Only profile photos are public. Report evidence lives in uploads/evidence and
+// is served through an authenticated route, never as a static file.
+app.use('/uploads/profiles', express.static(path.join(__dirname, '../uploads/profiles')));
 
 app.get('/', (req, res) => res.json({ message: 'Beral Care API is running' }));
 
@@ -87,6 +92,9 @@ app.get('/api/doctors', doctorRoutesPublic.getPublicDoctors);
 // Protected — token + role required
 // All role checks are enforced server-side here, never rely on frontend alone
 app.use('/api/profile', verifyToken,                    profileRoutes);
+app.use('/api/notifications', verifyToken,              notificationRoutes);
+app.use('/api/reports', verifyToken,                    reportRoutes);
+app.use('/api/admin/reports', verifyToken, requireAdmin, moderationRoutes);
 app.use('/api/admin',   verifyToken, requireAdmin,       adminRoutes);
 app.use('/api/doctor',  verifyToken, requireDoctor,      doctorRoutes);
 app.use('/api/patient', verifyToken, requirePatient,     patientRoutes);
@@ -188,6 +196,41 @@ app.get('/setup-db', async (req, res) => {
         FOREIGN KEY (related_user_id) REFERENCES users(id) ON DELETE SET NULL,
         FOREIGN KEY (related_consultation_id) REFERENCES consultations(id) ON DELETE SET NULL
       );
+
+      CREATE TABLE IF NOT EXISTS reports (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        reporter_id INT,
+        reported_id INT,
+        reporter_name VARCHAR(200),
+        reported_name VARCHAR(200),
+        reported_role VARCHAR(20),
+        reason VARCHAR(60) NOT NULL,
+        explanation TEXT NOT NULL,
+        evidence_file VARCHAR(255) DEFAULT NULL,
+        evidence_name VARCHAR(255) DEFAULT NULL,
+        evidence_mime VARCHAR(100) DEFAULT NULL,
+        status ENUM('pending', 'under_review', 'resolved', 'dismissed') DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (reported_id) REFERENCES users(id) ON DELETE SET NULL,
+        INDEX idx_reports_status (status),
+        INDEX idx_reports_reported (reported_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS moderation_actions (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        report_id INT,
+        admin_id INT,
+        admin_name VARCHAR(200),
+        action ENUM('dismissed', 'warning', 'temporary_block', 'permanent_block', 'deleted', 'unblocked') NOT NULL,
+        message TEXT,
+        blocked_until DATETIME DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE SET NULL,
+        FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE SET NULL,
+        INDEX idx_actions_report (report_id)
+      );
     `;
 
     const sampleDataSQL = `
@@ -210,14 +253,30 @@ app.get('/setup-db', async (req, res) => {
     for (const stmt of setupSQL.split(';').filter(s => s.trim()))
       await pool.query(stmt);
 
-    // Add doctor_id column if it does not exist yet (safe to run on existing databases).
-    // MySQL has no ADD COLUMN IF NOT EXISTS, so check information_schema first.
-    const [[{ has_doctor_id }]] = await pool.query(
-      `SELECT COUNT(*) AS has_doctor_id FROM information_schema.COLUMNS
-       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'doctor_id'`
+    // MySQL has no ADD COLUMN IF NOT EXISTS, so check information_schema first
+    const addColumn = async (table, column, definition) => {
+      const [[{ found }]] = await pool.query(
+        `SELECT COUNT(*) AS found FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+        [table, column],
+      );
+      if (!found) await pool.query(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+    };
+
+    await addColumn('users', 'doctor_id', 'VARCHAR(20) UNIQUE DEFAULT NULL');
+    // Set when a block should lift on its own; null means the block is permanent
+    await addColumn('users', 'suspended_until', 'DATETIME DEFAULT NULL');
+
+    // Lifting a block was added after the table, so widen the list if needed
+    const [[actionColumn]] = await pool.query(
+      `SELECT COLUMN_TYPE AS type FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'moderation_actions' AND COLUMN_NAME = 'action'`,
     );
-    if (!has_doctor_id) {
-      await pool.query('ALTER TABLE users ADD COLUMN doctor_id VARCHAR(20) UNIQUE DEFAULT NULL');
+    if (actionColumn && !actionColumn.type.includes('unblocked')) {
+      await pool.query(
+        `ALTER TABLE moderation_actions MODIFY COLUMN action
+         ENUM('dismissed', 'warning', 'temporary_block', 'permanent_block', 'deleted', 'unblocked') NOT NULL`,
+      );
     }
 
     if (shouldSeed)
@@ -226,7 +285,10 @@ app.get('/setup-db', async (req, res) => {
 
     res.json({
       message: 'Database setup completed successfully!',
-      tables_created: ['users', 'patients', 'doctors', 'consultations', 'consultation_requests', 'notifications'],
+      tables_created: [
+        'users', 'patients', 'doctors', 'consultations', 'consultation_requests',
+        'notifications', 'reports', 'moderation_actions',
+      ],
       sample_data: shouldSeed ? 'Sample records inserted' : 'Skipped (set DB_SEED_SAMPLE_DATA=true to enable)',
     });
   } catch (error) {

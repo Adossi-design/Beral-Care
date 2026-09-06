@@ -11,7 +11,7 @@ import Overview from './Overview';
 import Appointments from './Appointments';
 import Records from './Records';
 import CareTeam from './CareTeam';
-import Notifications from './Notifications';
+import Messages from '../Messages';
 import Profile from './Profile';
 
 /** Longest-prefix match so nested routes keep a meaningful heading. */
@@ -55,7 +55,7 @@ export default function PatientArea() {
           <Route path="appointments" element={<Appointments />} />
           <Route path="records" element={<Records />} />
           <Route path="care-team" element={<CareTeam onChange={refetch} />} />
-          <Route path="notifications" element={<Notifications onChange={refetch} />} />
+          <Route path="notifications" element={<Messages onChange={refetch} />} />
           <Route path="profile" element={<Profile />} />
           <Route path="*" element={<Navigate to="/app" replace />} />
         </Routes>

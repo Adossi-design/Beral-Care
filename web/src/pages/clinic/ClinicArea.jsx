@@ -5,8 +5,9 @@ import Assistant, { DOCTOR_PROMPTS } from '../../components/Assistant';
 import { useAuth } from '../../lib/auth';
 import { useI18n } from '../../lib/i18n';
 import { useAsync } from '../../lib/useAsync';
-import { clinic as clinicApi } from '../../lib/services';
+import { clinic as clinicApi, notifications as notificationsApi } from '../../lib/services';
 
+import Messages from '../Messages';
 import Overview from './Overview';
 import Patients from './Patients';
 import PatientDetail from './PatientDetail';
@@ -23,6 +24,7 @@ const TITLES = [
   ['/clinic/patients', 'Patients'],
   ['/clinic/appointments', 'Visits'],
   ['/clinic/requests', 'Requests'],
+  ['/clinic/messages', 'Messages'],
   ['/clinic/profile', 'My profile'],
   ['/clinic', 'Home'],
 ];
@@ -37,6 +39,10 @@ export default function ClinicArea() {
   const { data: requests, refetch } = useAsync(() => clinicApi.requests(), []);
   const pendingCount = (requests || []).filter((r) => r.status === 'pending').length;
 
+  // Doctors receive messages too, including anything an administrator sends them
+  const { data: messages, refetch: refetchMessages } = useAsync(() => notificationsApi.list(), []);
+  const unreadCount = (messages || []).filter((n) => !n.is_read).length;
+
   const nav = [
     { to: '/clinic', end: true, label: t('overview'), icon: 'home' },
     { to: '/clinic/patients', label: t('patients'), icon: 'users' },
@@ -50,8 +56,8 @@ export default function ClinicArea() {
         nav={nav}
         profileTo="/clinic/profile"
         title={titleFor(location.pathname)}
-        notifyTo="/clinic/requests"
-        notifyCount={pendingCount}
+        notifyTo="/clinic/messages"
+        notifyCount={unreadCount}
       >
         <Routes>
           <Route index element={<Overview pendingCount={pendingCount} />} />
@@ -59,6 +65,7 @@ export default function ClinicArea() {
           <Route path="patients/:patientId" element={<PatientDetail />} />
           <Route path="appointments" element={<Appointments />} />
           <Route path="requests" element={<Requests onChange={refetch} />} />
+          <Route path="messages" element={<Messages onChange={refetchMessages} />} />
           <Route path="profile" element={<Profile />} />
           <Route path="*" element={<Navigate to="/clinic" replace />} />
         </Routes>

@@ -439,6 +439,32 @@
 }
 .section__title { font-size: var(--fs-md); font-weight: 650; }
 
+/* ------------------------------------------------------------- moderation */
+
+.evidence-picked {
+  padding: var(--sp-3); border: 1px solid var(--border);
+  border-radius: var(--r-md); background: var(--slate-50);
+}
+
+/* Evidence preview inside a report, capped so a tall screenshot does not
+   push the administrator's actions off the screen. */
+.evidence-view {
+  max-height: 260px; overflow: auto;
+  border: 1px solid var(--border); border-radius: var(--r-md);
+  background: var(--slate-100);
+}
+.evidence-view img { width: 100%; height: auto; display: block; }
+
+.report-line {
+  display: flex; gap: var(--sp-3); padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--divider);
+}
+.report-line:last-child { border-bottom: none; }
+.report-line__label {
+  flex: 0 0 132px; font-size: var(--fs-sm); color: var(--text-muted);
+}
+.report-line__value { flex: 1; min-width: 0; }
+
 /* --------------------------------------------------------------- toolbar */
 
 .toolbar {
@@ -446,3 +472,11 @@
   flex-wrap: wrap; margin-bottom: var(--sp-4);
 }
 .toolbar__search { flex: 1 1 260px; max-width: 420px; }
+
+/* Second filter row, used where a list needs a search box, a dropdown and a
+   date range without crowding the chips above it. */
+.filter-row { display: flex; align-items: flex-end; gap: var(--sp-3); flex-wrap: wrap; }
+.filter-row__search { flex: 1 1 240px; max-width: 360px; }
+.filter-row .field { margin: 0; flex: 0 1 200px; }
+.filter-row__date { display: flex; flex-direction: column; gap: 4px; }
+.filter-row__date .input { min-height: 42px; }

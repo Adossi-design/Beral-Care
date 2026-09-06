@@ -146,21 +146,62 @@ describe('POST /api/auth/login', () => {
     expect(res.status).toBe(401);
   });
 
-  it('returns 401 when the account is suspended', async () => {
+  it('tells a blocked account why it cannot log in', async () => {
     const bcrypt = require('bcryptjs');
     const hash = await bcrypt.hash('Password1', 10);
 
     pool.execute.mockResolvedValueOnce([[{
       id: 2, full_name: 'Carol', email: 'carol@example.com',
       password_hash: hash, role: 'patient', patient_id: 'BC-2026-00002',
-      specialization: null, hospital: null, suspended: 1,
+      specialization: null, hospital: null, suspended: 1, suspended_until: null,
     }]]);
 
     const res = await request(app)
       .post('/api/auth/login')
       .send({ email: 'carol@example.com', password: 'Password1' });
 
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(403);
+    expect(res.body.error).toMatch(/blocked/i);
+  });
+
+  it('says when a temporary block ends', async () => {
+    const bcrypt = require('bcryptjs');
+    const hash = await bcrypt.hash('Password1', 10);
+    const until = new Date(Date.now() + 7 * 86400000);
+
+    pool.execute.mockResolvedValueOnce([[{
+      id: 3, full_name: 'Dan', email: 'dan@example.com',
+      password_hash: hash, role: 'doctor', patient_id: null,
+      specialization: null, hospital: null, suspended: 1, suspended_until: until,
+    }]]);
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'dan@example.com', password: 'Password1' });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toMatch(/blocked until/i);
+  });
+
+  it('lets a person in once a temporary block has passed', async () => {
+    const bcrypt = require('bcryptjs');
+    const hash = await bcrypt.hash('Password1', 10);
+    const yesterday = new Date(Date.now() - 86400000);
+
+    pool.execute.mockResolvedValueOnce([[{
+      id: 4, full_name: 'Eve', email: 'eve@example.com',
+      password_hash: hash, role: 'patient', patient_id: 'BC-2026-00004',
+      specialization: null, hospital: null, suspended: 1, suspended_until: yesterday,
+    }]]);
+    // The block lifting itself
+    pool.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'eve@example.com', password: 'Password1' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.token).toBeDefined();
   });
 
   it('logs in a valid user and returns a token', async () => {
