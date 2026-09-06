@@ -19,29 +19,19 @@ if REDIS_URL:
 else:
     redis_client = None
 
-# A phone alone has no email address, so one is built from the number. New
-# accounts use the Beral Care domain; accounts opened before the app was
-# renamed used beralcare.local, so login falls back to it.
-LEGACY_EMAIL_DOMAIN = "beralcare.local"
+# A phone alone has no email address, so one is built from the number.
 EMAIL_DOMAIN = "beralcare.local"
 
 
-def ussd_email(phone, domain=EMAIL_DOMAIN):
-    return f"ussd_{phone.replace('+', '')}@{domain}"
+def ussd_email(phone):
+    return f"ussd_{phone.replace('+', '')}@{EMAIL_DOMAIN}"
 
 
 def ussd_login(phone, password):
-    """Try the current address, then the one older accounts were given."""
-    response = requests.post(
+    return requests.post(
         f"{API_BASE_URL}/api/auth/login",
         json={"email": ussd_email(phone), "password": password},
     )
-    if response.status_code >= 400:
-        response = requests.post(
-            f"{API_BASE_URL}/api/auth/login",
-            json={"email": ussd_email(phone, LEGACY_EMAIL_DOMAIN), "password": password},
-        )
-    return response
 
 
 @app.route('/', methods=['GET'])

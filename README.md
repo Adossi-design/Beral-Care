@@ -196,8 +196,8 @@ understand the project and run it.
 Vercel, and Railway. The interface was rebuilt as a web application, the AI
 layer was made swappable and moved to the free Gemini tier, the wording was
 rewritten in plainer English, reporting and moderation were added, connecting
-was separated from access to health records, and the project was renamed to
-Beral Care.
+was separated from access to health records, and the brand and public pages
+were refreshed.
 
 ## Current state
 

@@ -4,34 +4,20 @@ const pool = require('./db');
 
 const JWT_TOKEN = process.env.JWT_TOKEN;
 
-// Health IDs are issued as BC-YYYY-NNNNN. Accounts opened before the app was
-// named Beral Care carry BC-YYYY-NNNNN, and those stay valid for life.
-const ID_PREFIXES = ['BC'];
-
-// Highest number already used this year under one prefix
-const lastNumberFor = async (connection, prefix, year) => {
-  const [rows] = await connection.execute(
-    'SELECT patient_id FROM users WHERE patient_id LIKE ? ORDER BY patient_id DESC LIMIT 1 FOR UPDATE',
-    [`${prefix}-${year}-%`],
-  );
-  if (!rows.length || !rows[0].patient_id) return 0;
-  const parsed = parseInt(rows[0].patient_id.split('-')[2], 10);
-  return Number.isFinite(parsed) ? parsed : 0;
-};
-
-/**
- * Generate a unique health ID inside a transaction. Both prefixes are read so
- * numbering carries on from the old IDs rather than starting again at one.
- */
+// Generate a unique health ID in BC-YYYY-NNNNN format inside a transaction.
 const generatePatientId = async (connection) => {
   const year = new Date().getFullYear();
-  let highest = 0;
-  for (const prefix of ID_PREFIXES) {
-    // One at a time: these run inside the caller's transaction
-    const used = await lastNumberFor(connection, prefix, year);
-    if (used > highest) highest = used;
+  const prefix = `BC-${year}-`;
+  const [rows] = await connection.execute(
+    'SELECT patient_id FROM users WHERE patient_id LIKE ? ORDER BY patient_id DESC LIMIT 1 FOR UPDATE',
+    [`${prefix}%`],
+  );
+  let nextNum = 1;
+  if (rows.length > 0 && rows[0].patient_id) {
+    const last = rows[0].patient_id.split('-')[2];
+    nextNum = parseInt(last, 10) + 1;
   }
-  return `BC-${year}-${String(highest + 1).padStart(5, '0')}`;
+  return `${prefix}${String(nextNum).padStart(5, '0')}`;
 };
 
 // Generate a unique doctor ID in DR-YYYY-NNNNN format inside a transaction.

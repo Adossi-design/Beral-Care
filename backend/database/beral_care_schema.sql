@@ -2,8 +2,6 @@
 -- Run this file once on a fresh database, or use GET /setup-db for automated setup.
 -- All table definitions here match what the backend code actually queries.
 
--- The database keeps its original name so existing deployments and local
--- copies keep working. Only the branding changed, not the schema.
 CREATE DATABASE IF NOT EXISTS beral_care CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE beral_care;
 
