@@ -2,6 +2,10 @@ const mysql = require('mysql2/promise');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
+// The database name and user come from the environment. The fallbacks below
+// are the original names, kept so existing databases keep working after the
+// app was renamed to Beral Care. Renaming a live database would only risk
+// breaking a working deployment.
 const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'beral_care',

@@ -1,3 +1,6 @@
+# Beral Care backend. The service keeps its original name: renaming it on
+# Render would create a new service and change the API address that the web
+# app and the USSD gateway already point at.
 services:
   - type: web
     name: beral-care-api

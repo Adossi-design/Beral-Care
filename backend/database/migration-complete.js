@@ -18,7 +18,7 @@ async function runMigration() {
     for (const col of columnsToAdd) {
       try {
         const [columns] = await pool.execute(
-          "SELECT COUNT(*) as count FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'beral_care' AND TABLE_NAME = 'users' AND COLUMN_NAME = ?",
+          "SELECT COUNT(*) as count FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = ?",
           [col.check]
         );
         
@@ -87,7 +87,7 @@ async function runMigration() {
     console.log('Updating consultations table...');
     try {
       const [columns] = await pool.execute(
-        "SELECT COUNT(*) as count FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'beral_care' AND TABLE_NAME = 'consultations' AND COLUMN_NAME = 'request_id'"
+        "SELECT COUNT(*) as count FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'consultations' AND COLUMN_NAME = 'request_id'"
       );
       
       if (columns[0].count === 0) {

@@ -6,7 +6,10 @@ website on any phone or computer, and the core services also work over USSD, so
 someone with a basic handset and no internet can still register, ask for a
 consultation, and check their recent visits.
 
-Live at [beral-care.vercel.app](https://beral-care.vercel.app)
+Live at [beral-care.vercel.app](https://beral-care.vercel.app).
+That address is the hosting name the project was first deployed under. The
+application itself is Beral Care, and the address can move to a Beral Care
+domain whenever one is ready.
 
 In development since 27 April 2026. There is a fuller write up of the problem,
 the architecture, and the technical decisions in [REPORT.md](REPORT.md).

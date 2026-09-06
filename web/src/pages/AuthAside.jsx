@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '../components/ui';
+import Brand from '../components/Brand';
 
 const POINTS = [
   { icon: 'idCard', title: 'One health ID for life', body: 'Your records follow you to any clinic.' },
@@ -12,9 +13,8 @@ const POINTS = [
 export default function AuthAside() {
   return (
     <aside className="auth__aside">
-      <Link to="/" className="row gap-3" style={{ color: '#fff' }}>
-        <span className="brand-mark"><Icon name="heart" size={18} /></span>
-        <span style={{ fontWeight: 650 }}>Beral Care</span>
+      <Link to="/" style={{ color: '#fff' }}>
+        <Brand tone="light" size={32} />
       </Link>
 
       <div>

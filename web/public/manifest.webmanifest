@@ -1,0 +1,19 @@
+{
+  "name": "Beral Care",
+  "short_name": "Beral Care",
+  "description": "Keep your health records in one place, choose who can see them, and book care when you need it.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1f6350",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    }
+  ]
+}

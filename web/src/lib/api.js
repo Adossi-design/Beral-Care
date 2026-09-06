@@ -13,18 +13,40 @@ const api = axios.create({
 const TOKEN_KEY = 'bc.token';
 const USER_KEY = 'bc.user';
 
+// Keys used before the app was named Beral Care. Read once and carried over,
+// so nobody is signed out by the rename.
+const OLD_TOKEN_KEY = 'bc.token';
+const OLD_USER_KEY = 'bc.user';
+
+const carryOver = (key, oldKey) => {
+  try {
+    const current = localStorage.getItem(key);
+    if (current !== null) return current;
+    const previous = localStorage.getItem(oldKey);
+    if (previous === null) return null;
+    localStorage.setItem(key, previous);
+    localStorage.removeItem(oldKey);
+    return previous;
+  } catch {
+    return null;
+  }
+};
+
 export const tokenStore = {
-  get: () => {
-    try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
-  },
+  get: () => carryOver(TOKEN_KEY, OLD_TOKEN_KEY),
   set: (t) => {
     try { localStorage.setItem(TOKEN_KEY, t); } catch { /* private mode */ }
   },
   clear: () => {
-    try { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); } catch { /* ignore */ }
+    try {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+      localStorage.removeItem(OLD_TOKEN_KEY);
+      localStorage.removeItem(OLD_USER_KEY);
+    } catch { /* ignore */ }
   },
   getUser: () => {
-    try { return JSON.parse(localStorage.getItem(USER_KEY) || 'null'); } catch { return null; }
+    try { return JSON.parse(carryOver(USER_KEY, OLD_USER_KEY) || 'null'); } catch { return null; }
   },
   setUser: (u) => {
     try { localStorage.setItem(USER_KEY, JSON.stringify(u)); } catch { /* ignore */ }

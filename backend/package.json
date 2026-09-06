@@ -1,5 +1,5 @@
 {
-  "name": "beral-care-api",
+  "name": "beral-care-backend",
   "version": "1.0.0",
   "private": true,
   "main": "backend-server.js",

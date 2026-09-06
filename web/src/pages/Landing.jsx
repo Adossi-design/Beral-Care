@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Icon } from '../components/ui';
+import Brand, { BrandMark } from '../components/Brand';
 import LanguageToggle from '../components/LanguageToggle';
 import { useI18n } from '../lib/i18n';
 
@@ -33,8 +34,7 @@ export default function Landing() {
     <div className="public">
       <header className="pubnav">
         <Link to="/" className="pubnav__brand">
-          <span className="brand-mark"><Icon name="heart" size={18} /></span>
-          <span className="pubnav__name">Beral Care</span>
+          <Brand size={32} />
         </Link>
         <nav className="pubnav__links">
           <a className="pubnav__link" href="#how">{t('nav.what')}</a>
@@ -191,7 +191,7 @@ export default function Landing() {
       <footer className="footer">
         <div className="footer__inner">
           <div className="row gap-3">
-            <span className="brand-mark"><Icon name="heart" size={16} /></span>
+            <BrandMark size={30} tone="light" />
             <div>
               <div style={{ color: '#fff', fontWeight: 650 }}>Beral Care</div>
               <div className="text-xs">{t('footer.tagline')}</div>

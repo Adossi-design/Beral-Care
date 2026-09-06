@@ -525,7 +525,7 @@ router.post('/create-appointment', async (req, res) => {
       return res.status(400).json({ error: 'Patient ID and appointment date are required' });
     }
 
-    // Find the patient by patient_id (BC-YYYY-NNNNN format)
+    // Find the patient by health ID (BC-YYYY-NNNNN)
     const [patients] = await pool.execute(
       'SELECT id FROM users WHERE patient_id = ? AND role = "patient"',
       [patient_id]

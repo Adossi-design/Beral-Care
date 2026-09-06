@@ -8,7 +8,8 @@ import { assetUrl, errorMessage } from '../lib/api';
 import { relativeDate } from '../lib/format';
 import { useI18n } from '../lib/i18n';
 
-const ID_PATTERN = /BC-\d{4}-\d+/i;
+// Health IDs read BC-YYYY-NNNNN. Accounts opened before the app was named
+const ID_PATTERN = /\bBC-\d{4}-\d+/i;
 
 /**
  * Scanning a patient code from start to finish: read the code, show who the

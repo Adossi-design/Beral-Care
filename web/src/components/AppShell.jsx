@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import Icon from './ui/Icon';
+import Brand, { BrandMark } from './Brand';
 import { Avatar, Count, IconButton } from './ui/primitives';
 import { useAuth } from '../lib/auth';
 import { useI18n } from '../lib/i18n';
@@ -32,11 +33,7 @@ export default function AppShell({ nav, profileTo, notifyTo, notifyCount = 0, ti
       {/* ------------------------------------------------------- sidebar */}
       <aside className="sidebar">
         <div className="sidebar__brand">
-          <span className="brand-mark"><Icon name="heart" size={18} /></span>
-          <span>
-            <span className="sidebar__name">Beral Care</span>
-            <span className="sidebar__tag" style={{ display: 'block' }}>Africa</span>
-          </span>
+          <Brand tone="light" size={32} />
         </div>
 
         <nav className="sidebar__nav" aria-label="Main">
@@ -97,7 +94,7 @@ export default function AppShell({ nav, profileTo, notifyTo, notifyCount = 0, ti
 
         {/* Mobile header, shown when the sidebar is hidden */}
         <header className="mobile-top">
-          <span className="brand-mark" style={{ width: 30, height: 30 }}><Icon name="heart" size={15} /></span>
+          <BrandMark size={28} />
           <span className="grow strong truncate">{title}</span>
           <button type="button" className="iconbtn" onClick={toggle} aria-label={t('language')}>
             <span className="text-xs strong">{lang.toUpperCase()}</span>
