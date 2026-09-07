@@ -22,3 +22,6 @@ ussd-gateway/__pycache__/
 
 # One-off seeder holding admin credentials
 backend/seeders/createAdmin.js
+
+# Local notes that must never be published
+*.local.md

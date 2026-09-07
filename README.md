@@ -260,6 +260,41 @@ Both use the password `DemoPass123!`.
 The patient has two written up consultations and two upcoming visits, and has
 approved the doctor's access, so both sides show real content.
 
+### Signing in as the administrator
+
+There is no separate administrator page. Everyone signs in at the same form and
+the server decides where they land, so an administrator arrives at `/admin`,
+which holds the overview, users, doctor verification, reports, ratings, and
+closed accounts.
+
+| Where | Sign in at |
+|---|---|
+| Live site | <https://beral-care.vercel.app/login> |
+| Running locally | <http://localhost:5173/login> |
+
+The address and password of the administrator account are deliberately not
+written down here. This repository is public, and anything committed to it stays
+in the history even after it is removed, so an administrator account named here
+would stay named for good. To set or reset that password, run this against
+whichever database `backend/.env` points at:
+
+```bash
+cd backend
+node set-password.js <the administrator address> '<the new password>'
+```
+
+That also ends any session the account already had open, which is what you want
+when the reason for changing it is that the old one leaked. For a password worth
+using, generate one rather than inventing one:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(18).toString('base64url'))"
+```
+
+The administrator can read every account, report, rating, and uploaded licence,
+and can block or delete people. It cannot read anyone's health records, which is
+enforced in the code rather than by policy. Treat its password accordingly.
+
 ## Where it could go
 
 I would rather let the remaining problems decide this than list technologies I
