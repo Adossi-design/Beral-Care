@@ -5,7 +5,18 @@ import api from './api';
 
 export const auth = {
   login: (email, password) => api.post('/api/auth/login', { email, password }).then((r) => r.data),
-  register: (payload) => api.post('/api/auth/register', payload).then((r) => r.data),
+  register: (payload) => {
+    // A doctor sends their licence with the form, so this goes as multipart
+    if (!payload.licence) return api.post('/api/auth/register', payload).then((r) => r.data);
+    const form = new FormData();
+    Object.entries(payload).forEach(([k, v]) => {
+      if (k !== 'licence' && v !== undefined && v !== null) form.append(k, v);
+    });
+    form.append('licence', payload.licence);
+    return api
+      .post('/api/auth/register', form, { headers: { 'Content-Type': 'multipart/form-data' } })
+      .then((r) => r.data);
+  },
 };
 
 export const profile = {
@@ -19,6 +30,7 @@ export const profile = {
       .then((r) => r.data);
   },
   removeImage: () => api.delete('/api/profile/image').then((r) => r.data),
+  closeAccount: (reason) => api.post('/api/profile/close-account', { reason }).then((r) => r.data),
   sendLicence: (file) => {
     const form = new FormData();
     form.append('licence', file);
@@ -104,6 +116,8 @@ export const admin = {
   decideDoctor: (id, status, note) =>
     api.patch('/api/admin/doctors/' + id + '/verification', { status, note }).then((r) => r.data),
   licenceUrl: (id) => '/api/admin/doctors/' + id + '/licence',
+  closures: () => api.get('/api/admin/closures').then((r) => r.data),
+  restore: (id) => api.post('/api/admin/closures/' + id + '/restore').then((r) => r.data),
 };
 
 export const directory = {

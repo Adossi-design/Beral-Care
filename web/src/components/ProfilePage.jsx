@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import {
   PageHeader, Card, CardHeader, Button, Field, Avatar, DetailRow,
-  Notice, useToast, Icon, ConfirmDialog,
+  Notice, useToast, Icon, ConfirmDialog, Dialog,
 } from './ui';
 import { QrDialog } from './QrCode';
 import { useAuth } from '../lib/auth';
@@ -14,7 +14,7 @@ const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 // Profile and account settings, shared by patients and doctors
 export default function ProfilePage({ role }) {
-  const { user, patchUser } = useAuth();
+  const { user, patchUser, signOut } = useAuth();
   const { t, lang } = useI18n();
   const toast = useToast();
   const fileRef = useRef(null);
@@ -31,6 +31,9 @@ export default function ProfilePage({ role }) {
   const [uploading, setUploading] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const [closeReason, setCloseReason] = useState('');
+  const [closingBusy, setClosingBusy] = useState(false);
 
   const set = (key) => (e) => {
     setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -92,6 +95,23 @@ export default function ProfilePage({ role }) {
       toast.error(errorMessage(err));
     } finally {
       setUploading(false);
+    }
+  };
+
+  // Closing an account locks it at once, so the person is signed out here
+  const closeAccount = async () => {
+    if (closeReason.trim().length < 10) {
+      toast.error('Please say why you want to close your account.');
+      return;
+    }
+    setClosingBusy(true);
+    try {
+      await profileApi.closeAccount(closeReason.trim());
+      toast.success('Your account is closed.');
+      setTimeout(() => signOut(), 1200);
+    } catch (err) {
+      toast.error(errorMessage(err));
+      setClosingBusy(false);
     }
   };
 
@@ -189,6 +209,16 @@ export default function ProfilePage({ role }) {
             <p className="muted text-xs mt-4">
               You log in with your email address, so it cannot be changed here.
             </p>
+
+            <div className="mt-4" style={{ borderTop: '1px solid var(--divider)', paddingTop: 'var(--sp-4)' }}>
+              <Button variant="danger-quiet" size="sm" icon="trash" onClick={() => setClosing(true)}>
+                Close my account
+              </Button>
+              <p className="field__msg mt-2">
+                Your account is locked as soon as you ask, and an administrator removes it
+                after reading why.
+              </p>
+            </div>
           </Card>
         </div>
 
@@ -247,6 +277,41 @@ export default function ProfilePage({ role }) {
         message="We will show your initials instead. You can add a new photo at any time."
         confirmLabel="Remove photo"
       />
+
+      <Dialog
+        open={closing}
+        onClose={() => setClosing(false)}
+        title="Close your account"
+        subtitle="Please tell us why. It helps to know what went wrong."
+        width={480}
+        footer={
+          <>
+            <Button onClick={() => setClosing(false)} block>Keep my account</Button>
+            <Button variant="danger" onClick={closeAccount} loading={closingBusy} block>
+              Close my account
+            </Button>
+          </>
+        }
+      >
+        <div className="stack gap-4">
+          <Notice tone="warning" title="What happens next">
+            You are signed out straight away and cannot log in again. An administrator
+            reads your reason and removes the account and everything in it, usually
+            within one working week. If you change your mind before then, write to
+            adossifredwilliam09@gmail.com.
+          </Notice>
+
+          <Field
+            label="Why are you closing it?"
+            textarea
+            rows={4}
+            required
+            placeholder="For example: I no longer need it, or I was not comfortable with something."
+            value={closeReason}
+            onChange={(e) => setCloseReason(e.target.value)}
+          />
+        </div>
+      </Dialog>
     </>
   );
 }

@@ -96,6 +96,57 @@ router.patch('/users/:id/suspend', async (req, res) => {
 });
 
 /**
+ * GET /api/admin/closures
+ * People who asked for their account to be closed. Their account is already
+ * locked, so nothing more happens in it, and this is the queue the
+ * administrator works through before removing anything for good.
+ */
+router.get('/closures', async (req, res) => {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT id, full_name, email, role, patient_id, doctor_id,
+              deletion_reason, deletion_requested_at,
+              DATEDIFF(NOW(), deletion_requested_at) AS days_waiting
+       FROM users
+       WHERE deletion_requested_at IS NOT NULL
+       ORDER BY deletion_requested_at ASC`,
+    );
+    res.json(rows);
+  } catch (error) {
+    console.error('Admin closures error:', error);
+    res.status(500).json({ error: 'Could not load the closed accounts.' });
+  }
+});
+
+/**
+ * POST /api/admin/closures/:id/restore
+ * Puts an account back, for the times when someone asks to come back or the
+ * request turns out to be a mistake.
+ */
+router.post('/closures/:id/restore', async (req, res) => {
+  try {
+    const [result] = await pool.execute(
+      `UPDATE users
+       SET deletion_requested_at = NULL, deletion_reason = NULL, suspended = 0
+       WHERE id = ? AND deletion_requested_at IS NOT NULL`,
+      [req.params.id],
+    );
+    if (!result.affectedRows) return res.status(404).json({ error: 'That account was not found.' });
+
+    forgetSession(req.params.id);
+    await pool.execute(
+      'INSERT INTO notifications (user_id, type, message) VALUES (?, ?, ?)',
+      [req.params.id, 'account_restored', 'Your account has been opened again. You can log in as before.'],
+    );
+
+    res.json({ restored: true });
+  } catch (error) {
+    console.error('Admin restore error:', error);
+    res.status(500).json({ error: 'Could not open that account again.' });
+  }
+});
+
+/**
  * GET /api/admin/doctors
  * Doctors waiting to be checked, and the ones already decided. A doctor is
  * only shown to patients once an administrator has confirmed their licence.

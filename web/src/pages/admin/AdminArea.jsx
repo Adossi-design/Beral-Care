@@ -8,6 +8,7 @@ import Users from './Users';
 import Reports from './Reports';
 import Ratings from './Ratings';
 import Doctors from './Doctors';
+import Closures from './Closures';
 import Settings from './Settings';
 
 const TITLES = {
@@ -16,6 +17,7 @@ const TITLES = {
   '/admin/reports': 'Reports',
   '/admin/ratings': 'Ratings',
   '/admin/doctors': 'Doctors',
+  '/admin/closures': 'Closed accounts',
   '/admin/settings': 'Settings',
 };
 
@@ -29,6 +31,7 @@ export default function AdminArea() {
     { to: '/admin/doctors', label: 'Doctors', icon: 'stethoscope' },
     { to: '/admin/reports', label: 'Reports', icon: 'shield' },
     { to: '/admin/ratings', label: 'Ratings', icon: 'star' },
+    { to: '/admin/closures', label: 'Closed accounts', icon: 'trash' },
   ];
 
   return (
@@ -39,6 +42,7 @@ export default function AdminArea() {
         <Route path="reports" element={<Reports />} />
         <Route path="ratings" element={<Ratings />} />
         <Route path="doctors" element={<Doctors />} />
+        <Route path="closures" element={<Closures />} />
         <Route path="settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>

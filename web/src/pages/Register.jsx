@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button, Field, Notice, Icon } from '../components/ui';
 import LanguageToggle from '../components/LanguageToggle';
@@ -24,6 +24,8 @@ export default function Register() {
   const [errors, setErrors] = useState({});
   const [failure, setFailure] = useState('');
   const [busy, setBusy] = useState(false);
+  const [licence, setLicence] = useState(null);
+  const licenceRef = useRef(null);
 
   const set = (key) => (e) => {
     setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -40,6 +42,9 @@ export default function Register() {
     else if (form.password.length < 8) next.password = 'Please use 8 letters or numbers or more.';
     if (role === 'doctor' && !form.licence_number.trim()) {
       next.licence_number = 'Please give your licence number so it can be checked.';
+    }
+    if (role === 'doctor' && !licence) {
+      next.licence = 'Please attach a picture or PDF of your licence.';
     }
     if (role === 'doctor' && !form.specialization.trim()) {
       next.specialization = 'Please say what you treat.';
@@ -66,6 +71,7 @@ export default function Register() {
             specialization: form.specialization.trim(),
             hospital: form.hospital.trim(),
             licence_number: form.licence_number.trim(),
+            licence,
           }
           : {}),
       };
@@ -181,10 +187,48 @@ export default function Register() {
                     <Field
                       label="Medical licence number" icon="idCard" required
                       placeholder="The number on your practising licence"
-                      hint="An administrator checks this before patients can find you. You can upload the document itself from your profile."
                       value={form.licence_number} onChange={set('licence_number')}
                       error={errors.licence_number}
                     />
+
+                    <div className="field">
+                      <div className="field__label">
+                        <span>A picture of your licence</span>
+                        <span className="field__req">Required</span>
+                      </div>
+                      {licence ? (
+                        <div className="row gap-3 evidence-picked">
+                          <Icon name="clipboard" size={17} />
+                          <span className="grow truncate text-sm">{licence.name}</span>
+                          <Button size="sm" variant="ghost" icon="x" onClick={() => setLicence(null)} aria-label="Remove" />
+                        </div>
+                      ) : (
+                        <Button icon="plus" onClick={() => licenceRef.current?.click()}>
+                          Attach the document
+                        </Button>
+                      )}
+                      <input
+                        ref={licenceRef}
+                        type="file"
+                        accept="image/*,application/pdf"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          e.target.value = '';
+                          if (file) { setLicence(file); setErrors((x) => ({ ...x, licence: undefined })); }
+                        }}
+                        style={{ display: 'none' }}
+                        tabIndex={-1}
+                        aria-hidden="true"
+                      />
+                      {errors.licence ? (
+                        <p className="field__msg field__msg--error">{errors.licence}</p>
+                      ) : (
+                        <p className="field__msg">
+                          A picture or PDF, up to 5 MB. Only an administrator can open it. Patients
+                          cannot find you until your licence has been checked.
+                        </p>
+                      )}
+                    </div>
                   </>
                 ) : null}
 
@@ -201,7 +245,9 @@ export default function Register() {
 
               <p className="muted text-xs mt-6" style={{ textAlign: 'center' }}>
                 When you create an account, your records stay private. They are only shared with
-                doctors you say yes to. <Link to="/">Back to home page</Link>
+                doctors you say yes to. Creating one means you accept the{' '}
+                <Link to="/terms">terms of use</Link> and the{' '}
+                <Link to="/privacy">privacy notice</Link>. <Link to="/">Back to home page</Link>
               </p>
             </>
           )}

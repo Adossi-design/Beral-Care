@@ -110,6 +110,13 @@ const auth = {
           specialization || null, hospital || null, userData.licence_number || null, verification,
         ]
       );
+      // The licence document is stored under the new account's own id
+      if (role === 'doctor' && userData.licence_file) {
+        await conn.execute(
+          'UPDATE users SET licence_file = ? WHERE id = ?',
+          [userData.licence_file, result.insertId],
+        );
+      }
       const userId = result.insertId;
 
       if (role === 'patient') {
@@ -135,12 +142,22 @@ const auth = {
   loginUser: async (email, password) => {
     try {
       const [users] = await pool.execute(
-        'SELECT id, full_name, email, password_hash, role, patient_id, doctor_id, specialization, hospital, suspended, suspended_until, verification, session_version FROM users WHERE email = ?',
+        'SELECT id, full_name, email, password_hash, role, patient_id, doctor_id, specialization, hospital, suspended, suspended_until, verification, session_version, deletion_requested_at FROM users WHERE email = ?',
         [email]
       );
       if (users.length === 0) throw new Error('Invalid email or password');
 
       const user = users[0];
+
+      // A closed account says so plainly rather than looking like a block
+      if (user.deletion_requested_at) {
+        const closed = new Error(
+          'You asked for this account to be closed, so it can no longer be used. '
+          + 'It is removed once the request has been read.',
+        );
+        closed.blocked = true;
+        throw closed;
+      }
 
       if (user.suspended) {
         // A temporary block lifts itself once its date has passed

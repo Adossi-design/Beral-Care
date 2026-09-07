@@ -229,3 +229,71 @@ describe('A session that has been ended', () => {
     expect(res.status).toBe(401);
   });
 });
+
+describe('Closing an account', () => {
+  it('needs a reason worth reading', async () => {
+    allowSession();
+
+    const res = await request(app)
+      .post('/api/profile/close-account')
+      .set('Authorization', `Bearer ${PATIENT}`)
+      .send({ reason: 'no' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/why/i);
+  });
+
+  it('locks the account and ends the session', async () => {
+    allowSession();
+    pool.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
+
+    const res = await request(app)
+      .post('/api/profile/close-account')
+      .set('Authorization', `Bearer ${PATIENT}`)
+      .send({ reason: 'I am moving to another country and do not need this.' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.closed).toBe(true);
+
+    const [sql, params] = pool.execute.mock.calls[1];
+    expect(sql).toMatch(/deletion_requested_at = NOW\(\)/);
+    expect(sql).toMatch(/suspended = 1/);
+    expect(sql).toMatch(/session_version = session_version \+ 1/);
+    expect(params[0]).toMatch(/moving to another country/);
+  });
+
+  it('cannot be done to the administrator account', async () => {
+    allowSession();
+
+    const res = await request(app)
+      .post('/api/profile/close-account')
+      .set('Authorization', `Bearer ${ADMIN}`)
+      .send({ reason: 'I no longer want to run this service.' });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('shows the administrator who is waiting, and for how long', async () => {
+    allowSession();
+    pool.execute.mockResolvedValueOnce([[
+      { id: 20, full_name: 'Grace', deletion_reason: 'Moving away', days_waiting: 8 },
+    ]]);
+
+    const res = await request(app)
+      .get('/api/admin/closures')
+      .set('Authorization', `Bearer ${ADMIN}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body[0].days_waiting).toBe(8);
+  });
+
+  it('keeps a patient out of the closures list', async () => {
+    allowSession();
+
+    const res = await request(app)
+      .get('/api/admin/closures')
+      .set('Authorization', `Bearer ${PATIENT}`);
+
+    expect(res.status).toBe(403);
+  });
+});

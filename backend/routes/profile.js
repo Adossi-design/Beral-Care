@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../utils/db');
 const storage = require('../utils/storage');
+const { forgetSession } = require('../middleware/roleGuard');
 const path = require('path');
 const fs = require('fs');
 
@@ -211,6 +212,43 @@ router.delete('/image', async (req, res) => {
   } catch (error) {
     console.error('Error deleting image:', error);
     res.status(500).json({ error: 'Failed to delete image' });
+  }
+});
+
+/**
+ * POST /api/profile/close-account
+ * Closing an account is not instant and it is not silent. The person says why,
+ * the account is locked straight away so nothing more can happen in it, and
+ * the administrator removes it after reading the reason. Nothing is deleted
+ * here: that decision stays with a person.
+ */
+router.post('/close-account', async (req, res) => {
+  try {
+    if (req.user.role === 'admin') {
+      return res.status(400).json({ error: 'An administrator account cannot be closed from here.' });
+    }
+
+    const reason = (req.body.reason || '').trim();
+    if (reason.length < 10) {
+      return res.status(400).json({ error: 'Please say why you want to close your account.' });
+    }
+
+    await pool.execute(
+      `UPDATE users
+       SET deletion_requested_at = NOW(), deletion_reason = ?,
+           suspended = 1, session_version = session_version + 1
+       WHERE id = ?`,
+      [reason.slice(0, 500), req.user.id],
+    );
+    forgetSession(req.user.id);
+
+    res.json({
+      closed: true,
+      message: 'Your account is closed. It will be removed after it has been read.',
+    });
+  } catch (error) {
+    console.error('Close account error:', error);
+    res.status(500).json({ error: 'Could not close your account. Please try again.' });
   }
 });
 

@@ -166,6 +166,16 @@ gateway its own small database. Doing that would have created two versions of
 the truth and made the people on basic phones second class users of their own
 records, which is the opposite of the point.
 
+**Why closing an account is not instant.** A person can close their own account
+from their profile, and has to say why. The account locks immediately: the
+session ends, the password stops working, and no doctor can reach the file. The
+deletion itself waits for a person. An administrator reads the reason and removes
+the account within one working week, whether or not the reason is one they agree
+with. Deleting straight from a button would be quicker, but it would also mean
+an account and every record in it could disappear on a misclick, with no way to
+notice a pattern of people leaving for the same reason. `/privacy` and `/terms`
+say all of this in plain language, in English and French.
+
 ## How it was built, month by month
 
 The commit history follows this, and each stage below is a real step the

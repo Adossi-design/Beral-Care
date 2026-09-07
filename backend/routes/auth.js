@@ -7,6 +7,7 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../utils/auth');
+const storage = require('../utils/storage');
 
 // POST /api/auth/register — create a new patient or doctor account
 router.post('/register', async (req, res) => {
@@ -26,16 +27,32 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Invalid phone format' });
     if (role === 'doctor' && (!specialization || !hospital))
       return res.status(400).json({ error: 'Doctors must provide specialization and hospital' });
-    // The licence is what an administrator checks before patients see them
+    // The licence is what an administrator checks before patients see them.
+    // Anyone can type the word doctor on a form, so the document is required,
+    // not just the number.
     if (role === 'doctor' && !String(licence_number || '').trim())
       return res.status(400).json({ error: 'Doctors must give their medical licence number' });
+    if (role === 'doctor' && !req.files?.licence)
+      return res.status(400).json({ error: 'Doctors must attach a picture or PDF of their licence' });
+
+    let licenceFile = null;
+    if (role === 'doctor') {
+      const file = req.files.licence;
+      const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+      if (!allowed.includes(file.mimetype))
+        return res.status(400).json({ error: 'The licence must be a picture or a PDF' });
+      if (file.size > 5 * 1024 * 1024)
+        return res.status(400).json({ error: 'That file is larger than 5 MB' });
+
+      licenceFile = await storage.savePrivate(file, 'licences', `licence_new_${Date.now()}`);
+    }
 
     // Prevent admin self-registration through public endpoint
     const safeRole = role === 'admin' ? 'patient' : role;
 
     const user = await auth.registerUser({
       full_name, email, phone, password, role: safeRole,
-      specialization, hospital, licence_number,
+      specialization, hospital, licence_number, licence_file: licenceFile,
     });
     const token = auth.generateToken(user);
 
