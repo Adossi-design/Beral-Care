@@ -8,6 +8,7 @@ import { useAuth } from '../lib/auth';
 import { useI18n } from '../lib/i18n';
 import { profile as profileApi } from '../lib/services';
 import { assetUrl, errorMessage } from '../lib/api';
+import { CONTACT } from '../lib/legal';
 import { formatDate } from '../lib/format';
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -298,7 +299,7 @@ export default function ProfilePage({ role }) {
             You are signed out straight away and cannot log in again. An administrator
             reads your reason and removes the account and everything in it, usually
             within one working week. If you change your mind before then, write to
-            adossifredwilliam09@gmail.com.
+            {' '}{CONTACT}.
           </Notice>
 
           <Field

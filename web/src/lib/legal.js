@@ -7,7 +7,7 @@
  * a point in a list.
  */
 
-export const CONTACT = 'adossifredwilliam09@gmail.com';
+export const CONTACT = 'f.adossi@alustudent.com';
 export const UPDATED = '2026-09-07';
 
 const h = (x) => ({ kind: 'h', x });
