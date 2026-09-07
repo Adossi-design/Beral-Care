@@ -4,6 +4,7 @@ const fs = require('fs');
 
 const router = express.Router();
 const pool = require('../utils/db');
+const storage = require('../utils/storage');
 
 const evidenceDir = path.join(__dirname, '../../uploads/evidence');
 if (!fs.existsSync(evidenceDir)) fs.mkdirSync(evidenceDir, { recursive: true });
@@ -72,12 +73,10 @@ router.post('/', async (req, res) => {
       if (file.size > MAX_EVIDENCE_BYTES) {
         return res.status(400).json({ error: 'That file is larger than 5 MB.' });
       }
-      // Stored name is generated, never taken from the upload
-      const ext = path.extname(file.name).toLowerCase().slice(0, 6);
-      evidenceFile = `evidence_${reporterId}_${Date.now()}${ext}`;
+      // The stored name is generated, never taken from the upload
+      evidenceFile = await storage.savePrivate(file, 'evidence', `evidence_${reporterId}_${Date.now()}`);
       evidenceName = file.name.slice(0, 200);
       evidenceMime = file.mimetype;
-      await file.mv(path.join(evidenceDir, evidenceFile));
     }
 
     const [[reporter]] = await pool.execute(
@@ -144,15 +143,13 @@ router.get('/:id/evidence', async (req, res) => {
       return res.status(403).json({ error: 'You are not allowed to open this file.' });
     }
 
-    const filepath = path.join(evidenceDir, path.basename(report.evidence_file));
-    if (!fs.existsSync(filepath)) {
-      return res.status(404).json({ error: 'The file is no longer available.' });
-    }
+    const contents = await storage.read(report.evidence_file, 'evidence');
+    if (!contents) return res.status(404).json({ error: 'The file is no longer available.' });
 
     res.setHeader('Content-Type', report.evidence_mime || 'application/octet-stream');
     res.setHeader('Content-Disposition', `inline; filename="${report.evidence_name || 'evidence'}"`);
     res.setHeader('Cache-Control', 'private, no-store');
-    fs.createReadStream(filepath).pipe(res);
+    res.send(contents);
   } catch (error) {
     console.error('Error serving evidence:', error);
     res.status(500).json({ error: 'Could not open the file.' });

@@ -211,9 +211,11 @@ patient information.
 
 It also runs entirely on free hosting tiers, which has practical limits:
 
-Uploaded profile photos are written to the server's local disk, so they are lost
-whenever the service restarts. Making that durable needs object storage such as
-S3, or a paid persistent disk.
+Uploaded files, meaning profile photos, report evidence, rating attachments and
+doctor licences, are kept in Cloudinary rather than on the server's own disk, so
+a restart no longer loses them. The private ones are stored as authenticated
+assets: they cannot be fetched from Cloudinary without a signature, and the
+application only signs a request after checking who is asking.
 
 The API sleeps when idle, so the first request after a quiet period takes about
 fifty seconds to wake up.

@@ -8,6 +8,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../utils/db');
 const { forgetSession } = require('../middleware/roleGuard');
+const storage = require('../utils/storage');
 
 // GET /api/admin/users — list all users filterable by role
 router.get('/users', async (req, res) => {
@@ -180,18 +181,16 @@ router.patch('/doctors/:id/verification', async (req, res) => {
  */
 router.get('/doctors/:id/licence', async (req, res) => {
   try {
-    const path = require('path');
-    const fs = require('fs');
     const [[doctor]] = await pool.execute(
       'SELECT licence_file FROM users WHERE id = ? AND role = "doctor"', [req.params.id],
     );
     if (!doctor?.licence_file) return res.status(404).json({ error: 'No licence was uploaded.' });
 
-    const filepath = path.join(__dirname, '../../uploads/licences', path.basename(doctor.licence_file));
-    if (!fs.existsSync(filepath)) return res.status(404).json({ error: 'The file is no longer available.' });
+    const contents = await storage.read(doctor.licence_file, 'licences');
+    if (!contents) return res.status(404).json({ error: 'The file is no longer available.' });
 
     res.setHeader('Cache-Control', 'private, no-store');
-    fs.createReadStream(filepath).pipe(res);
+    res.send(contents);
   } catch (error) {
     console.error('Admin licence error:', error);
     res.status(500).json({ error: 'Could not open the file.' });

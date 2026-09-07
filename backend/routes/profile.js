@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../utils/db');
+const storage = require('../utils/storage');
 const path = require('path');
 const fs = require('fs');
 
@@ -113,8 +114,6 @@ router.post('/licence', async (req, res) => {
       return res.status(400).json({ error: 'Please choose the file to send.' });
     }
 
-    const path = require('path');
-    const fs = require('fs');
     const file = req.files.licence;
 
     const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
@@ -125,11 +124,7 @@ router.post('/licence', async (req, res) => {
       return res.status(400).json({ error: 'That file is larger than 5 MB.' });
     }
 
-    const dir = path.join(__dirname, '../../uploads/licences');
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-
-    const stored = `licence_${req.user.id}_${Date.now()}${path.extname(file.name).toLowerCase().slice(0, 6)}`;
-    await file.mv(path.join(dir, stored));
+    const stored = await storage.savePrivate(file, 'licences', `licence_${req.user.id}_${Date.now()}`);
 
     // Sending a new licence puts the account back in the queue
     await pool.execute(
@@ -164,16 +159,10 @@ router.post('/upload-image', async (req, res) => {
       return res.status(400).json({ error: 'Image size must be less than 5MB' });
     }
 
-    // Generate unique filename
-    const ext = path.extname(imageFile.name);
-    const filename = `profile_${userId}_${Date.now()}${ext}`;
-    const filepath = path.join(uploadsDir, filename);
-
-    // Save file
-    await imageFile.mv(filepath);
-
-    // Save URL in database
-    const imageUrl = `/uploads/profiles/${filename}`;
+    // Stored wherever storage says: Cloudinary in production, the local disk
+    // during development
+    const saved = await storage.savePublic(imageFile, 'profiles', `profile_${userId}_${Date.now()}`);
+    const imageUrl = saved.url;
     await pool.execute(
       'UPDATE users SET profile_image_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       [imageUrl, userId]
@@ -207,12 +196,9 @@ router.delete('/image', async (req, res) => {
     const imageUrl = users[0].profile_image_url;
 
     if (imageUrl) {
-      // Delete file from disk
-      const filename = path.basename(imageUrl);
-      const filepath = path.join(uploadsDir, filename);
-      if (fs.existsSync(filepath)) {
-        fs.unlinkSync(filepath);
-      }
+      // Local files are named in the URL. A file kept elsewhere is left to
+      // its own housekeeping, and the account simply stops pointing at it.
+      if (!imageUrl.startsWith('http')) await storage.remove(path.basename(imageUrl), 'profiles');
     }
 
     // Clear image URL from database

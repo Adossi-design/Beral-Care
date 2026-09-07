@@ -4,6 +4,7 @@ const fs = require('fs');
 
 const router = express.Router();
 const pool = require('../utils/db');
+const storage = require('../utils/storage');
 
 const evidenceDir = path.join(__dirname, '../../uploads/reviews');
 if (!fs.existsSync(evidenceDir)) fs.mkdirSync(evidenceDir, { recursive: true });
@@ -124,11 +125,9 @@ router.post('/', async (req, res) => {
       if (file.size > MAX_EVIDENCE_BYTES) {
         return res.status(400).json({ error: 'That file is larger than 5 MB.' });
       }
-      const ext = path.extname(file.name).toLowerCase().slice(0, 6);
-      evidenceFile = `review_${patientId}_${Date.now()}${ext}`;
+      evidenceFile = await storage.savePrivate(file, 'reviews', `review_${patientId}_${Date.now()}`);
       evidenceName = file.name.slice(0, 200);
       evidenceMime = file.mimetype;
-      await file.mv(path.join(evidenceDir, evidenceFile));
     }
 
     // One rating per patient per doctor. Rating again replaces the old one.
@@ -184,15 +183,13 @@ router.get('/:id/evidence', async (req, res) => {
     const allowed = req.user.role === 'admin' || review.patient_id === req.user.id;
     if (!allowed) return res.status(403).json({ error: 'You are not allowed to open this file.' });
 
-    const filepath = path.join(evidenceDir, path.basename(review.evidence_file));
-    if (!fs.existsSync(filepath)) {
-      return res.status(404).json({ error: 'The file is no longer available.' });
-    }
+    const contents = await storage.read(review.evidence_file, 'reviews');
+    if (!contents) return res.status(404).json({ error: 'The file is no longer available.' });
 
     res.setHeader('Content-Type', review.evidence_mime || 'application/octet-stream');
     res.setHeader('Content-Disposition', `inline; filename="${review.evidence_name || 'attachment'}"`);
     res.setHeader('Cache-Control', 'private, no-store');
-    fs.createReadStream(filepath).pipe(res);
+    res.send(contents);
   } catch (error) {
     console.error('Error serving review evidence:', error);
     res.status(500).json({ error: 'Could not open the file.' });
