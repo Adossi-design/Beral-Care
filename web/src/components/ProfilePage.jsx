@@ -85,7 +85,8 @@ export default function ProfilePage({ role }) {
     setUploading(true);
     try {
       const data = await profileApi.uploadImage(file);
-      patchUser({ profile_image_url: data.profile_image_url || data.imageUrl });
+      // The API answers with image_url, so the photo shows straight away
+      patchUser({ profile_image_url: data.image_url || data.profile_image_url });
       toast.success('Your photo was saved.');
     } catch (err) {
       toast.error(errorMessage(err));
