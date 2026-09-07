@@ -9,6 +9,7 @@ import About from './pages/About';
 import Doctors from './pages/Doctors';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Legal from './pages/Legal';
 import NotFound from './pages/NotFound';
 
 // Authenticated areas are split per role, so a patient never downloads the
@@ -56,6 +57,8 @@ export default function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/about" element={<About />} />
         <Route path="/doctors" element={<Doctors />} />
+        <Route path="/privacy" element={<Legal doc="privacy" />} />
+        <Route path="/terms" element={<Legal doc="terms" />} />
         <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
         <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
 

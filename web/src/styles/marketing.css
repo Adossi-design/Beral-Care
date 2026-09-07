@@ -265,6 +265,24 @@
   max-width: var(--content-max); margin: 0 auto;
   display: flex; flex-wrap: wrap; gap: var(--sp-6); justify-content: space-between; align-items: center;
 }
+.footer__legal {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-4);
+  font-size: var(--fs-xs);
+}
+.footer__link {
+  color: #fff; font-size: var(--fs-xs); text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25); padding-bottom: 1px;
+}
+.footer__link:hover { border-bottom-color: #fff; }
+
+/* A point in a list inside the privacy notice or the terms */
+.legal__li {
+  position: relative; padding-left: var(--sp-5); margin-bottom: var(--sp-3);
+}
+.legal__li::before {
+  content: ''; position: absolute; left: 2px; top: 0.62em;
+  width: 6px; height: 6px; border-radius: 50%; background: var(--pine-500);
+}
 
 /* -------------------------------------------------------------------- auth */
 

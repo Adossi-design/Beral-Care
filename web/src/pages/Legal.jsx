@@ -1,22 +1,20 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Button, Icon } from '../components/ui';
+import { Button } from '../components/ui';
 import Brand, { BrandMark } from '../components/Brand';
 import LanguageToggle from '../components/LanguageToggle';
 import { useI18n } from '../lib/i18n';
+import { DOCS, UPDATED, CONTACT } from '../lib/legal';
+import { formatDate } from '../lib/format';
 
-// The story is a list of blocks so it can be translated like the rest of the site
-const BLOCKS = [
-  'p1', 'p2', 'p3', 'p4',
-  'h1', 'p5', 'p6',
-  'h2', 'p7', 'p8',
-  'h3', 'p9',
-  'h4', 'p10', 'p11',
-  'h5', 'p12', 'p13', 'p14',
-];
-
-export default function About() {
-  const { t } = useI18n();
+/**
+ * The privacy notice and the terms of use. Both are the same page with a
+ * different document, because they share the public header, the footer, and
+ * the reading width.
+ */
+export default function Legal({ doc }) {
+  const { t, lang } = useI18n();
+  const content = DOCS[doc][lang] || DOCS[doc].en;
 
   return (
     <div className="public">
@@ -34,30 +32,24 @@ export default function About() {
 
       <main className="section-pad">
         <div className="section-inner prose">
-          <h1 className="about__title">{t('about.title')}</h1>
+          <h1 className="about__title">{content.title}</h1>
+          <p className="about__lede">{content.lede}</p>
 
-          <div className="byline">
-            <span className="byline__photo">
-              <img src="/author.jpg" alt="Adossi Fred William" />
-            </span>
-            <div>
-              <div className="byline__name">Adossi Fred William</div>
-              <div className="byline__role">{t('about.role')}</div>
-              <div className="byline__place">{t('about.place')}</div>
-            </div>
-          </div>
+          {content.blocks.map((block, i) => {
+            if (block.kind === 'h') return <h2 className="about__h2" key={i}>{block.x}</h2>;
+            if (block.kind === 'li') return <p className="legal__li" key={i}>{block.x}</p>;
+            return <p key={i}>{block.x}</p>;
+          })}
 
-          <p className="about__lede">{t('about.lede')}</p>
-
-          {BLOCKS.map((key) => (
-            key.startsWith('h')
-              ? <h2 className="about__h2" key={key}>{t(`about.${key}`)}</h2>
-              : <p key={key}>{t(`about.${key}`)}</p>
-          ))}
+          <p className="muted text-sm mt-6">
+            {lang === 'fr' ? 'Dernière mise à jour' : 'Last updated'} {formatDate(UPDATED, lang)}
+            {' · '}
+            <a href={`mailto:${CONTACT}`}>{CONTACT}</a>
+          </p>
 
           <div className="about__cta">
-            <Button to="/register" variant="primary" size="lg" iconRight="arrowRight">
-              {t('hero.cta')}
+            <Button to={doc === 'privacy' ? '/terms' : '/privacy'} size="lg">
+              {doc === 'privacy' ? DOCS.terms[lang].title : DOCS.privacy[lang].title}
             </Button>
             <Button to="/" size="lg">{t('about.back')}</Button>
           </div>

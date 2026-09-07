@@ -96,6 +96,8 @@ const en = {
   'cta.lede': 'Signing up takes about one minute and costs nothing. You get your health ID straight away, and you can use it at any clinic on Beral Care.',
   'footer.tagline': 'Health care and health records for everyone',
   'footer.built': 'Built by Adossi Fred William',
+  'footer.privacy': 'Privacy',
+  'footer.terms': 'Terms of use',
 
   // About page
   'about.title': 'Why this exists',
@@ -216,6 +218,8 @@ const fr = {
   'cta.lede': 'L’inscription prend environ une minute et ne coûte rien. Vous recevez votre identifiant santé immédiatement, et vous pouvez l’utiliser dans toute clinique sur Beral Care.',
   'footer.tagline': 'Des soins et des dossiers de santé pour tous',
   'footer.built': 'Créé par Adossi Fred William',
+  'footer.privacy': 'Confidentialité',
+  'footer.terms': 'Conditions d’utilisation',
 
   // Page à propos
   'about.title': 'Pourquoi ce projet existe',

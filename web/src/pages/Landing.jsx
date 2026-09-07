@@ -198,7 +198,11 @@ export default function Landing() {
               <div className="text-xs">{t('footer.tagline')}</div>
             </div>
           </div>
-          <div className="text-xs">{t('footer.built')}</div>
+          <div className="footer__legal">
+            <Link className="footer__link" to="/privacy">{t('footer.privacy')}</Link>
+            <Link className="footer__link" to="/terms">{t('footer.terms')}</Link>
+            <span className="text-xs">{t('footer.built')}</span>
+          </div>
         </div>
       </footer>
     </div>
