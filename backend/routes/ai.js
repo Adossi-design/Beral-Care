@@ -17,6 +17,7 @@ const express = require('express');
 
 const router = express.Router();
 const pool = require('../utils/db');
+const accessLog = require('../utils/accessLog');
 const { requireDoctor, requirePatient } = require('../middleware/roleGuard');
 const ai = require('../utils/ai');
 const { DOCTOR_SYSTEM, PATIENT_SYSTEM } = require('../utils/ai/prompts');
@@ -81,6 +82,13 @@ router.post('/doctor', requireDoctor, async (req, res) => {
         );
 
         if (rows.length > 0) {
+          accessLog.record({
+            patientId,
+            doctor: req.user,
+            action: 'assistant_context',
+            detail: 'Health history sent to MedAssist',
+          });
+
           const history = rows
             .filter((r) => r.consultation_date)
             .map((r) => `  - ${r.consultation_date}: Dx: ${r.diagnosis || '—'} | Rx: ${r.prescription || '—'}`

@@ -7,6 +7,7 @@ import Overview from './Overview';
 import Users from './Users';
 import Reports from './Reports';
 import Ratings from './Ratings';
+import Doctors from './Doctors';
 import Settings from './Settings';
 
 const TITLES = {
@@ -14,6 +15,7 @@ const TITLES = {
   '/admin/users': 'Users',
   '/admin/reports': 'Reports',
   '/admin/ratings': 'Ratings',
+  '/admin/doctors': 'Doctors',
   '/admin/settings': 'Settings',
 };
 
@@ -24,6 +26,7 @@ export default function AdminArea() {
   const nav = [
     { to: '/admin', end: true, label: t('overview'), icon: 'chart' },
     { to: '/admin/users', label: t('users'), icon: 'users' },
+    { to: '/admin/doctors', label: 'Doctors', icon: 'stethoscope' },
     { to: '/admin/reports', label: 'Reports', icon: 'shield' },
     { to: '/admin/ratings', label: 'Ratings', icon: 'star' },
   ];
@@ -35,6 +38,7 @@ export default function AdminArea() {
         <Route path="users" element={<Users />} />
         <Route path="reports" element={<Reports />} />
         <Route path="ratings" element={<Ratings />} />
+        <Route path="doctors" element={<Doctors />} />
         <Route path="settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>

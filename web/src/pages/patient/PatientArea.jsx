@@ -12,12 +12,14 @@ import Appointments from './Appointments';
 import Records from './Records';
 import CareTeam from './CareTeam';
 import Messages from '../Messages';
+import RecordAccess from './RecordAccess';
 import Profile from './Profile';
 
 /** Longest-prefix match so nested routes keep a meaningful heading. */
 const TITLES = [
   ['/app/appointments', 'My visits'],
   ['/app/records', 'My records'],
+  ['/app/record-access', 'Who opened my records'],
   ['/app/care-team', 'My doctors'],
   ['/app/notifications', 'Messages'],
   ['/app/profile', 'My profile'],
@@ -38,6 +40,7 @@ export default function PatientArea() {
     { to: '/app', end: true, label: t('overview'), icon: 'home' },
     { to: '/app/appointments', label: t('appointments'), icon: 'calendar' },
     { to: '/app/records', label: t('records'), icon: 'records' },
+    { to: '/app/record-access', label: 'Who opened them', icon: 'eye' },
     { to: '/app/care-team', label: t('careTeam'), icon: 'stethoscope' },
   ];
 
@@ -54,6 +57,7 @@ export default function PatientArea() {
           <Route index element={<Overview summary={summary} onChange={refetch} />} />
           <Route path="appointments" element={<Appointments />} />
           <Route path="records" element={<Records />} />
+          <Route path="record-access" element={<RecordAccess />} />
           <Route path="care-team" element={<CareTeam onChange={refetch} />} />
           <Route path="notifications" element={<Messages onChange={refetch} />} />
           <Route path="profile" element={<Profile />} />

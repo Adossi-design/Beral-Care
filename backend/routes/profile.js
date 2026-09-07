@@ -99,6 +99,51 @@ router.put('/', async (req, res) => {
 });
 
 // POST /api/profile/upload-image - Upload profile image
+/**
+ * POST /api/profile/licence
+ * A doctor uploads the licence an administrator checks. The file is never
+ * public: only administrators can open it, through the admin route.
+ */
+router.post('/licence', async (req, res) => {
+  try {
+    if (req.user.role !== 'doctor') {
+      return res.status(403).json({ error: 'Only a doctor sends a licence.' });
+    }
+    if (!req.files || !req.files.licence) {
+      return res.status(400).json({ error: 'Please choose the file to send.' });
+    }
+
+    const path = require('path');
+    const fs = require('fs');
+    const file = req.files.licence;
+
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!allowed.includes(file.mimetype)) {
+      return res.status(400).json({ error: 'The licence must be a picture or a PDF.' });
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      return res.status(400).json({ error: 'That file is larger than 5 MB.' });
+    }
+
+    const dir = path.join(__dirname, '../../uploads/licences');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+    const stored = `licence_${req.user.id}_${Date.now()}${path.extname(file.name).toLowerCase().slice(0, 6)}`;
+    await file.mv(path.join(dir, stored));
+
+    // Sending a new licence puts the account back in the queue
+    await pool.execute(
+      "UPDATE users SET licence_file = ?, verification = 'pending' WHERE id = ?",
+      [stored, req.user.id],
+    );
+
+    res.json({ sent: true, verification: 'pending' });
+  } catch (error) {
+    console.error('Licence upload error:', error);
+    res.status(500).json({ error: 'Could not send that file. Please try again.' });
+  }
+});
+
 router.post('/upload-image', async (req, res) => {
   try {
     const userId = req.user.id;

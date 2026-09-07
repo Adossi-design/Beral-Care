@@ -12,6 +12,7 @@
  */
 
 const jwt = require('jsonwebtoken');
+const pool = require('../utils/db');
 
 const JWT_TOKEN = process.env.JWT_TOKEN;
 
@@ -20,16 +21,55 @@ const JWT_TOKEN = process.env.JWT_TOKEN;
  * Attaches the decoded payload to req.user on success.
  * Returns 401 if token is missing or invalid/expired.
  */
-const verifyToken = (req, res, next) => {
+/**
+ * A token stays valid for a day, so blocking or deleting an account has to be
+ * able to end a session that is already open. Each account carries a session
+ * version, the token carries the version it was issued with, and a mismatch
+ * ends the session. The version is cached briefly so this costs one query a
+ * minute per person rather than one on every request.
+ */
+const SESSION_CACHE_MS = 60 * 1000;
+const sessionCache = new Map();
+
+const currentSessionVersion = async (userId) => {
+  const cached = sessionCache.get(userId);
+  if (cached && cached.expires > Date.now()) return cached.state;
+
+  const [[row]] = await pool.execute(
+    'SELECT session_version, suspended FROM users WHERE id = ?', [userId],
+  );
+  const state = row ? { version: row.session_version, suspended: !!row.suspended } : null;
+  sessionCache.set(userId, { state, expires: Date.now() + SESSION_CACHE_MS });
+  return state;
+};
+
+// Called after blocking or deleting so the change is felt straight away
+const forgetSession = (userId) => sessionCache.delete(Number(userId));
+
+const verifyToken = async (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ error: 'No token provided' });
 
+  let payload;
   try {
-    req.user = jwt.verify(token, JWT_TOKEN);
-    next();
+    payload = jwt.verify(token, JWT_TOKEN);
   } catch {
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
+
+  try {
+    const current = await currentSessionVersion(payload.id);
+    if (!current) return res.status(401).json({ error: 'This account no longer exists.' });
+    if (current.suspended || current.version !== (payload.sv || 1)) {
+      return res.status(401).json({ error: 'Your session has ended. Please log in again.' });
+    }
+  } catch (error) {
+    // A database hiccup should not lock everyone out of a signed token
+    console.error('Session check failed:', error.message);
+  }
+
+  req.user = payload;
+  next();
 };
 
 /**
@@ -79,4 +119,7 @@ const readToken = (req, res, next) => {
   next();
 };
 
-module.exports = { verifyToken, readToken, requireAdmin, requireDoctor, requirePatient };
+module.exports = {
+  verifyToken, readToken, forgetSession,
+  requireAdmin, requireDoctor, requirePatient,
+};

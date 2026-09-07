@@ -19,6 +19,7 @@ export default function Register() {
   const [role, setRole] = useState('patient');
   const [form, setForm] = useState({
     full_name: '', email: '', phone: '', password: '', specialization: '', hospital: '',
+    licence_number: '',
   });
   const [errors, setErrors] = useState({});
   const [failure, setFailure] = useState('');
@@ -37,6 +38,9 @@ export default function Register() {
     if (!form.phone.trim()) next.phone = 'Please enter your phone number.';
     if (!form.password) next.password = 'Please choose a password.';
     else if (form.password.length < 8) next.password = 'Please use 8 letters or numbers or more.';
+    if (role === 'doctor' && !form.licence_number.trim()) {
+      next.licence_number = 'Please give your licence number so it can be checked.';
+    }
     if (role === 'doctor' && !form.specialization.trim()) {
       next.specialization = 'Please say what you treat.';
     }
@@ -58,7 +62,11 @@ export default function Register() {
         password: form.password,
         role,
         ...(role === 'doctor'
-          ? { specialization: form.specialization.trim(), hospital: form.hospital.trim() }
+          ? {
+            specialization: form.specialization.trim(),
+            hospital: form.hospital.trim(),
+            licence_number: form.licence_number.trim(),
+          }
           : {}),
       };
       const data = await authApi.register(payload);
@@ -169,6 +177,13 @@ export default function Register() {
                       label={t('hospital')} icon="hospital"
                       placeholder="Kigali Central Hospital"
                       value={form.hospital} onChange={set('hospital')}
+                    />
+                    <Field
+                      label="Medical licence number" icon="idCard" required
+                      placeholder="The number on your practising licence"
+                      hint="An administrator checks this before patients can find you. You can upload the document itself from your profile."
+                      value={form.licence_number} onChange={set('licence_number')}
+                      error={errors.licence_number}
                     />
                   </>
                 ) : null}

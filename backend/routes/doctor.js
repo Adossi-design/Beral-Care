@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../utils/db');
+const accessLog = require('../utils/accessLog');
 
 // GET /api/doctors - Get all doctors (public endpoint for patient discovery)
 const getPublicDoctors = async (req, res) => {
@@ -14,7 +15,8 @@ const getPublicDoctors = async (req, res) => {
                         COUNT(r.id) AS rating_count
                  FROM users u
                  LEFT JOIN doctor_reviews r ON r.doctor_id = u.id
-                 WHERE u.role = 'doctor' AND u.suspended = 0`;
+                 WHERE u.role = 'doctor' AND u.suspended = 0
+                   AND u.verification = 'verified'`;
     let params = [];
 
     if (search && search.trim()) {
@@ -477,6 +479,14 @@ router.get('/patient/:patient_id', async (req, res) => {
         [patientUserId, doctorId],
       );
 
+    // The patient can see this afterwards in their own account
+    accessLog.record({
+      patientId: patientUserId,
+      doctor: req.user,
+      action: canReadRecords ? 'opened_records' : 'opened_profile',
+      detail: canReadRecords ? `${consultations.length} visits` : null,
+    });
+
     res.json({
       ...users[0],
       records_status: link.records_status,
@@ -515,6 +525,13 @@ router.get('/patients/:patient_id/consultations', async (req, res) => {
        ORDER BY c.consultation_date DESC`,
       [patient_id]
     );
+
+    accessLog.record({
+      patientId: patient_id,
+      doctor: req.user,
+      action: 'opened_records',
+      detail: `${consultations.length} visits`,
+    });
 
     res.json(consultations);
   } catch (error) {

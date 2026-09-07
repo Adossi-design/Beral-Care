@@ -207,6 +207,19 @@ app.get('/setup-db', async (req, res) => {
         FOREIGN KEY (related_consultation_id) REFERENCES consultations(id) ON DELETE SET NULL
       );
 
+      CREATE TABLE IF NOT EXISTS record_access_log (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        patient_id INT NOT NULL,
+        doctor_id INT,
+        doctor_name VARCHAR(200),
+        action VARCHAR(40) NOT NULL,
+        detail VARCHAR(200),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (patient_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (doctor_id) REFERENCES users(id) ON DELETE SET NULL,
+        INDEX idx_access_patient (patient_id, created_at)
+      );
+
       CREATE TABLE IF NOT EXISTS doctor_reviews (
         id INT PRIMARY KEY AUTO_INCREMENT,
         doctor_id INT NOT NULL,
@@ -302,6 +315,30 @@ app.get('/setup-db', async (req, res) => {
       "ENUM('patient', 'doctor') NOT NULL DEFAULT 'patient'",
     );
 
+    // A doctor has to be checked by an administrator before patients see them
+    await addColumn('users', 'licence_number', 'VARCHAR(80) DEFAULT NULL');
+    await addColumn('users', 'licence_file', 'VARCHAR(255) DEFAULT NULL');
+    const verificationAdded = await addColumn(
+      'users', 'verification',
+      "ENUM('pending', 'verified', 'refused') NOT NULL DEFAULT 'pending'",
+    );
+    if (verificationAdded) {
+      // Doctors already working on the platform keep their place
+      await pool.query("UPDATE users SET verification = 'verified' WHERE role != 'doctor'");
+      await pool.query(
+        `UPDATE users SET verification = 'verified'
+         WHERE role = 'doctor' AND created_at < NOW()`,
+      );
+    }
+    await addColumn('users', 'verification_note', 'VARCHAR(300) DEFAULT NULL');
+
+    // Blocking someone, or their own password change, ends open sessions
+    await addColumn('users', 'session_version', 'INT NOT NULL DEFAULT 1');
+
+    // A doctor can answer a rating once, under the rating itself
+    await addColumn('doctor_reviews', 'reply', 'TEXT DEFAULT NULL');
+    await addColumn('doctor_reviews', 'replied_at', 'DATETIME DEFAULT NULL');
+
     // Seeing someone's health records is a second permission, asked for after
     // the two are connected. Anyone connected before this existed keeps the
     // access they already had.
@@ -337,7 +374,8 @@ app.get('/setup-db', async (req, res) => {
       message: 'Database setup completed successfully!',
       tables_created: [
         'users', 'patients', 'doctors', 'consultations', 'consultation_requests',
-        'notifications', 'reports', 'moderation_actions',
+        'notifications', 'reports', 'moderation_actions', 'doctor_reviews',
+        'record_access_log',
       ],
       sample_data: shouldSeed ? 'Sample records inserted' : 'Skipped (set DB_SEED_SAMPLE_DATA=true to enable)',
     });

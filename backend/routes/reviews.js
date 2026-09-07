@@ -34,7 +34,7 @@ const getDoctorReviews = async (req, res) => {
     );
 
     const [rows] = await pool.execute(
-      `SELECT id, rating, comment, created_at, updated_at, patient_id,
+      `SELECT id, rating, comment, reply, replied_at, created_at, updated_at, patient_id,
               evidence_file IS NOT NULL AS has_evidence
        FROM doctor_reviews WHERE doctor_id = ?
        ORDER BY updated_at DESC LIMIT 100`,
@@ -48,6 +48,8 @@ const getDoctorReviews = async (req, res) => {
         id: r.id,
         rating: r.rating,
         comment: r.comment,
+        reply: r.reply,
+        replied_at: r.replied_at,
         created_at: r.created_at,
         updated_at: r.updated_at,
         mine: isMine,
@@ -194,6 +196,37 @@ router.get('/:id/evidence', async (req, res) => {
   } catch (error) {
     console.error('Error serving review evidence:', error);
     res.status(500).json({ error: 'Could not open the file.' });
+  }
+});
+
+/**
+ * POST /api/reviews/:id/reply
+ * The doctor being rated answers once, under the rating. A rating with no
+ * right of reply is not fair to the person it is about.
+ */
+router.post('/:id/reply', async (req, res) => {
+  try {
+    const reply = (req.body.reply || '').trim();
+    if (reply.length < 5) return res.status(400).json({ error: 'Please write your answer.' });
+
+    const [[review]] = await pool.execute(
+      'SELECT id, doctor_id FROM doctor_reviews WHERE id = ?', [req.params.id],
+    );
+    if (!review) return res.status(404).json({ error: 'That rating was not found.' });
+
+    if (req.user.role !== 'doctor' || review.doctor_id !== req.user.id) {
+      return res.status(403).json({ error: 'Only the doctor being rated can answer.' });
+    }
+
+    await pool.execute(
+      'UPDATE doctor_reviews SET reply = ?, replied_at = NOW() WHERE id = ?',
+      [reply.slice(0, 1000), review.id],
+    );
+
+    res.json({ reply });
+  } catch (error) {
+    console.error('Error saving a reply:', error);
+    res.status(500).json({ error: 'Could not save your answer.' });
   }
 });
 

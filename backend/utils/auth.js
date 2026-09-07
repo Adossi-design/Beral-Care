@@ -55,6 +55,8 @@ const auth = {
         name: user.full_name,
         patient_id: user.patient_id || null,
         doctor_id: user.doctor_id || null,
+        // Bumped when an account is blocked or deleted, which ends open sessions
+        sv: user.session_version || 1,
       },
       JWT_TOKEN,
       { expiresIn: '24h' }
@@ -94,9 +96,19 @@ const auth = {
       const patient_id = role === 'patient' ? await generatePatientId(conn) : null;
       const doctor_id  = role === 'doctor'  ? await generateDoctorId(conn)  : null;
 
+      // A doctor waits for an administrator to check their licence. Patients
+      // are ready straight away, because there is nothing to check.
+      const verification = role === 'doctor' ? 'pending' : 'verified';
+
       const [result] = await conn.execute(
-        'INSERT INTO users (full_name, email, phone, password_hash, role, patient_id, doctor_id, specialization, hospital) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [full_name, email, phoneValue, hashedPassword, role, patient_id, doctor_id, specialization || null, hospital || null]
+        `INSERT INTO users
+          (full_name, email, phone, password_hash, role, patient_id, doctor_id,
+           specialization, hospital, licence_number, verification)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          full_name, email, phoneValue, hashedPassword, role, patient_id, doctor_id,
+          specialization || null, hospital || null, userData.licence_number || null, verification,
+        ]
       );
       const userId = result.insertId;
 
@@ -108,7 +120,10 @@ const auth = {
       }
 
       await conn.commit();
-      return { id: userId, full_name, email, phone: phoneValue, role, patient_id, doctor_id, specialization, hospital };
+      return {
+        id: userId, full_name, email, phone: phoneValue, role, patient_id, doctor_id,
+        specialization, hospital, verification,
+      };
     } catch (error) {
       await conn.rollback();
       throw new Error(`Error registering user: ${error.message}`);
@@ -120,7 +135,7 @@ const auth = {
   loginUser: async (email, password) => {
     try {
       const [users] = await pool.execute(
-        'SELECT id, full_name, email, password_hash, role, patient_id, doctor_id, specialization, hospital, suspended, suspended_until FROM users WHERE email = ?',
+        'SELECT id, full_name, email, password_hash, role, patient_id, doctor_id, specialization, hospital, suspended, suspended_until, verification, session_version FROM users WHERE email = ?',
         [email]
       );
       if (users.length === 0) throw new Error('Invalid email or password');
@@ -156,7 +171,7 @@ const auth = {
       const token = auth.generateToken(user);
       return {
         // Include both full_name and name so screens work regardless of which field they read
-        user: { id: user.id, full_name: user.full_name, name: user.full_name, email: user.email, role: user.role, patient_id: user.patient_id, doctor_id: user.doctor_id, specialization: user.specialization, hospital: user.hospital },
+        user: { id: user.id, full_name: user.full_name, name: user.full_name, email: user.email, role: user.role, patient_id: user.patient_id, doctor_id: user.doctor_id, specialization: user.specialization, hospital: user.hospital, verification: user.verification },
         token,
       };
     } catch (error) {

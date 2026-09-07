@@ -11,7 +11,10 @@ const auth = require('../utils/auth');
 // POST /api/auth/register — create a new patient or doctor account
 router.post('/register', async (req, res) => {
   try {
-    const { full_name, email, phone, password, role = 'patient', specialization, hospital } = req.body;
+    const {
+      full_name, email, phone, password, role = 'patient',
+      specialization, hospital, licence_number,
+    } = req.body;
 
     if (!full_name || !email || !phone || !password)
       return res.status(400).json({ error: 'All fields are required: full_name, email, phone, password' });
@@ -23,11 +26,17 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Invalid phone format' });
     if (role === 'doctor' && (!specialization || !hospital))
       return res.status(400).json({ error: 'Doctors must provide specialization and hospital' });
+    // The licence is what an administrator checks before patients see them
+    if (role === 'doctor' && !String(licence_number || '').trim())
+      return res.status(400).json({ error: 'Doctors must give their medical licence number' });
 
     // Prevent admin self-registration through public endpoint
     const safeRole = role === 'admin' ? 'patient' : role;
 
-    const user = await auth.registerUser({ full_name, email, phone, password, role: safeRole, specialization, hospital });
+    const user = await auth.registerUser({
+      full_name, email, phone, password, role: safeRole,
+      specialization, hospital, licence_number,
+    });
     const token = auth.generateToken(user);
 
     res.status(201).json({

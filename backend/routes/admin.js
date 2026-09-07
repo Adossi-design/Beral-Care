@@ -7,6 +7,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../utils/db');
+const { forgetSession } = require('../middleware/roleGuard');
 
 // GET /api/admin/users — list all users filterable by role
 router.get('/users', async (req, res) => {
@@ -80,11 +81,120 @@ router.patch('/users/:id/suspend', async (req, res) => {
     const [existing] = await pool.execute('SELECT id FROM users WHERE id = ?', [req.params.id]);
     if (existing.length === 0) return res.status(404).json({ error: 'User not found' });
     
-    await pool.execute('UPDATE users SET suspended = ? WHERE id = ?', [suspended ? 1 : 0, req.params.id]);
+    // Bumping the session version ends any session the person already had open
+    await pool.execute(
+      'UPDATE users SET suspended = ?, session_version = session_version + 1 WHERE id = ?',
+      [suspended ? 1 : 0, req.params.id],
+    );
+    forgetSession(req.params.id);
     res.json({ message: `User ${suspended ? 'suspended' : 'unsuspended'} successfully` });
   } catch (error) {
     console.error('Admin suspend user error:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * GET /api/admin/doctors
+ * Doctors waiting to be checked, and the ones already decided. A doctor is
+ * only shown to patients once an administrator has confirmed their licence.
+ */
+router.get('/doctors', async (req, res) => {
+  try {
+    const { status } = req.query;
+    const where = ["role = 'doctor'"];
+    const params = [];
+
+    if (['pending', 'verified', 'refused'].includes(status)) {
+      where.push('verification = ?');
+      params.push(status);
+    }
+
+    const [doctors] = await pool.execute(
+      `SELECT id, full_name, email, phone, specialization, hospital, doctor_id,
+              licence_number, licence_file IS NOT NULL AS has_licence_file,
+              verification, verification_note, suspended, created_at
+       FROM users
+       WHERE ${where.join(' AND ')}
+       ORDER BY FIELD(verification, 'pending', 'refused', 'verified'), created_at DESC`,
+      params,
+    );
+
+    const [[counts]] = await pool.execute(
+      `SELECT SUM(verification = 'pending') AS pending,
+              SUM(verification = 'verified') AS verified,
+              SUM(verification = 'refused') AS refused
+       FROM users WHERE role = 'doctor'`,
+    );
+
+    res.json({ doctors, counts });
+  } catch (error) {
+    console.error('Admin doctors error:', error);
+    res.status(500).json({ error: 'Could not load the doctors.' });
+  }
+});
+
+/**
+ * PATCH /api/admin/doctors/:id/verification
+ * The decision itself. A refused doctor keeps their account and is told why,
+ * but patients never see them in the directory.
+ */
+router.patch('/doctors/:id/verification', async (req, res) => {
+  try {
+    const { status, note } = req.body;
+    if (!['pending', 'verified', 'refused'].includes(status)) {
+      return res.status(400).json({ error: 'Unknown decision.' });
+    }
+
+    const [[doctor]] = await pool.execute(
+      "SELECT id, full_name FROM users WHERE id = ? AND role = 'doctor'", [req.params.id],
+    );
+    if (!doctor) return res.status(404).json({ error: 'That doctor was not found.' });
+
+    await pool.execute(
+      'UPDATE users SET verification = ?, verification_note = ? WHERE id = ?',
+      [status, note?.trim()?.slice(0, 300) || null, doctor.id],
+    );
+
+    const message = status === 'verified'
+      ? 'Your licence has been checked. Patients can now find you on Beral Care.'
+      : status === 'refused'
+        ? `We could not confirm your licence.${note?.trim() ? ` ${note.trim()}` : ''} You can send the right details and ask again.`
+        : 'Your account is being checked again.';
+
+    await pool.execute(
+      'INSERT INTO notifications (user_id, type, message) VALUES (?, ?, ?)',
+      [doctor.id, 'verification', message],
+    );
+
+    res.json({ verification: status });
+  } catch (error) {
+    console.error('Admin verification error:', error);
+    res.status(500).json({ error: 'Could not save that decision.' });
+  }
+});
+
+/**
+ * GET /api/admin/doctors/:id/licence
+ * The licence document a doctor uploaded. Administrators only.
+ */
+router.get('/doctors/:id/licence', async (req, res) => {
+  try {
+    const path = require('path');
+    const fs = require('fs');
+    const [[doctor]] = await pool.execute(
+      'SELECT licence_file FROM users WHERE id = ? AND role = "doctor"', [req.params.id],
+    );
+    if (!doctor?.licence_file) return res.status(404).json({ error: 'No licence was uploaded.' });
+
+    const filepath = path.join(__dirname, '../../uploads/licences', path.basename(doctor.licence_file));
+    if (!fs.existsSync(filepath)) return res.status(404).json({ error: 'The file is no longer available.' });
+
+    res.setHeader('Cache-Control', 'private, no-store');
+    fs.createReadStream(filepath).pipe(res);
+  } catch (error) {
+    console.error('Admin licence error:', error);
+    res.status(500).json({ error: 'Could not open the file.' });
   }
 });
 

@@ -171,6 +171,31 @@ router.patch('/records-requests/:id', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/patient/record-access
+ * Who reached into this patient's account, and when. Consent is only worth
+ * something if the person can check afterwards that it was respected.
+ */
+router.get('/record-access', async (req, res) => {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT l.id, l.action, l.detail, l.created_at, l.doctor_id,
+              COALESCE(u.full_name, l.doctor_name) AS doctor_name,
+              u.specialization, u.profile_image_url
+       FROM record_access_log l
+       LEFT JOIN users u ON u.id = l.doctor_id
+       WHERE l.patient_id = ?
+       ORDER BY l.created_at DESC
+       LIMIT 200`,
+      [req.user.id],
+    );
+    res.json(rows);
+  } catch (error) {
+    console.error('Error loading the access log:', error);
+    res.status(500).json({ error: 'Could not load who opened your records.' });
+  }
+});
+
 // GET /api/patient/consultation-requests - Get request status
 router.get('/consultation-requests', async (req, res) => {
   try {
@@ -341,7 +366,7 @@ router.get('/doctors', async (req, res) => {
               COUNT(r.id) AS rating_count
        FROM users u
        LEFT JOIN doctor_reviews r ON r.doctor_id = u.id
-       WHERE u.role = 'doctor' AND u.suspended = 0
+       WHERE u.role = 'doctor' AND u.suspended = 0 AND u.verification = 'verified'
        GROUP BY u.id, u.full_name, u.specialization, u.hospital, u.profile_image_url
        ORDER BY u.full_name ASC`
     );
