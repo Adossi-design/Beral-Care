@@ -43,10 +43,20 @@ const PORT = process.env.PORT || 3000;
 // the auth routes. Trust exactly one hop — the platform load balancer.
 app.set('trust proxy', 1);
 
-// CORS: allow the mobile app origin and localhost during development
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:19006')
-  .split(',')
-  .map(o => o.trim());
+// CORS: allow the mobile app origin and localhost during development.
+// The Vite dev server forwards the browser's own origin when it proxies /api,
+// so its address has to be here or nothing works when running the site locally.
+const DEV_ORIGINS = [
+  'http://localhost:5173', 'http://127.0.0.1:5173',
+  'http://localhost:3000', 'http://localhost:19006', 'http://localhost:8081',
+];
+const allowedOrigins = [
+  ...new Set([
+    ...(process.env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean),
+    // Only on a developer machine. The deployed API answers its own site.
+    ...(process.env.NODE_ENV === 'production' ? [] : DEV_ORIGINS),
+  ]),
+];
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -335,6 +345,11 @@ app.get('/setup-db', async (req, res) => {
     // Blocking someone, or their own password change, ends open sessions
     await addColumn('users', 'session_version', 'INT NOT NULL DEFAULT 1');
 
+    // Asking to close an account locks it at once and puts it in the queue
+    // the administrator works through
+    await addColumn('users', 'deletion_requested_at', 'DATETIME DEFAULT NULL');
+    await addColumn('users', 'deletion_reason', 'VARCHAR(500) DEFAULT NULL');
+
     // A doctor can answer a rating once, under the rating itself
     await addColumn('doctor_reviews', 'reply', 'TEXT DEFAULT NULL');
     await addColumn('doctor_reviews', 'replied_at', 'DATETIME DEFAULT NULL');
@@ -385,8 +400,13 @@ app.get('/setup-db', async (req, res) => {
   }
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Beral Care API running on port ${PORT}`);
-});
+// Only listen when this file is the program being run. The tests import the
+// app to drive it through supertest, and a test run should not leave a port
+// open behind it.
+if (require.main === module) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Beral Care API running on port ${PORT}`);
+  });
+}
 
 module.exports = app;
