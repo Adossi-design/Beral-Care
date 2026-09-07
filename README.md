@@ -331,15 +331,15 @@ SENDGRID_API_KEY=       SENDGRID_FROM_EMAIL=
 | Part | Host |
 |---|---|
 | API | Render, built from `backend/`, redeploys on push to `main` |
-| Website | Vercel, `npx vercel deploy --prod --cwd web` |
+| Website | Vercel, redeploys on push to `main` with the root directory set to `web` |
 | USSD gateway | Vercel, `npx vercel deploy --prod --cwd ussd-gateway` |
 | Database | Railway MySQL, reached over its public TCP proxy |
 | USSD sessions | Upstash Redis |
 
-Both Vercel projects deploy from the command line rather than from GitHub. When
-a Vercel project is linked to this repository its root directory defaults to the
-repository root, which deploys the wrong folder and replaces the working site.
-If you reconnect them, set the root directory first.
+The website project has its root directory set to `web`, so a push to `main` is
+all it needs. Do not deploy it with `vercel deploy --cwd web`: the CLI uploads
+the `web` folder and Vercel then looks for `web/web`, which fails. If you ever
+need a command line deploy, run it from the repository root.
 
 Changing an environment variable on Render does not redeploy the service. Update
 the value, then trigger a deploy for it to take effect. `GET /api/ai/status`
