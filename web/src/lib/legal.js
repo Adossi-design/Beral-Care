@@ -7,7 +7,11 @@
  * a point in a list.
  */
 
+// The university address is the one read every day, so it comes first. The
+// second one is here because a student address stops working after graduation,
+// and a privacy notice has to stay reachable for longer than a degree lasts.
 export const CONTACT = 'f.adossi@alustudent.com';
+export const CONTACT_ALT = 'adossifredwilliam09@gmail.com';
 export const UPDATED = '2026-09-07';
 
 const h = (x) => ({ kind: 'h', x });
@@ -19,7 +23,7 @@ const privacyEn = [
 
   h('Who is responsible'),
   p('Beral Care is built and run by one person, Adossi Fred William, a student at the African Leadership University in Kigali, Rwanda. There is no company behind it and no team. That means one person decides what happens to your information, and one person answers for it.'),
-  p(`If you have a question, a worry, or a request about your information, write to ${CONTACT}. It is read by the same person who runs the service.`),
+  p(`If you have a question, a worry, or a request about your information, write to ${CONTACT}. It is read by the same person who runs the service. ${CONTACT_ALT} reaches the same person, and it is the one to use if the university address ever stops working.`),
 
   h('What is kept'),
   li('Your name, email address, phone number, and the photo you upload, if you upload one.'),
@@ -51,7 +55,7 @@ const privacyEn = [
   h('Closing your account'),
   p('You can close your account yourself, from your profile. You are asked to say why, in your own words. As soon as you ask, the account is locked: you are signed out, you cannot log in again, and no doctor can reach your file.'),
   p('The account and everything in it is then deleted within one working week. Your reason is read first, but it does not have to be a reason anyone agrees with. Whether it is understood or not, the account is removed.'),
-  p(`If you change your mind before the week is up, write to ${CONTACT} and the account can be opened again.`),
+  p('If you change your mind before the week is up, write to either address above and the account can be opened again.'),
   p('One thing is worth knowing. A note a doctor wrote about a visit belongs to that visit, and deleting your account deletes it. There is no copy kept for the doctor afterwards.'),
 
   h('What you can ask for'),
@@ -116,7 +120,7 @@ const termsEn = [
   p('The project was built in Rwanda and follows Rwandan law, including Law No. 058/2021 on the protection of personal data and privacy. If something here conflicts with a right the law gives you, the law wins.'),
 
   h('Getting in touch'),
-  p(`Write to ${CONTACT}. It reaches the person who built this.`),
+  p(`Write to ${CONTACT}, or to ${CONTACT_ALT}. Both reach the person who built this.`),
 ];
 
 const privacyFr = [
@@ -124,7 +128,7 @@ const privacyFr = [
 
   h('Qui est responsable'),
   p('Beral Care est conçu et géré par une seule personne, Adossi Fred William, étudiant à l\'African Leadership University à Kigali, au Rwanda. Il n\'y a ni société ni équipe derrière ce projet. Une seule personne décide donc de ce qui arrive à vos informations, et une seule personne en répond.'),
-  p(`Pour toute question, inquiétude ou demande concernant vos informations, écrivez à ${CONTACT}. Ce message est lu par la personne qui gère le service.`),
+  p(`Pour toute question, inquiétude ou demande concernant vos informations, écrivez à ${CONTACT}. Ce message est lu par la personne qui gère le service. ${CONTACT_ALT} joint la même personne, et c'est l'adresse à utiliser si celle de l'université cesse un jour de fonctionner.`),
 
   h('Ce qui est conservé'),
   li('Votre nom, votre adresse e-mail, votre numéro de téléphone et la photo que vous téléversez, le cas échéant.'),
@@ -156,7 +160,7 @@ const privacyFr = [
   h('Fermer votre compte'),
   p('Vous pouvez fermer votre compte vous même, depuis votre profil. Il vous est demandé d\'expliquer pourquoi, avec vos propres mots. Dès la demande, le compte est verrouillé : vous êtes déconnecté, vous ne pouvez plus vous connecter, et aucun médecin ne peut accéder à votre dossier.'),
   p('Le compte et tout ce qu\'il contient sont ensuite supprimés dans un délai d\'une semaine ouvrée. Votre motif est lu d\'abord, mais il n\'a pas à être un motif approuvé. Compris ou non, le compte est supprimé.'),
-  p(`Si vous changez d\'avis avant la fin de cette semaine, écrivez à ${CONTACT} et le compte peut être rouvert.`),
+  p('Si vous changez d\'avis avant la fin de cette semaine, écrivez à l\'une des deux adresses ci dessus et le compte peut être rouvert.'),
   p('Une chose mérite d\'être sue. Une note rédigée par un médecin appartient à la consultation concernée, et supprimer votre compte la supprime aussi. Aucune copie n\'est conservée pour le médecin.'),
 
   h('Ce que vous pouvez demander'),
@@ -221,7 +225,7 @@ const termsFr = [
   p('Le projet a été conçu au Rwanda et suit le droit rwandais, dont la loi n° 058/2021 relative à la protection des données à caractère personnel et de la vie privée. Si un point de cette page contredit un droit que la loi vous donne, la loi prévaut.'),
 
   h('Nous joindre'),
-  p(`Écrivez à ${CONTACT}. Le message parvient à la personne qui a construit ce service.`),
+  p(`Écrivez à ${CONTACT}, ou à ${CONTACT_ALT}. Les deux parviennent à la personne qui a construit ce service.`),
 ];
 
 export const DOCS = {

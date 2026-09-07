@@ -43,25 +43,22 @@ const PORT = process.env.PORT || 3000;
 // the auth routes. Trust exactly one hop — the platform load balancer.
 app.set('trust proxy', 1);
 
-// CORS: allow the mobile app origin and localhost during development.
-// The Vite dev server forwards the browser's own origin when it proxies /api,
-// so its address has to be here or nothing works when running the site locally.
-const DEV_ORIGINS = [
-  'http://localhost:5173', 'http://127.0.0.1:5173',
-  'http://localhost:3000', 'http://localhost:19006', 'http://localhost:8081',
-];
-const allowedOrigins = [
-  ...new Set([
-    ...(process.env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean),
-    // Only on a developer machine. The deployed API answers its own site.
-    ...(process.env.NODE_ENV === 'production' ? [] : DEV_ORIGINS),
-  ]),
-];
+// CORS. The deployed API only answers the sites named in ALLOWED_ORIGINS.
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',').map(o => o.trim()).filter(Boolean);
+
+// On a developer machine any localhost port is allowed. The Vite dev server
+// forwards the browser's own origin when it proxies /api, and it moves to
+// another port whenever one is already taken, so pinning a port here means
+// the site silently stops working the second time you start it.
+const isDevelopment = process.env.NODE_ENV !== 'production';
+const LOCAL_ORIGIN = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (mobile apps, curl, Postman)
     if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    if (isDevelopment && LOCAL_ORIGIN.test(origin)) return callback(null, true);
     callback(new Error('Not allowed by CORS'));
   },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

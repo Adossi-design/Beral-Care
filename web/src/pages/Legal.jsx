@@ -4,7 +4,7 @@ import { Button } from '../components/ui';
 import Brand, { BrandMark } from '../components/Brand';
 import LanguageToggle from '../components/LanguageToggle';
 import { useI18n } from '../lib/i18n';
-import { DOCS, UPDATED, CONTACT } from '../lib/legal';
+import { DOCS, UPDATED, CONTACT, CONTACT_ALT } from '../lib/legal';
 import { formatDate } from '../lib/format';
 
 /**
@@ -45,6 +45,8 @@ export default function Legal({ doc }) {
             {lang === 'fr' ? 'Dernière mise à jour' : 'Last updated'} {formatDate(UPDATED, lang)}
             {' · '}
             <a href={`mailto:${CONTACT}`}>{CONTACT}</a>
+            {' · '}
+            <a href={`mailto:${CONTACT_ALT}`}>{CONTACT_ALT}</a>
           </p>
 
           <div className="about__cta">
